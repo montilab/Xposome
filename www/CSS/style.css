@@ -1,0 +1,309 @@
+
+/*----------------------------------------*/
+/* MAIN TEMPLATE CSS
+/*----------------------------------------*/
+
+html,
+body {
+	height: 100%;
+	background-color: #40424a;
+	/*background-color: white;*/
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	color: #40424a;
+	margin: 0 0 10px 0;
+	font-weight: 600;
+}
+
+
+h2 {
+	font-size: 48px;
+}
+
+
+h3 {
+	font-size: 30px;
+}
+
+h4 {
+	font-size: 20px;
+}
+
+
+p {
+	font-size: 14px;
+	color: #808181;
+	line-height: 1.8;
+}
+
+
+img {
+	max-width: 100%;
+}
+
+a:hover,
+a:focus {
+	text-decoration: none;
+	outline: none;
+}
+
+ul,
+ol {
+	padding: 0;
+	margin: 0;
+}
+
+label {
+  color: black;
+  display: inline-block;
+  margin-bottom: 0.5rem; 
+}
+
+input,
+button,
+select,
+optgroup,
+textarea {
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit; }
+
+button,
+input {
+  overflow: visible; }
+
+button,
+select {
+  text-transform: none; }
+
+button,
+html [type="button"],
+[type="reset"],
+[type="submit"] {
+  -webkit-appearance: button; }
+  
+.mybuttons{
+ color: black; 
+ background-color: #F8F5F0; 
+ padding: 10px 10px 10px 10px; 
+ margin: 1px; 
+ text-align: center; 
+ display: inline-block; 
+ font-size: 12px;
+}
+
+/*---------------------
+ Style select-input 
+-----------------------*/
+
+.selectize-input.input-active .selectize-input.input-active:hover .selectize-control.multi .selectize-input.focus {text-align: left; border-color: #00008B !important;}
+
+.selectize-dropdown .active {text-align: left; background: #FFE4C4 !important;}
+
+.selectize-input{text-align: left; margin-right: 20px;}
+
+.selectize-dropdown {text-align: left;}
+
+/*---------------------
+	tooltip style
+-----------------------*/
+
+.tooltip-inner {
+    text-align: left;
+}
+  
+/*---------------------
+	Media CSS
+-----------------------*/
+
+@media (min-width: 576px) {
+  .text-sm-left {
+    text-align: left !important; }
+  .text-sm-right {
+    text-align: right !important; }
+  .text-sm-center {
+    text-align: center !important; } }
+
+@media (min-width: 768px) {
+  .text-md-left {
+    text-align: left !important; }
+  .text-md-right {
+    text-align: right !important; }
+  .text-md-center {
+    text-align: center !important; } }
+
+@media (min-width: 992px) {
+  .text-lg-left {
+    text-align: left !important; }
+  .text-lg-right {
+    text-align: right !important; }
+  .text-lg-center {
+    text-align: center !important; } }
+
+@media (min-width: 1200px) {
+  .text-xl-left {
+    text-align: left !important; }
+  .text-xl-right {
+    text-align: right !important; }
+  .text-xl-center {
+    text-align: center !important; } }
+
+/*---------------------
+	Header section
+-----------------------*/
+
+.header-section {
+	padding: 50px 20px 50px 20px;
+	background: #f2f7f8;
+	/*border-bottom: 1px solid gray;*/
+}
+
+/*---------------------
+	Navbar section
+-----------------------*/
+
+
+/*---------------------
+	Copyright section
+-----------------------*/
+
+.copyright-section {
+	font-size: 14px;
+	color: #838488;
+	padding: 20px 0 20px 0;
+}
+
+.copyright p{
+	line-height: 70%;
+}
+
+/* Navar Bar */
+
+.navbar {
+  background-color: #330066;
+  margin-bottom: 20px;
+  width: 100%;
+  color: white;
+}
+
+
+.navbar-default .navbar-nav > li > a:hover {
+  font-weight: bold; color: white;
+}
+
+.navbar-default .navbar-nav > li > a:focus {
+  font-weight: bold; color: white;
+}
+
+.navbar-default .navbar-nav > li[class=active] > a,
+.navbar-default .navbar-nav > li[class=active] > a:hover, 
+.navbar-default .navbar-nav > li[class=active] > a:focus{
+  background-color: white;
+  font-weight: bold;
+} 
+
+/* HTML active tab */
+
+.tabbable {
+  border: none;
+}
+
+.tabbable > .nav > li > a {
+	font-size: 14px;
+	/*min-width: 213px;
+	min-height: 20px;*/
+	text-align: center;
+	padding: 10px 10px 10px 10px;
+	margin-bottom: 10px;
+	background-color: #fff;
+	border: 2px solid #40424a;
+	/*color: #40424a;*/
+	font-weight: 700;
+}
+
+.tabbable > .nav > li > a:hover{
+  background: lightgray; 
+}
+
+.tabbable > .nav > li > a:focus{
+  background: rgb(209, 68, 20); 
+}  
+
+.tabbable > .nav > li[class=active] > a,
+.tabbable > .nav > li[class=active] > a:hover, 
+.tabbable > .nav > li[class=active] > a:focus{
+  background: rgb(209, 68, 20); color: white; font-weight: bold;
+}  
+
+
+/* Site Links */
+
+.site-link {
+	display: inline-block;
+	font-size: 16px;
+	min-width: 50px;
+	min-height: 20px;
+	margin: 10px 10px 0 0;
+	text-align: center;
+	position: relative;
+	color: #40424a;
+	font-weight: 700;
+}
+
+a.site-link:focus, a.site-link:hover{
+  text-decoration: underline;
+}
+
+a.site-link[class=active]{
+  text-decoration: underline;
+}
+
+
+/* Override Table */
+
+.main-table td, th {
+	border: 1px solid black; 
+    text-align: center;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.main-table table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 2px solid black;
+} 
+
+.main-table td:nth-child(1) {
+    text-align: center;
+    width: 15%;
+}
+
+.main-table td:nth-child(2) {
+    text-align: center;
+    width: 15%;
+}
+
+.main-table td:nth-child(3) {
+    text-align: left;
+}
+
+  
+ /* Active link */
+ a.site-link:hover a.site-link:active {
+  color: red;
+  font-weight: bold;
+}  
+  
+  
+  
+  

@@ -1,0 +1,55 @@
+---
+title: "HEPG2 Liver Carcinogenome Portal"
+output:
+  html_document:
+  toc: true
+  theme: united
+---
+
+An interactive portal for retrieving and visualizing data from the HEGP2 liver carcinogenome project
+
+### Dataset details
+
+This experiment uses 330 selected chemicals for in-vivo liver carcinogenicity testing, including 128 liver carcinogens, 168 non-carcinogens, and 34 miscellaneous chemicals (e.g. nuclear receptor ligands). Chemical carcinogenicity and genotoxicity annotations are based on the Carcinogenicity Potency Database ([CPDB](https://toxnet.nlm.nih.gov/cpdb/)), which is the result of tissue-specific long-term animal cancer tests in rodents. In the liver carcinogenome project, HepG2 (liver) cells are exposed to each individual chemical for 24 hours and their gene expression is profiled on the L1000 platform. Each chemical is assayed at 6 doses (2 fold dilutions starting from the highest concentration of 40uM or 20uM) with triplicate profiles generated for each dose. For each chemical and dose profile, the gene expression of 1000 landmark genes is calculated as a moderated z-score (weighted collapsed z-score of the 3 replicate perturbational profiles with respect to the entire plate).
+
+### Annotation
+
+Tables detailing the chemicals/samples in the HEPG2 carcinogenome dataset and their associated annotation.
+
+### Chemical Explorer
+
+Interactive explorer for a single queried chemical. 
+
+#### Gene Expression
+
+A list of differentially expressed genes for a given chemical of interest.
+
+#### Gene set enrichment
+
+Gene set enrichment scores for a given chemical of interest. Gene sets include the [MSigDB](http://software.broadinstitute.org/gsea/msigdb) collections (Hallmark, C2 reactome pathways), and gene targets of various nuclear receptors ([NURSA](https://www.nursa.org/nursa/transcriptomine/index.jsf)). Enrichment scores were computed based on multiple methods, including gsva, ssGSEA, zscore (from R Bioconductor package, [GSVA](https://bioconductor.org/packages/release/bioc/html/GSVA.html)), and gsproj (custom script).
+
+#### Connectivity
+
+Connectivity scores measure similarity of profiles of the query chemical to profiles in the Connectivity Map (CMap).
+Scores are calculated at the level of either CMap Perturbagens or Perturbational Classes.
+
+### Marker Explorer
+
+Interactive explorer for a single queried markers (gene, gene-set, or CMap perturbagen/perturbagen class). 
+
+### Heatmap Explorer
+
+A heatmap visualizer to explore bulk visualization of gene expression, gene set enrichment, and connectivity 
+results.
+
+A interactive heatmap using Morpheus is supported for querying gene set enrichment results. For details, see [Morpheus](https://software.broadinstitute.org/morpheus/).
+
+---
+
+Credits: Amy Li, Stefano Monti, David Sherr, Broad Institute CMap team.
+
+Contact us at [ajli@bu.edu](mailto:ajli@bu.edu)
+
+This project is supported by Superfund Research Program at Boston University ([BUSRP](http://www.bu.edu/sph/research/research-landing-page/superfund-research-program-at-boston-university)), [NIH/LINCS](http://www.lincsproject.org), and [Find the Cause Breast Cancer Foundation](http://findthecausebcf.org/).
+
+

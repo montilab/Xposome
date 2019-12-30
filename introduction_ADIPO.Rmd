@@ -1,0 +1,53 @@
+---
+title: "Adipogenome Portal"
+output:
+  html_document:
+  toc: true
+  theme: united
+---
+
+An interactive portal for retrieving and visualizing data from the Adipogenome roject
+
+### Dataset details
+
+This experiment includes the results of taxonomic clustering of trascriptomic profiles of 38 known and 4 suspected therapeutic and environmental adipogens. 3' digital gene expression profiling was performed on mouse NIH 3T3-L1 pre-adipocytes exposed over a 10 day period during differentiation. On the Adipogen Taxaonomic Clustering tab you will find a diagram on the hierarchical segregation of compounds into taxonomic sub-modules. By clicking specific nodes of the clustering diagram you will explore gene and pathway-level signatures of expression changes shared by specific sub-modules of compounds...
+
+### Annotation
+
+Tables detailing the chemicals/samples in the ADIPO dataset and their associated annotation.
+
+### Chemical Explorer
+
+Interactive explorer for a single queried chemical. 
+
+#### Gene Expression
+
+A list of differentially expressed genes for a given chemical of interest.
+
+#### Gene set enrichment
+
+Gene set enrichment scores for a given chemical of interest. Gene sets include the [MSigDB](http://software.broadinstitute.org/gsea/msigdb) collections (Hallmark, C2 reactome pathways), and gene targets of various nuclear receptors ([NURSA](https://www.nursa.org/nursa/transcriptomine/index.jsf)). Enrichment scores were computed based on multiple methods, including gsva, ssGSEA, zscore (from R Bioconductor package, [GSVA](https://bioconductor.org/packages/release/bioc/html/GSVA.html)), and gsproj (custom script).
+
+#### Connectivity
+
+Connectivity scores measure similarity of profiles of the query chemical to profiles in the Connectivity Map (CMap).
+Scores are calculated at the level of either CMap Perturbagens or Perturbational Classes.
+
+### Marker Explorer
+
+Interactive explorer for a single queried markers (gene, gene-set, or CMap perturbagen/perturbagen class). 
+
+### Heatmap Explorer
+
+A heatmap visualizer to explore bulk visualization of gene expression, gene set enrichment, and connectivity 
+results.
+
+A interactive heatmap using Morpheus is supported for querying gene set enrichment results. For details, see [Morpheus](https://software.broadinstitute.org/morpheus/).
+
+---
+
+Credits: Amy Li, Stefano Monti, David Sherr, Broad Institute CMap team.
+
+Contact us at [ajli@bu.edu](mailto:ajli@bu.edu)
+
+This project is supported by Superfund Research Program at Boston University ([BUSRP](http://www.bu.edu/sph/research/research-landing-page/superfund-research-program-at-boston-university)), [NIH/LINCS](http://www.lincsproject.org), and [Find the Cause Breast Cancer Foundation](http://findthecausebcf.org/).
