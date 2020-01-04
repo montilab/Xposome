@@ -6,5 +6,5 @@ Scripts for running R Shiny portals for exploring data and results from the Expo
 
 ### source scripts
 ```
-requires /data directory: contact maintainer for access
+requires data directory: contact maintainer for access
 
