@@ -1,4 +1,4 @@
-# Carcinogenome Portal 
+# Xposome Portal 
 
 This portal is currently hosted at: https://reina-chau-2018.shinyapps.io/Exposome/
 
