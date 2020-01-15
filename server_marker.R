@@ -1,35 +1,4 @@
 
-##A reactive value to keep track if a gene set is selected####
-marker_plot <- reactiveVal()
-
-##Observe then marker gene set is selected#####
-observeEvent(input$marker, {
-  
-  marker_plot(input$marker)
-  
-}, ignoreInit=TRUE)
-
-##Observe then marker gene set is selected#####
-observeEvent(input$marker_gene, {
-  
-  marker_plot(input$marker_gene)
-  
-}, ignoreInit=TRUE)
-
-##Observe then marker TAS is selected#####
-observeEvent(input$marker_tas, {
-  
-  marker_plot(input$marker_tas)
-  
-}, ignoreInit=TRUE)
-
-##Observe then marker gene set is selected#####
-observeEvent(input$marker_view, {
-  
-  marker_plot(input$marker_view)
-  
-}, ignoreInit=TRUE)
-
 ##Get a list of gene set#####
 get_gs_eset <- function(gslist, gsname, gsmethod, annot_prof, match_id = "sig_id"){
   ind <- grep(paste0(".*", dsmap[[gsname]], ".*", gsmethod, ".*"), names(gslist))
@@ -40,13 +9,11 @@ get_gs_eset <- function(gslist, gsname, gsmethod, annot_prof, match_id = "sig_id
 }
 
 ##Output the gene set selection####
-output$marker_gs_selection <- renderUI({
+observeEvent(c(input$marker_gsname, input$marker_gsmethod), {
   
-  req(input$marker_gsname, input$marker_gsmethod)
-  
-  selectInput(
+  updateSelectInput(
+    session,
     inputId = "marker_gs",
-    label = "Select a gene set:",
     choices = sort(rownames(
       get_gs_eset(
         gslist = dat[["Gene Set Enrichment"]], 
@@ -58,20 +25,6 @@ output$marker_gs_selection <- renderUI({
   )
     
 })
-
-##Observe which marker gene set is selected#####
-observeEvent(input$marker_gs, {
-
-  marker_plot(input$marker_gs)
-  
-}, ignoreInit=TRUE)
-
-##Observe which marker gene method is selected#####
-observeEvent(input$marker_gsmethod, {
-  
-  marker_plot(input$marker_gsmethod)
-
-}, ignoreInit=TRUE)
 
 ##Get a list of connectivity set#####
 get_conn_eset <- function(
@@ -89,13 +42,11 @@ get_conn_eset <- function(
 }
 
 ##Output the gene set selection####
-output$marker_conn_selection <- renderUI({
+observeEvent(input$marker_conn_name, {
   
-  req(input$marker_conn_name)
-  
-  selectInput(
+  updateSelectInput(
+    session,
     inputId = "marker_conn",
-    label = "Select a gene set:",
     choices = rownames(get_conn_eset(
       connlist = dat[["Connectivity"]], 
       conn_name = input$marker_conn_name, 
@@ -105,13 +56,6 @@ output$marker_conn_selection <- renderUI({
   )
   
 })
-
-##Observe the marker gene connectivity is selected#####
-observeEvent(input$marker_conn, {
-  
-  marker_plot(input$marker_conn)
-  
-}, ignoreInit=TRUE)
 
 ##Get differential expression gene set#####
 get_de_eset <- function(annot_prof, match_id = "sig_id", hm = FALSE){
@@ -160,7 +104,7 @@ get_de_by_gene_hist <- function(
           outlier.fill = NULL,
           outlier.alpha = NULL
         )
-      
+
     }
     
     return(res)
@@ -169,7 +113,7 @@ get_de_by_gene_hist <- function(
   
   if(is.na(col_id)){
     
-    p.title <- paste("Distribution of ", header, " across profiles for ", input, " (Overall)", sep = "")
+    p.title <- paste("Distribution of ", header, " across profiles\n for ", input, " (Overall)", sep = "")
     background <- as.numeric(exprs(eset))
     df <- rbind(data.frame(x = x, cols = "query"),
                 data.frame(x = background, cols = "background"))
@@ -192,7 +136,7 @@ get_de_by_gene_hist <- function(
     
   }else{
     
-    p.title <- paste("Distribution of ", header, " across profiles for ", input, " (by ", col_id, ")", sep = "")
+    p.title <- paste("Distribution of ", header, " across profiles\n for ", input, " (by ", col_id, ")", sep = "")
     cols <- pData(eset)[, col_id]
     cols <- as.character(cols)
     cols_match <- col_colors
@@ -241,169 +185,285 @@ get_de_by_gene_table <- function(
   
 }
 
-#Output marker explorer plots#####
-observeEvent(marker_plot(), {
-  
-  if(input$marker == "Genes"){
-    
-    if(is.null(input$marker_gene)) return(NULL) 
+##Create reactive marker data#####
+marker_data <- reactiveVal(NULL); 
+marker_id <- reactiveVal(NULL);
+marker_header <- reactiveVal(NULL);
+marker_key <- reactiveVal(NULL);
 
-    es <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id")
-    markerid <- input$marker_gene
-    header <- "mod Z-scores"
-    
-  }else if(input$marker == "Gene Sets"){   
-    
-    if(is.null(input$marker_gsname) | is.null(input$marker_gsmethod) | is.null(input$marker_gs)) return(NULL)
-      
-    es <- get_gs_eset(
-      gslist = dat[["Gene Set Enrichment"]], 
-      gsname = input$marker_gsname, 
-      gsmethod = input$marker_gsmethod, 
-      annot_prof = dat[["Profile Annotation"]],
-      match_id = "sig_id"
-    )
-    
-    markerid <- input$marker_gs
-    header <- "Gene Set Scores"
-    
-  }else if(input$marker == "CMap Connectivity"){
-    
-    if(is.null(input$marker_conn_name) | is.null(input$marker_conn)) return(NULL)
-    
-    es <- get_conn_eset(
-      connlist = dat[["Connectivity"]], 
-      conn_name = input$marker_conn_name, 
-      annot_prof = dat[["Profile Annotation"]],
-      match_id = "sig_id"
-    )
-    
-    markerid <- input$marker_conn
-    header <- "Connectivity Score (Percentile)"
-    
-  }
+##Observe event when a button is clicked####
+observeEvent(input$de_generate, {
   
-  tas <- input$marker_tas
-  plot <- input$marker_view
-  es <- es[, pData(es)[, "TAS"] > tas]
-    
-  p1 <- get_de_by_gene_hist(
-    input = markerid, 
-    eset=es,
-    annot_prof = dat[["Profile Annotation"]], 
+  req(input$marker, input$marker_tas, input$marker_view, input$marker_gene)
+  
+  es <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id")
+  es <- es[, pData(es)[, "TAS"] > input$marker_tas]
+  
+  marker_data(es)
+  marker_id(input$marker_gene)
+  marker_header("mod Z-scores")
+  marker_key(paste0(session$clientData$url_search, "_", input$marker, "_", input$marker_tas, "_", input$marker_view, "_", input$marker_gene))
+  
+})
+
+##Observe event when a button is clicked####
+observeEvent(input$es_generate, {
+  
+  req(input$marker, input$marker_tas, input$marker_view, input$marker_gsname, input$marker_gsmethod, input$marker_gs)
+  
+  es <- get_gs_eset(
+    gslist = dat[["Gene Set Enrichment"]],
+    gsname = input$marker_gsname,
+    gsmethod = input$marker_gsmethod,
+    annot_prof = dat[["Profile Annotation"]],
+    match_id = "sig_id"
+  )
+  es <- es[, pData(es)[, "TAS"] > input$marker_tas]
+  
+  marker_data(es)
+  marker_id(input$marker_gs)
+  marker_header("Gene Set Scores")
+  marker_key(paste0(session$clientData$url_search, "_", input$marker, "_", input$marker_tas, "_", input$marker_view, "_", input$marker_gsname, "_", input$marker_gsmethod, "_", input$marker_gs))
+  
+})
+
+##Observe event when a button is clicked####
+observeEvent(input$conn_generate, {
+  
+  req(input$marker, input$marker_tas, input$marker_view, input$marker_conn_name, input$marker_conn)
+  
+  es <- get_conn_eset(
+    connlist = dat[["Connectivity"]],
+    conn_name = input$marker_conn_name,
+    annot_prof = dat[["Profile Annotation"]],
+    match_id = "sig_id"
+  )
+  es <- es[, pData(es)[, "TAS"] > input$marker_tas]
+  
+  marker_data(es)
+  marker_id(input$marker_conn)
+  marker_header("Connectivity Score (Percentile)")
+  marker_key(paste0(session$clientData$url_search, "_", input$marker, "_", input$marker_tas, "_", input$marker_view, "_", input$marker_conn_name, "_", input$marker_conn))
+  
+})
+
+##Output the first plot#####
+output$marker_plot_1 <- renderCachedPlot({
+  
+  req(marker_data(), marker_id(), marker_header(), marker_key(), input$marker_tas, input$marker_view)
+  
+  get_de_by_gene_hist(
+    input = marker_id(),
+    eset = marker_data(),
+    annot_prof = dat[["Profile Annotation"]],
     match_id = "sig_id",
-    col_id = NA, 
-    header = header,
-    tas = tas,
-    plot = plot
+    col_id = NA,
+    header = marker_header(),
+    tas = input$marker_tas,
+    plot = input$marker_view
   )
   
-  p2 <- get_de_by_gene_hist(
-    input = markerid, 
-    eset=es,
-    annot_prof = dat[["Profile Annotation"]], 
+}, cacheKeyExpr = { list(marker_key()) })
+
+##Output the first plot#####
+output$marker_plot_2 <- renderCachedPlot({
+  
+  req(marker_data(), marker_id(), marker_header(), marker_key(), input$marker_tas, input$marker_view)
+  
+  get_de_by_gene_hist(
+    input = marker_id(),
+    eset = marker_data(),
+    annot_prof = dat[["Profile Annotation"]],
     match_id = "sig_id",
-    col_id = "Carcinogenicity", 
-    col_colors = c("grey","green", "orange"), 
+    col_id = "Carcinogenicity",
+    col_colors = c("grey","green", "orange"),
     col_names = c("N/A","-", "+"),
-    header = header,
-    tas = tas,
-    plot = plot
+    header = marker_header(),
+    tas = input$marker_tas,
+    plot = input$marker_view
   )
   
-  p3 <- get_de_by_gene_hist(
-    input = markerid, 
-    eset=es,
-    annot_prof = dat[["Profile Annotation"]], 
+}, cacheKeyExpr = { list(marker_key()) })
+
+##Output the first plot#####
+output$marker_plot_3 <- renderCachedPlot({
+  
+  req(marker_data(), marker_id(), marker_header(), marker_key(), input$marker_tas, input$marker_view)
+  
+  get_de_by_gene_hist(
+    input = marker_id(),
+    eset = marker_data(),
+    annot_prof = dat[["Profile Annotation"]],
     match_id = "sig_id",
-    col_id = "Genotoxicity", 
-    col_colors = c("grey","pink", "purple"), 
+    col_id = "Genotoxicity",
+    col_colors = c("grey","pink", "purple"),
     col_names = c("N/A", "-", "+"),
-    header = header,
-    tas = tas,
-    plot = plot
+    header = marker_header(),
+    tas = input$marker_tas,
+    plot = input$marker_view
   )
   
-  ##Define the width and height of the plot
-  if(plot %in% "Density"){
-    w = 1000; h=300
-  }else if(plot %in% "Boxplot"){
-    w = 600; h=400
+}, cacheKeyExpr = { list(marker_key()) })
+
+##Define the width and height of the plot
+w <- reactiveVal(NULL); h <- reactiveVal(NULL);
+
+observeEvent(input$marker_view, {
+  
+  req(input$marker_view)
+  
+  if(input$marker_view %in% "Density"){
+    w(1000); h(300)
+  }else if(input$marker_view %in% "Boxplot"){
+    w(600); h(400)
   }
   
-  ##Output the first plot#####
-  output$marker_plot_1 <- renderPlot({
-    p1
-  })
+})
+
+##Download pdf format#####
+output$marker_download_pdf <- downloadHandler(
   
-  #Output the second plots#####
-  output$marker_plot_2 <- renderPlot({
-    p2
-  })
+  filename = paste0("Carcinogenome_download_", marker_header(), "_", marker_id(), ".pdf"),
   
-  #Output the third plots#####
-  output$marker_plot_3 <- renderPlot({
-    p3
-  })
-  
-  ##Download pdf format#####
-  output$marker_download_pdf <- downloadHandler(
-    filename = paste0("Carcinogenome_download_", header, "_", markerid, ".pdf"),
-    content = function(file){
-      ggsave(
-        file, device = "pdf", grid.arrange(p1, p2, p3),
-        width = w/130, height = h/35, 
-        dpi = 300
-      )
-    }
-  )
-  
-  ##Download png format#####
-  output$marker_download_png <- downloadHandler(
-    filename = paste0("Carcinogenome_download_", header, "_", markerid, ".png"),
-    content = function(file){
-      ggsave(
-        file, device = "png", grid.arrange(p1, p2, p3),
-        width = w/130, height = h/35, 
-        dpi = 300
-      )
-    }
-  )
-  
-  ##Output the marker table header####
-  output$marker_table_header <- renderUI({
-    h3(paste0("Table of profiles ranked by ", header))
-  })
-  
-  ##Output the marker table####
-  output$marker_table <-  DT::renderDataTable({
-  
-    data.table.round(
-      get_de_by_gene_table(
-        input=markerid, 
-        eset=es, 
-        annot_prof = dat[["Profile Annotation"]], 
-        match_id = "sig_id",  
-        header = header,
-        tas = tas
-      )
+  content = function(file){
+    
+    p1 <- get_de_by_gene_hist(
+      input = marker_id(),
+      eset = marker_data(),
+      annot_prof = dat[["Profile Annotation"]],
+      match_id = "sig_id",
+      col_id = NA,
+      header = marker_header(),
+      tas = input$marker_tas,
+      plot = input$marker_view
     )
     
-  }, escape = FALSE, extensions = 'Buttons', server = TRUE, colnames = c('Entry'=1), class = "display",
-  options = list(
-    deferRender = FALSE,
-    paging = TRUE,
-    searching = TRUE,
-    ordering = TRUE,
-    pageLength = 20, 
-    scrollX = TRUE, 
-    scrollY = 400,
-    scrollCollapse = TRUE,
-    dom = 'T<"clear">Blfrtip', 
-    buttons=c('copy','csv','print'))
+    p2 <- get_de_by_gene_hist(
+      input = marker_id(),
+      eset = marker_data(),
+      annot_prof = dat[["Profile Annotation"]],
+      match_id = "sig_id",
+      col_id = "Carcinogenicity",
+      col_colors = c("grey","green", "orange"),
+      col_names = c("N/A","-", "+"),
+      header = marker_header(),
+      tas = input$marker_tas,
+      plot = input$marker_view
+    )
+    
+    p3 <- get_de_by_gene_hist(
+      input = marker_id(),
+      eset = marker_data(),
+      annot_prof = dat[["Profile Annotation"]],
+      match_id = "sig_id",
+      col_id = "Genotoxicity",
+      col_colors = c("grey","pink", "purple"),
+      col_names = c("N/A", "-", "+"),
+      header = marker_header(),
+      tas = input$marker_tas,
+      plot = input$marker_view
+    )
+    
+    ggsave(
+      file, device = "pdf", grid.arrange(p1, p2, p3),
+      width = w()/130, height = h()/35,
+      dpi = 300
+    )
+    
+  }
+)
+
+##Download png format#####
+output$marker_download_png <- downloadHandler(
+  
+  filename = paste0("Carcinogenome_download_", marker_header(), "_", marker_id(), ".png"),
+  
+  content = function(file){
+    
+    p1 <- get_de_by_gene_hist(
+      input = marker_id(),
+      eset = marker_data(),
+      annot_prof = dat[["Profile Annotation"]],
+      match_id = "sig_id",
+      col_id = NA,
+      header = marker_header(),
+      tas = input$marker_tas,
+      plot = input$marker_view
+    )
+    
+    p2 <- get_de_by_gene_hist(
+      input = marker_id(),
+      eset = marker_data(),
+      annot_prof = dat[["Profile Annotation"]],
+      match_id = "sig_id",
+      col_id = "Carcinogenicity",
+      col_colors = c("grey","green", "orange"),
+      col_names = c("N/A","-", "+"),
+      header = marker_header(),
+      tas = input$marker_tas,
+      plot = input$marker_view
+    )
+    
+    p3 <- get_de_by_gene_hist(
+      input = marker_id(),
+      eset = marker_data(),
+      annot_prof = dat[["Profile Annotation"]],
+      match_id = "sig_id",
+      col_id = "Genotoxicity",
+      col_colors = c("grey","pink", "purple"),
+      col_names = c("N/A", "-", "+"),
+      header = marker_header(),
+      tas = input$marker_tas,
+      plot = input$marker_view
+    )
+    
+    ggsave(
+      file, device = "png", grid.arrange(p1, p2, p3),
+      width = w()/130, height = h()/35,
+      dpi = 300
+    )
+    
+  }
+)
+
+
+##Output the marker table header####
+output$marker_table_header <- renderUI({
+  
+  req(marker_header())
+  
+  h3(paste0("Table of profiles ranked by ", marker_header()))
+  
+})
+
+##Output the marker table####
+output$marker_table <-  DT::renderDataTable({
+
+  req(marker_data(), marker_id(), marker_header(), input$marker_tas)
+  
+  data.table.round(
+    get_de_by_gene_table(
+      input = marker_id(),
+      eset = marker_data(),
+      annot_prof = dat[["Profile Annotation"]],
+      match_id = "sig_id",
+      header = marker_header(),
+      tas = input$marker_tas
+    )
   )
-  
-}, ignoreInit=TRUE)
-  
-  
-  
+
+}, escape = FALSE, extensions = 'Buttons', server = TRUE, colnames = c('Entry'=1), class = "display",
+options = list(
+  deferRender = FALSE,
+  paging = TRUE,
+  searching = TRUE,
+  ordering = TRUE,
+  pageLength = 20,
+  scrollX = TRUE,
+  scrollY = 400,
+  scrollCollapse = TRUE,
+  dom = 'T<"clear">Blfrtip',
+  buttons=c('copy','csv','print'))
+)
+
+

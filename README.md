@@ -1,10 +1,13 @@
-# Exposome Portal 
+# Carcinogenome Portal 
 
-This portal is currently hosted at: https://reina-chau-2018.shinyapps.io/Exposome/
+This portal is currently hosted at: [https://carcinogenome.org](https://carcinogenome.org)
 
-Scripts for running R Shiny portals for exploring data and results from the Exposome Project
+Scripts for running R Shiny portals for exploring data and results from the Carcinogenome Project
 
 ### source scripts
 ```
-requires data directory: contact maintainer for access
+source_HEPG2_server.R
+source_MCF10A_server.R
+
+requires /data directory: contact maintainer for access
 

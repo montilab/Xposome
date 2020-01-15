@@ -1,6 +1,8 @@
 
 
 ##Shiny Packages####
+library(BiocManager)
+options(repos = BiocManager::repositories())
 library(shiny)
 library(shinycssloaders)
 library(shinythemes)
@@ -10,17 +12,25 @@ library(promises)
 library(future)
 plan(multiprocess)
 library(ggplot2)
-library(plotly)
-library(ipc)
 library(DT)
 library(Biobase)
 library(rjson)
 library(shinyBS)
 
+##Loading data files####
+HEPG2 <- readRDS(paste0("data/HEPG2/data.RDS"))
+MCF10A <- readRDS(paste0("data/MCF10A/data.RDS"))
+ADIPO <- readRDS(paste0("data/ADIPO/data.RDS"))
+profile_info <- read_csv(paste0("data/ADIPO/profile_info.csv"))
+chemical_info <- read_csv(paste0("data/ADIPO/chemical_info.csv"))
+
+##Create the storage memory to storage cache objects####
+shinyOptions(cache = diskCache("./myapp-cache"))
+
 ##Define Server Login####
 ui <- bootstrapPage(
   
-  title=paste0("The Exposome Project"),
+  title=paste0("The Xposome Project"),
     
   tagList(
     tags$head(
@@ -50,7 +60,7 @@ ui <- bootstrapPage(
       column(
         width=8,
         div(class="text-md-left",
-            a(href="?home", h2("The Exposome Project")),    
+            a(href="?home", h2("The Xposome Project")),    
             h4(style="font-weight: 200;", "Chemical Carcinogenicity Screening using high-throughput transcriptomics assays")
         )
       ),
@@ -58,17 +68,17 @@ ui <- bootstrapPage(
       column(
         width=4,
         div(class="text-md-right",
-            a(href="?home", class="site-link", title="Home", "Home"),
-            a(href="?about", class="site-link", title="About", "About"),
-            a(href="?contact", class="site-link", title="Contact", "Contact")
+            a(href="?home", class="site-link", "Home"),
+            a(href="?about", class="site-link", "About"),
+            a(href="?contact", class="site-link", "Contact")
         )
       )
     ),
     
     ###The main body#####
-    uiOutput("pageStub") %>% withSpinner(color="#0dc5c1", proxy.height="200px"),
+    uiOutput("pageStub") %>% withSpinner(color="#0dc5c1", type=4, proxy.height="200px"),
     
-    ###the footer#####
+    ###the footer/copyright#####
     fluidRow(
       class="copyright-section",
       
@@ -76,7 +86,7 @@ ui <- bootstrapPage(
         width=12,
         div(class="text-md-center", 
           div(class="copyright",
-            p("The Carcinogenome Project: Developed by Monti Lab at Boston University"),
+            p("The Xposome Project: Developed by Monti Lab at Boston University"),
             HTML("&copy; Monti Lab &diams; 2017 &diams; All rights reserved")
           )
         )
@@ -89,13 +99,13 @@ ui <- bootstrapPage(
 ##Define Server Login####
 server <- function(input, output, session) {
   
-  cat("Session started.\n")                               # this prints when a session starts
+  cat("Session started.\n")                                 # this prints when a session starts
   onSessionEnded(function() { cat("Session ended.\n\n") })  # this prints when a session ends
   
   #load server code for page specified in URL
   fname = isolate(session$clientData$url_search)
-  
-  if(nchar(fname)==0) { fname = "?home" }              # blank means home page
+
+  if(nchar(fname)==0) { fname = "?home" } # blank means home page
   fname = paste0(substr(fname, 2, nchar(fname)), ".R") # remove leading "?", add ".R"
 
   #If the files are home, about, and contract, stay in the current page, else go to main_app

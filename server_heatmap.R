@@ -33,21 +33,24 @@ get_heatmap_gct <- function(ds, dsmap, method, domain){
   url <- paste(dsname, "_", method, ".gct", sep = "")
 }
 
+##Show morpheus link###
+show_morpheus <- reactiveVal(FALSE)
+
 #Output the morpheus result link to heatmap####
 output$morpheus_result_link <- renderUI({
   
-  req(input$marker_gsname_hm, input$marker_gsmethod_hm, input$marker_tas_hm)
+  req(show_morpheus() %in% TRUE, input$marker_tas_hm, input$marker_gsname_hm, input$marker_gsmethod_hm)
   
   HTML(
     paste0(
       '<a target="_blank" href="',
       get_morpheus_link(
         url = get_heatmap_gct(
-          ds=input$marker_gsname_hm, 
+          ds = isolate({ input$marker_gsname_hm }), 
           dsmap = dsmap, 
-          method = input$marker_gsmethod_hm
-        ), 
-        domain = domain, tas = input$marker_tas_hm
+          method = isolate({ input$marker_gsmethod_hm })
+          ), 
+        domain = domain, tas = isolate({ input$marker_tas_hm })
       ),
       '">', 'Open interactive heatmap in Morpheus', 
       '</a>'
@@ -147,116 +150,132 @@ plot_heatmap_static <- function(eset, tas){
   
 }
 
-##A reactive value to keep track if a gene set is selected####
-heatmap_plot <- reactiveVal()
 
-##Observe then marker gene set is selected#####
-observeEvent(input$marker_hm, {
-  
-  heatmap_plot(input$marker_hm)
-  
-}, ignoreInit=TRUE)
+##Create reactive hm data#####
+hm_data <- reactiveVal(NULL); 
+hm_key <- reactiveVal(NULL);
 
-##Observe then marker TAS is selected#####
-observeEvent(input$marker_tas_hm, {
+##Observe event when a button is clicked####
+observeEvent(input$hm_de_generate, {
   
-  heatmap_plot(input$marker_tas_hm)
+  req(input$marker_hm, input$marker_tas_hm)
   
-}, ignoreInit=TRUE)
+  es <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id", hm = TRUE)
 
-##Observe which marker gene set is selected#####
-observeEvent(input$marker_gsname_hm, {
+  hm_data(es)
+  hm_key(paste0(session$clientData$url_search, "_", input$marker_hm, "_", input$marker_tas_hm))
+  show_morpheus(FALSE) 
   
-  heatmap_plot(input$marker_gsname_hm)
-  
-}, ignoreInit=TRUE)
+})
 
-##Observe which marker gene method is selected#####
-observeEvent(input$marker_gsmethod_hm, {
+##Observe event when a button is clicked####
+observeEvent(input$hm_es_generate, {
   
-  heatmap_plot(input$marker_gsmethod_hm)
+  req(input$marker_hm, input$marker_tas_hm, input$marker_gsname_hm, input$marker_gsmethod_hm)
   
-}, ignoreInit=TRUE)
+  es <- get_gs_eset(
+    gslist = dat[["Gene Set Enrichment"]],
+    gsname = input$marker_gsname_hm,
+    gsmethod = input$marker_gsmethod_hm,
+    annot_prof = dat[["Profile Annotation"]],
+    match_id = "sig_id"
+  )
 
-##Observe the marker gene connectivity is selected#####
-observeEvent(input$marker_conn_name_hm, {
+  hm_data(es)
+  hm_key(paste0(session$clientData$url_search, "_", input$marker_hm, "_", input$marker_tas_hm, "_", input$marker_gsname_hm, "_", input$marker_gsmethod_hm))
+  show_morpheus(TRUE) 
   
-  heatmap_plot(input$marker_conn_name_hm)
+})
+
+##Observe event when a button is clicked####
+observeEvent(input$hm_conn_generate, {
   
-}, ignoreInit=TRUE)
+  req(input$marker_hm, input$marker_tas_hm, input$marker_conn_name_hm)
+  
+  es <- get_conn_eset(
+    connlist = dat[["Connectivity"]],
+    conn_name = input$marker_conn_name_hm,
+    annot_prof = dat[["Profile Annotation"]],
+    match_id = "sig_id"
+  )
+  
+  hm_data(es)
+  hm_key(paste0(session$clientData$url_search, "_", input$marker_hm, "_", input$marker_tas_hm, "_", input$marker_conn_name_hm))
+  show_morpheus(FALSE) 
+  
+})
+
+
+##Change width and height of plot when the data changed###
+output$heatmap_holder <- renderUI({
+  
+  req(hm_data())
+  
+  nrows <- nrow(hm_data())
+  ncols <- ncol(hm_data())
+  
+  w <- max(min(ncols*15+50, 3000), 400)
+  h <- min(nrows*15+200, 3000)
+  
+  plotOutput(outputId = "hm_plot", width="100%", height=h) %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+  
+})
+
 
 ##Output heatmap explorer plots#####
-observeEvent(heatmap_plot(), {
+output$hm_plot <- renderCachedPlot({
   
-  if(input$marker_hm == "Genes (Landmark)"){
+  req(hm_data(), input$marker_tas_hm, hm_key())
+  
+  p <- plot_heatmap_static(eset=hm_data(), tas=input$marker_tas_hm)
+  do.call(grid.arrange, p)
+  
+}, cacheKeyExpr = { list(hm_key()) })
+
+#Download pdf####
+output$hm_download_pdf <- downloadHandler(
+  
+  filename = paste0("carcinogenome_download_heatmap.pdf"),
+  
+  content = function(file){
+    p <- plot_heatmap_static(eset=hm_data(), tas=input$marker_tas_hm)
+    nrows <- nrow(hm_data())
+    ncols <- ncol(hm_data())
+    w <- max(min(ncols*15+50, 3000), 400)
+    h <- min(nrows*15+200, 3000)
     
-    es <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id", hm = TRUE)
-    
-  }else if(input$marker_hm == "Gene Sets"){
-    
-    if(is.null(input$marker_gsname_hm) | is.null(input$marker_gsmethod_hm)) return(NULL)
-    
-    es <- get_gs_eset(
-      gslist = dat[["Gene Set Enrichment"]], 
-      gsname = input$marker_gsname_hm, 
-      gsmethod = input$marker_gsmethod_hm, 
-      annot_prof = dat[["Profile Annotation"]],
-      match_id = "sig_id"
+    ggsave(
+      plot = do.call(grid.arrange, p),
+      filename = file,
+      device = "pdf",
+      width = w/61, height = h/61,
+      dpi = 300
     )
-    
-  }else if (input$marker_hm == "CMap Connectivity"){
-    
-    if(is.null(input$marker_conn_name_hm)) return(NULL)
-    
-    es <- get_conn_eset(
-      connlist = dat[["Connectivity"]], 
-      conn_name = input$marker_conn_name_hm, 
-      annot_prof = dat[["Profile Annotation"]],
-      match_id = "sig_id"
-    )
-    
   }
   
-  tas <- input$marker_tas_hm
+)
+
+#Download png####
+output$hm_download_png <- downloadHandler(
+  
+  filename = paste0("carcinogenome_download_heatmap.png"),
+  
+  content = function(file){
+    p <- plot_heatmap_static(eset=hm_data(), tas=input$marker_tas_hm)
+    nrows <- nrow(hm_data())
+    ncols <- ncol(hm_data())
+    w <- max(min(ncols*15+50, 3000), 400)
+    h <- min(nrows*15+200, 3000)
     
-  ncols <- ncol(es)
-  nrows <- nrow(es)
+    ggsave(
+      plot = do.call(grid.arrange, p),
+      filename = file,
+      device = "png",
+      width = w/61, height = h/61,
+      dpi = 300
+    )
+  }
   
-  h <- min(nrows*15+200, 3000)
-  w <- max(min(ncols*15+50, 3000), 400)
-  
-  p <- plot_heatmap_static(eset=es, tas=tas)
+)
 
-  #Output the first plot#####
-  output$hm_plot <- renderPlot({
-    do.call(grid.arrange, p)
-  })
-  
-  #Download pdf ####
-  output$hm_download_pdf <- downloadHandler(
-    filename = paste0("carcinogenome_download_heatmap.pdf"),
-    content = function(file){ 			
-      ggsave(
-        plot = do.call(grid.arrange, p), 
-        filename = file, 
-        device = "pdf", 
-        width = w/61, height = h/61, 
-        dpi = 300
-      )
-    })
-  
-  #Download png####
-  output$hm_download_png <- downloadHandler(
-    filename = paste0("carcinogenome_download_heatmap.png"),
-    content = function(file){ 			
-      ggsave(
-        plot = do.call(grid.arrange, p), 
-        filename = file, 
-        device = "png", 
-        width = w/61, height = h/61, 
-        dpi = 300
-      )
-    })
-
-}, ignoreInit=TRUE)
 

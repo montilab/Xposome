@@ -8,26 +8,24 @@ get_chemical_description <- function(input, annot_chem){
 }
 
 ##Output the chemical table####
-observeEvent(input$chem, {
+output$chemical_table <- DT::renderDataTable({
   
-  output$chemical_table <- DT::renderDataTable({
-    
-    data.table.round(
-      get_chemical_description(
-        input = input$chem, 
-        annot_chem = dat[["Chemical Annotation"]]
-      )
+  req(input$chem)
+  
+  data.table.round(
+    get_chemical_description(
+      input = input$chem, 
+      annot_chem = dat[["Chemical Annotation"]]
     )
-    
-  }, escape = FALSE, extensions = 'Buttons', server = TRUE, rownames=FALSE, options = list(dom = 'T'))
+  )
   
-}, ignoreInit=TRUE)
+}, escape = FALSE, extensions = 'Buttons', server = TRUE, rownames=FALSE, 
+options = list(
+  deferRender = FALSE,
+  scrollX = TRUE, 
+  dom = 'T<"clear">Blfrtip'
+))
 
-
-##Link gene expression to genecards.org####
-get_genecard_link <- function(genesymbol){
-  sprintf('<a href="http://www.genecards.org/cgi-bin/carddisp.pl?gene=%s&keywords=%s" target="_blank" class="btn btn-primary">%s</a>', genesymbol, genesymbol, genesymbol)
-}
 
 ##Summarize gene expression#### 
 summarize_eset <- function(
@@ -36,7 +34,7 @@ summarize_eset <- function(
   do.scorecutoff = TRUE, scorecutoff = c(-0.6, 0.6), 
   do.nmarkers = TRUE, nmarkers = c(100, 100)){
   
-  summarize.func<- match.arg(summarize.func)
+  summarize.func <- match.arg(summarize.func)
   x <- apply(mat, 1, match.fun(summarize.func))
   x <- as.numeric(x)
   n <- length(x)
@@ -68,6 +66,10 @@ summarize_eset <- function(
   
 } 
 
+##Link gene expression to genecards.org####
+get_genecard_link <- function(genesymbol){
+  sprintf('<a href="http://www.genecards.org/cgi-bin/carddisp.pl?gene=%s&keywords=%s" target="_blank" class="btn btn-primary">%s</a>', genesymbol, genesymbol, genesymbol)
+}
 
 ##Get gene expression####
 get_de <- function(
@@ -109,50 +111,44 @@ get_de <- function(
 }
 
 ##Output the gene expression table####
-observeEvent(c(input$chem, input$summarizefunc_de, input$filterbyinput_de, input$range_de, input$numberthresleft_de, input$numberthresright_de), {
+output$gene_expression_table <- DT::renderDataTable({
   
-  output$gene_expression_table <- DT::renderDataTable({
-    
-    data.table.round(
-      get_de(
-        input = input$chem, 
-        tab = dat[["Chemical Annotation"]][, c("Chemical Name", "BUID", "CAS")], 
-        eset = dat[["Gene Expression"]], 
-        annot_prof = dat[["Profile Annotation"]],
-        col_id = ifelse(dat[["title"]]=="MCF10A Portal", "unique_ID_by_chem", "dose (uM)"),
-        match_id = "sig_id",
-        header = "ModZScore", 
-        landmark = input$landmark_de,
-        landmark_id = "Landmark Gene", 
-        landmark_positive = "Yes",
-        do.scorecutoff = "score" %in% input$filterbyinput_de, 
-        do.nmarkers = "number" %in% input$filterbyinput_de, 
-        scorecutoff = c(input$range_de[1], input$range_de[2]), 
-        nmarkers = c(input$numberthresleft_de, input$numberthresright_de),
-        summarize.func = input$summarizefunc_de
-      )
+  req(input$chem, input$filterbyinput_de, input$filterbyinput_de, input$range_de, input$numberthresleft_de, input$numberthresright_de, input$summarizefunc_de)
+  
+  data.table.round(
+    get_de(
+      input = input$chem, 
+      tab = dat[["Chemical Annotation"]][, c("Chemical Name", "BUID", "CAS")], 
+      eset = dat[["Gene Expression"]], 
+      annot_prof = dat[["Profile Annotation"]],
+      col_id = ifelse(dat[["title"]]=="MCF10A Portal", "unique_ID_by_chem", "dose (uM)"),
+      match_id = "sig_id",
+      header = "ModZScore", 
+      landmark = input$landmark_de,
+      landmark_id = "Landmark Gene", 
+      landmark_positive = "Yes",
+      do.scorecutoff = "score" %in% input$filterbyinput_de, 
+      do.nmarkers = "number" %in% input$filterbyinput_de, 
+      scorecutoff = c(input$range_de[1], input$range_de[2]), 
+      nmarkers = c(input$numberthresleft_de, input$numberthresright_de),
+      summarize.func = input$summarizefunc_de
     )
-    
-  }, escape = FALSE, extensions = 'Buttons', server = TRUE, colnames = c('Entry'=1), class = "display",
-  options = list(
-    deferRender = FALSE,
-    paging = TRUE,
-    searching = TRUE,
-    ordering = TRUE,
+  )
+  
+}, escape = FALSE, extensions = 'Buttons', server = TRUE, colnames = c('Entry'=1), class = "display",
+options = list(
+  deferRender = FALSE,
+  paging = TRUE,
+  searching = TRUE,
+  ordering = TRUE,
     pageLength = 20, 
     scrollX = TRUE, 
     scrollY = 400,
     scrollCollapse = TRUE,
     dom = 'T<"clear">Blfrtip', 
     buttons=c('copy','csv','print'))
-  )
+)
   
-}, ignoreInit=TRUE)
-  
-##Get the gene set hyperlink####
-get_geneset_link <- function(geneset){
-  sprintf('<a href="http://software.broadinstitute.org/gsea/msigdb/cards/%s" target="_blank" class="btn btn-primary">%s</a>', geneset, geneset)
-}
 
 ##Summarize gene set enrichment#####
 summarize_gsproj <- function(
@@ -175,6 +171,11 @@ summarize_gsproj <- function(
   res <- res[order(res$score, decreasing = TRUE),, drop = FALSE]
   colnames(res)[colnames(res) %in% "score"]<- "Summary Score"
   return(res)
+}
+
+##Get the gene set hyperlink####
+get_geneset_link <- function(geneset){
+  sprintf('<a href="http://software.broadinstitute.org/gsea/msigdb/cards/%s" target="_blank" class="btn btn-primary">%s</a>', geneset, geneset)
 }
 
 ##Get gene set enrichment#####
@@ -205,42 +206,40 @@ get_gsproj <- function(
 }
 
 #Output the gene set enrichment table####
-observeEvent(c(input$chem, input$gsname, input$gsmethod, input$summarize_gs), {
+output$gene_set_enrichment_table <- DT::renderDataTable({
   
-  output$gene_set_enrichment_table <- DT::renderDataTable({
-    
-    data.table.round(
-      get_gsproj(
-        input = input$chem, 
-        gslist = dat[["Gene Set Enrichment"]], 
-        tab = dat[["Chemical Annotation"]][, c("Chemical Name", "BUID", "CAS")], 
-        gsname = input$gsname, 
-        gsmethod = input$gsmethod,
-        annot_prof = dat[["Profile Annotation"]], 
-        col_id = ifelse(dat[["title"]]=="MCF10A Portal", "unique_ID_by_chem", "dose (uM)"), 
-        match_id = "sig_id", 
-        header = "GS Score",
-        summarize.func = input$summarize_gs
-      )
+  req(input$chem, input$gsname, input$gsmethod, input$summarize_gs)
+  
+  data.table.round(
+    get_gsproj(
+      input = input$chem, 
+      gslist = dat[["Gene Set Enrichment"]], 
+      tab = dat[["Chemical Annotation"]][, c("Chemical Name", "BUID", "CAS")], 
+      gsname = input$gsname, 
+      gsmethod = input$gsmethod,
+      annot_prof = dat[["Profile Annotation"]], 
+      col_id = ifelse(dat[["title"]]=="MCF10A Portal", "unique_ID_by_chem", "dose (uM)"), 
+      match_id = "sig_id", 
+      header = "GS Score",
+      summarize.func = input$summarize_gs
     )
-    
-  }, escape = FALSE, extensions = 'Buttons', server = TRUE, colnames = c('Entry'=1), class = "display",
-  options = list(
-    deferRender = FALSE,
-    paging = TRUE,
-    searching = TRUE,
-    ordering = TRUE,
-    pageLength = 20, 
-    scrollX = TRUE, 
-    scrollY = 400,
-    scrollCollapse = TRUE,
-    dom = 'T<"clear">Blfrtip', 
-    buttons=c('copy','csv','print'))
   )
   
-}, ignoreInit=TRUE)
+}, escape = FALSE, extensions = 'Buttons', server = TRUE, colnames = c('Entry'=1), class = "display",
+options = list(
+  deferRender = FALSE,
+  paging = TRUE,
+  searching = TRUE,
+  ordering = TRUE,
+  pageLength = 20, 
+  scrollX = TRUE, 
+  scrollY = 400,
+  scrollCollapse = TRUE,
+  dom = 'T<"clear">Blfrtip', 
+  buttons=c('copy','csv','print'))
+)
 
-  
+
 ##Get connectivity####
 get_connectivity <- function(
   input, 
@@ -264,62 +263,117 @@ get_connectivity <- function(
 }
 
 #Output connectivity table####
-observeEvent(c(input$chem, input$conn_name, input$summarizefunc_conn), {
+output$connectivity_table <- DT::renderDataTable({
   
-  output$connectivity_table <- DT::renderDataTable({
-    
-    data.table.round(
-      get_connectivity(
-        input = input$chem, 
-        tab = dat[["Chemical Annotation"]][, c("Chemical Name", "BUID", "CAS")], 
-        annot_prof = dat[["Profile Annotation"]],
-        connlist = dat[["Connectivity"]], 
-        conn_name = input$conn_name,
-        col_id = ifelse(dat[["title"]]=="MCF10A Portal", "unique_ID_by_chem", "dose (uM)"),
-        match_id = "sig_id",
-        header = "Connectivity Score",
-        summarize.func = input$summarizefunc_conn
-      )
+  req(input$chem, input$conn_name, input$summarizefunc_conn)
+  
+  data.table.round(
+    get_connectivity(
+      input = input$chem, 
+      tab = dat[["Chemical Annotation"]][, c("Chemical Name", "BUID", "CAS")], 
+      annot_prof = dat[["Profile Annotation"]],
+      connlist = dat[["Connectivity"]], 
+      conn_name = input$conn_name,
+      col_id = ifelse(dat[["title"]]=="MCF10A Portal", "unique_ID_by_chem", "dose (uM)"),
+      match_id = "sig_id",
+      header = "Connectivity Score",
+      summarize.func = input$summarizefunc_conn
     )
-    
-  }, escape = FALSE, extensions = 'Buttons', server = TRUE, colnames = c('Entry'=1), class = "display",
-  options = list(
-    deferRender = FALSE,
-    paging = TRUE,
-    searching = TRUE,
-    ordering = TRUE,
-    pageLength = 20, 
-    scrollX = TRUE, 
-    scrollY = 400,
-    scrollCollapse = TRUE,
-    dom = 'T<"clear">Blfrtip', 
-    buttons=c('copy','csv','print'))
   )
   
-}, ignoreInit=TRUE)
+}, escape = FALSE, extensions = 'Buttons', server = TRUE, colnames = c('Entry'=1), class = "display",
+options = list(
+  deferRender = FALSE,
+  paging = TRUE,
+  searching = TRUE,
+  ordering = TRUE,
+  pageLength = 20, 
+  scrollX = TRUE, 
+  scrollY = 400,
+  scrollCollapse = TRUE,
+  dom = 'T<"clear">Blfrtip', 
+  buttons=c('copy','csv','print'))
+)
 
-  
+###################################################
+#
+# GENE EXPRESSION
+#
+###################################################
+
 #observe when restore button is clicked####
-observeEvent(input$restore, {
-  
+observeEvent(input$de_restore, {
+
   updateCheckboxInput(session, inputId = "landmark_de", value = defaults[["landmark_de"]])
   updateSelectInput(session, inputId = "summarizefunc_de", selected = defaults[["summarizefunc_de"]])
   updateCheckboxGroupInput(session, inputId = "filterbyinput_de", selected = defaults[["filterbyinput_de"]])
   updateSelectInput(session, inputId = "range_de", selected = defaults[["range_de"]])
   updateSliderInput(session, inputId = "numberthresleft_de", value = defaults[["numberthresleft_de"]])
   updateSliderInput(session, inputId = "numberthresright_de", value = defaults[["numberthresright_de"]])
-  
+
 }, ignoreInit=TRUE)
 
 ##Observe when hide button is clicked####
 observeEvent(input$de_hide, {
-  updateCollapse(session, "de_opt_panel", close = "Options")
+  updateCollapse(session, "de_opt_panel", close = "de_options")
 }, ignoreInit=TRUE)
 
 
 ##Observe when show button is clicked####
 observeEvent(input$de_show, {
-  updateCollapse(session, "de_opt_panel", open = "Options")
+  updateCollapse(session, "de_opt_panel", open = "de_options")
 }, ignoreInit=TRUE)
 
+
+###################################################
+#
+# GENE SET ENRICHMENT
+#
+###################################################
+
+#observe when restore button is clicked####
+observeEvent(input$es_restore, {
+  
+  updateSelectInput(session, inputId = "gsname", selected = "Hallmark")
+  updateSelectInput(session, inputId = "gsmethod", selected = "gsva")
+  updateSelectInput(session, inputId = "summarize_gs", selected = "median")
+  
+}, ignoreInit=TRUE)
+
+##Observe when hide button is clicked####
+observeEvent(input$es_hide, {
+  updateCollapse(session, "es_opt_panel", close = "es_options")
+}, ignoreInit=TRUE)
+
+
+##Observe when show button is clicked####
+observeEvent(input$es_show, {
+  updateCollapse(session, "es_opt_panel", open = "es_options")
+}, ignoreInit=TRUE)
+
+
+###################################################
+#
+# CONNECTIVITY
+#
+###################################################
+
+#observe when restore button is clicked####
+observeEvent(input$conn_restore, {
+  
+  updateSelectInput(session, inputId = "conn_name", selected = "pcl")
+  updateSelectInput(session, inputId = "summarizefunc_conn", selected = "median")
+  
+}, ignoreInit=TRUE)
+
+##Observe when hide button is clicked####
+observeEvent(input$conn_hide, {
+  updateCollapse(session, "conn_opt_panel", close = "conn_options")
+}, ignoreInit=TRUE)
+
+
+##Observe when show button is clicked####
+observeEvent(input$conn_show, {
+  updateCollapse(session, "conn_opt_panel", open = "conn_options")
+}, ignoreInit=TRUE)
 

@@ -1,5 +1,5 @@
 
-#Obtain the column dose for the dataset####
+#Obtain the chemical dose variable in each portal####
 col_id = ifelse(dat[["title"]]=="MCF10A Portal", "unique_ID_by_chem", "dose (uM)")
 
 #Function to create a list of chemicals without duplicated names####
@@ -16,10 +16,20 @@ get_ids_pdat <- function(pdat, cols = c("Chemical Name", "CAS", "BUID"), col.uni
   return(res)
 }
 
-#A list of chemicals without duplicated names####
+#Create a list of chemicals without duplicated names####
 chemicals <- get_ids_pdat(pdat = dat[["Chemical Annotation"]])
 
-#Get the tas value from the profile annotation#####
+#Defaults for gene expression subtab####
+defaults <- list(
+  landmark_de = FALSE, 
+  summarizefunc_de = "median", 
+  filterbyinput_de = c("score", "number"),
+  range_de = c(-2, 2), 
+  numberthresleft_de = 10, 
+  numberthresright_de = 10
+)
+
+#Get the tas values from the profile annotation#####
 tas <- dat[["Profile Annotation"]]$TAS
 
 #Create a tas range menu for marker explorer and heatmap explorer#####
@@ -34,11 +44,11 @@ dsmap <- list(
   NURSA="gsscores_nursa_consensome_Cbyfdrvalue_0.01.gmt"
 )
 
-##Create names of the connectivity mapping#####
+##Create method names for connectivity mapping#####
 connmap <- list(PCL = "pcl", PERT = "pert")
 names(connmap) <- c("Perturbagen Classes", "Perturbagens")
 
-##Define the webpage domain####
+##Define a domain to create morpheus link####
 domain <- paste0("https://carcinogenome.org/data/", sub(" .*", "", dat$title))
 
 ##Function to extract BUID for each chemical#####
@@ -46,7 +56,17 @@ get_BUID <- function(input, tab){
   as.character(tab[which(apply(tab, 1, function(i) any(i %in% input)))[1], "BUID"])
 }
 
-##function to round the data table values####
+#Get the 25th percentile####
+Q1 <- function(x){ 
+  quantile(x, 0.25, na.rm = T)
+}
+
+#Get the 75th percentile####
+Q3 <- function(x){
+  quantile(x, 0.75, na.rm = T)
+}
+
+##Function to round the data table values####
 data.table.round <- function(dt, digits = 3){
   
   cols <- sapply(colnames(dt), function(i) is.numeric(dt[,i]))
@@ -77,7 +97,7 @@ selectInputWithTooltip <- function(inputId, label, bId,helptext, choices){
   )
 }
 
-#The main page layouts####
+#The main page layout####
 output$pageStub <- renderUI({
   
   fluidRow(
@@ -87,7 +107,7 @@ output$pageStub <- renderUI({
       width=12,
       
       navbarPage(
-        title=actionLink(inputId="main_link", label=strong(paste(substr(fname, 1, nchar(fname)-2), "Portal"))), id="main_page", position=c("static-top"), collapsible=TRUE, selected="About",
+        title=actionLink(inputId="main_link", label=strong(paste(substr(session$clientData$url_search, 2, nchar(session$clientData$url_search)), "Portal"))), id="main_page", position=c("static-top"), collapsible=TRUE, selected="About",
         
         ###About####
         tabPanel(
@@ -104,34 +124,50 @@ output$pageStub <- renderUI({
         ###Chemical Explorer#####
         tabPanel(
           title = "Chemical Explorer", value = "Chemical Explorer",
+          #"hello"
           source("ui_chemical.R", local=TRUE)$value
         ),
         
         ###Marker Explorer####
         tabPanel(
           title = "Marker Explorer", value = "Marker Explorer",
+          #"hello"
           source("ui_marker.R", local=TRUE)$value
         ),
         
         ###Heatmap Explorer####
         tabPanel(
           title = "Heatmap Explorer", value = "Heatmap Explorer",
+          #"hello"
           source("ui_heatmap.R", local=TRUE)$value
         ),
         
         ###Taxonomic Clustering####
-        tabPanel(
-          title = "Taxonomic Clustering", value = "Taxonomic Clustering",
-          HTML("THIS TAB WILL INCLUDE THE INFORMATION ABOUT TAXOMONIC CLUSTERING")
+        navbarMenu(
+          title = "Taxonomic Clustering",
+          
+          tabPanel(
+            title = "Instructions", value = "Instructions",
+            source("ui_taxonomic_clustering_instructions.R", local=TRUE)$value
+          ),
+          
+          tabPanel(
+            title = "K2 Taxanomer Results", value = "K2_Taxanomer_Results",
+            source("ui_taxonomic_clustering.R", local=TRUE)$value
+          ),
+          
+          tabPanel(
+            title = "Compare Multiple", value = "Compare_Multiple",
+            source("ui_compare_multiple.R", local=TRUE)$value
+          )
         )
-        
       )
     )
   )
     
 })
 
-##Go back to home page when logo link is clicked####
+##Go back to home page when the logo link is clicked on####
 observeEvent(input$main_link, {
   
   updateNavbarPage(session, inputId="main_page", selected = "About")
