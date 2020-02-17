@@ -74,7 +74,7 @@ tagList(
                 "NURSA: Nuclear Receptor Signaling Atlas, consensome data for human",
                 sep = "<br>"
               ),
-              choices = c("Hallmark", "C2", "NURSA")
+              choices = if(isolate(session$clientData$url_search) == "?ADIPO"){ c("Hallmark", "C2") }else{ c("Hallmark", "C2", "NURSA") }
             )
           ),
           
@@ -86,10 +86,10 @@ tagList(
               bId = "Bgsmethod_marker",
               helptext = paste(
                 "gsva, ssgea, zscore: from R Bioconductor package GSVA",
-                "gsproj: GeneSetProjection for R package montilab:CBMRtools",
+                "gsproj: GeneSetProjection for R package montilab: CBMRtools",
                 sep = "<br>"
               ),
-              choices = c("gsva", "ssgsea", "zscore", "gsproj")
+              choices = if(isolate(session$clientData$url_search) == "?ADIPO"){  c("gsva", "ssgsea", "zscore") }else{ c("gsva", "ssgsea", "zscore", "gsproj") }
             )
           ),
           
@@ -162,7 +162,7 @@ tagList(
       fluidRow(
         column(
           width=12,
-          plotOutput(outputId = "marker_plot_1") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+          plotOutput(outputId = "marker_plot_1")
         ),
         
         column(
@@ -172,7 +172,9 @@ tagList(
         
         column(
           width=12,
-          plotOutput(outputId = "marker_plot_3")
+          if(isolate({ session$clientData$url_search }) != "?ADIPO"){
+            plotOutput(outputId = "marker_plot_3")
+          }
         ),
         
         column(

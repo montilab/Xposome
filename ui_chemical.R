@@ -41,7 +41,11 @@ tagList(
               fluidRow(
                 column(
                   width=2,
-                  checkboxInput(inputId = "landmark_de", label = "Landmark only", value=defaults[["landmark_de"]])
+                  if(isolate({ session$clientData$url_search }) == "?ADIPO"){
+                    shinyjs::disabled(checkboxInput(inputId = "landmark_de", label = "Landmark only", value=defaults[["landmark_de"]]))
+                  }else{
+                    checkboxInput(inputId = "landmark_de", label = "Landmark only", value=defaults[["landmark_de"]])
+                  }
                 ),
                 
                 column(
@@ -51,7 +55,11 @@ tagList(
                 
                 column(
                   width=2,
-                  checkboxGroupInput(inputId = "filterbyinput_de", label = "Filter by", choices=c("score" = "score", "number" = "number"), selected = defaults[["filterbyinput_de"]])
+                  if(isolate({ session$clientData$url_search }) == "?ADIPO"){
+                    checkboxGroupInput(inputId = "filterbyinput_de", label = "Filter by", choices=c("score" = "score"), selected = "score")
+                  }else{
+                    checkboxGroupInput(inputId = "filterbyinput_de", label = "Filter by", choices=c("score" = "score", "number" = "number"), selected = defaults[["filterbyinput_de"]])
+                  }
                 ),
                 
                 column(
@@ -61,12 +69,20 @@ tagList(
                 
                 column(
                   width=2,
-                  sliderInput(inputId = "numberthresleft_de", label = "Num +", min = 0, max = 1000, value = defaults[["numberthresleft_de"]], ticks = FALSE, step = 10)
+                  if(isolate({ session$clientData$url_search }) == "?ADIPO"){
+                    shinyjs::disabled(sliderInput(inputId = "numberthresleft_de", label = "Num +", min = 0, max = 1000, value = defaults[["numberthresleft_de"]], ticks = FALSE, step = 10))
+                  }else{
+                    sliderInput(inputId = "numberthresleft_de", label = "Num +", min = 0, max = 1000, value = defaults[["numberthresleft_de"]], ticks = FALSE, step = 10)
+                  }
                 ),
                 
                 column(
                   width=2,
-                  sliderInput(inputId = "numberthresright_de", label = "Num -", min = 0, max = 1000, value = defaults[["numberthresright_de"]], ticks = FALSE, step = 10)
+                  if(isolate({ session$clientData$url_search }) == "?ADIPO"){
+                    shinyjs::disabled(sliderInput(inputId = "numberthresright_de", label = "Num -", min = 0, max = 1000, value = defaults[["numberthresright_de"]], ticks = FALSE, step = 10))
+                  }else{
+                    sliderInput(inputId = "numberthresright_de", label = "Num -", min = 0, max = 1000, value = defaults[["numberthresright_de"]], ticks = FALSE, step = 10)
+                  }
                 )
               )
             )
@@ -114,7 +130,7 @@ tagList(
                       "NURSA: Nuclear Receptor Signaling Atlas, consensome data for human",
                       sep = "<br>"
                     ),
-                    choices = c("Hallmark", "C2", "NURSA")
+                    choices = if(isolate(session$clientData$url_search) == "?ADIPO"){ c("Hallmark", "C2") }else{ c("Hallmark", "C2", "NURSA") }
                   )
                 ),
                 
@@ -129,7 +145,7 @@ tagList(
                       "gsproj: GeneSetProjection for R package montilab:CBMRtools",
                       sep = "<br>"
                     ),
-                    choices = c("gsva", "ssgsea", "zscore", "gsproj")
+                    choices = if(isolate(session$clientData$url_search) == "?ADIPO"){  c("gsva", "ssgsea", "zscore") }else{ c("gsva", "ssgsea", "zscore", "gsproj") }
                   )
                 ),
                 
@@ -137,7 +153,7 @@ tagList(
                   width=4,
                   selectInput(
                     inputId = "summarize_gs",
-                    label = "Sort by",
+                    label = "Sort by:",
                     choices = c("max", "median", "mean", "min", "Q1", "Q3"),
                     selected = "median"
                   )
@@ -180,7 +196,7 @@ tagList(
                   width=4,
                   selectInput(
                     inputId = "conn_name",
-                    label = "Connectivity Level",
+                    label = "Connectivity Level:",
                     choices = c("Perturbagen Classes" = "pcl", "Perturbagens" = "pert")
                   )
                 ),
@@ -189,7 +205,7 @@ tagList(
                   width=4,
                   selectInput(
                     inputId = "summarizefunc_conn",
-                    label = "Sort by",
+                    label = "Sort by:",
                     choices = c("max", "median", "mean", "min", "Q1", "Q3"),
                     selected = "median"
                   )
@@ -220,5 +236,7 @@ tagList(
     )
   )
 )
+
+
 
 

@@ -175,20 +175,21 @@ make_legend_continuous<-function(hmcolors,
 }
 
 #' @export
-clust_eset<-function(eset){
-	mat<-exprs(eset)
+clust_eset <- function(eset){
+  
+	mat <- exprs(eset)
 
 	#column clustering
 	#using euclidean distance, ward.D agglomeration
 	distC <- function(x) dist(t(x), method="euclidean")
-	dist_c<-distC(mat)
-	hc<-hcopt(dist_c, method = "ward.D")
+	dist_c <- distC(mat)
+	hc <- hcopt(dist_c, method = "ward.D")
 
 	#row clustering
 	#using 1-cor as distance, ward.D agglomeration
-	distR <- function(x) stats::as.dist(1- cor(t(x)))
-	dist_r<-distR(mat)
-	hr<-hcopt(dist_r, method = "ward.D")
+	distR <- function(x) stats::as.dist(1 - cor(t(x)))
+	dist_r <- distR(mat)
+	hr <- hcopt(dist_r, method = "ward.D")
 
 	return(list(hc = hc, hr = hr))
 }
@@ -541,67 +542,68 @@ ggheat.continuous<-function(eset,
 #' 	ysizelab = 7,
 #' 	xright = 0.18)
 #' @export
-ggheat.continuous.single<-function(eset,
-	hc,
-	hr,
-	hmcolors = NA,
-	hmtitle = "expression",
-	col_lab,
-	col_legend,
-	ylabstr = "",
-	fout = NA,
-	p.heights = c(1.5, 0.5, 5),
-	xsize = 4,
-	ysize = 4,
-	ysizelab = 7,
-	xright = 0.24,
-	override.hc = NA){
-
-	#default heatmap fill gradient
-	if(suppressWarnings(is.na(hmcolors)[1])){
-		warning("heatmap color gradient not specified, setting to default hmcolors")
-		hmcolors<-function(... ) scale_fill_gradient2(low = "blue", mid = "white",
-       high = "red", midpoint = 0, limits=c(-3,3), oob=squish, ...)
-	}
-
-	if(!(all(names(col_legend) %in% colnames(pData(eset)))))
-		stop("all names of col_legend must be in colnames of pData(eset)")
+ggheat.continuous.single <- function(
+  eset,
+  hc,
+  hr,
+  hmcolors = NA,
+  hmtitle = "expression",
+  col_lab,
+  col_legend,
+  ylabstr = "",
+  fout = NA,
+  p.heights = c(1.5, 0.5, 5),
+  xsize = 4,
+  ysize = 4,
+  ysizelab = 7,
+  xright = 0.24,
+  override.hc = NA){
+  
+  #default heatmap fill gradient
+  if(suppressWarnings(is.na(hmcolors)[1])){
+    warning("heatmap color gradient not specified, setting to default hmcolors")
+    hmcolors <- function(... ) scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, limits=c(-3,3), oob=squish, ...)
+  }
+  
+  if(!(all(names(col_legend) %in% colnames(pData(eset)))))
+    stop("all names of col_legend must be in colnames of pData(eset)")
 	
-	col_leg2<-lapply(names(col_legend), function(i){
-		col_breaks<-paste0(i, col_legend[[i]]$col_breaks)
-		col_values<-col_legend[[i]]$col_values
-		col_labels<-col_legend[[i]]$col_labels
-		list(col_breaks = col_breaks, col_values = col_values, col_labels = col_labels)
-		})
+  col_leg2 <- lapply(names(col_legend), function(i){
+    col_breaks <- paste0(i, col_legend[[i]]$col_breaks)
+    col_values <- col_legend[[i]]$col_values
+    col_labels <- col_legend[[i]]$col_labels
+    list(col_breaks = col_breaks, col_values = col_values, col_labels = col_labels)
+  })
+  
+  col_leg3 <- list(
+    col_breaks = unlist(lapply(col_leg2, function(i) i$col_breaks)),
+    col_values = unlist(lapply(col_leg2, function(i) i$col_values)),
+    col_labels = unlist(lapply(col_leg2, function(i) i$col_labels))
+  )
+  
+	col_values <- col_leg3$col_values
+	col_breaks <- col_leg3$col_breaks
+	col_labels <- col_leg3$col_labels
 
-	col_leg3<-list(col_breaks = unlist(lapply(col_leg2, function(i) i$col_breaks)),
-		col_values = unlist(lapply(col_leg2, function(i) i$col_values)),
-		col_labels = unlist(lapply(col_leg2, function(i) i$col_labels))
-		)
-
-	col_values<-col_leg3$col_values
-	col_breaks<-col_leg3$col_breaks
-	col_labels<-col_leg3$col_labels
-
-
-	p1<-ggheat.continuous(eset,
-		hc, #hcopt for column leave NA for no ordering
-		hr, #hcopt for row leave NA for no ordering
-		hmcolors,
-		col_lab,
-		col_values,
-		col_breaks,
-		col_labels,
-		ylabstr,
-		type="regular",
-		fout =NA,
-		p.heights,
-		xsize,
-		ysize,
-		ysizelab,
-		override.hc
-		)
-
+	p1 <- ggheat.continuous(
+	  eset,
+	  hc, #hcopt for column leave NA for no ordering
+	  hr, #hcopt for row leave NA for no ordering
+	  hmcolors,
+	  col_lab,
+	  col_values,
+	  col_breaks,
+	  col_labels,
+	  ylabstr,
+	  type="regular",
+	  fout =NA,
+	  p.heights,
+	  xsize,
+	  ysize,
+	  ysizelab,
+	  override.hc
+	)
+	
 	# pcol.legend<-make_legend_list(col_legend,
 	# 	legend.key.size =  unit(0.2, "in"),
 	# 	legend.text = element_text(size=10),

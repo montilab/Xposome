@@ -7,24 +7,22 @@ tagList(
     
     column(
       width=6,
-      
       div(class="header-3",
           div(class="title", "Click and hold nodes to select sub-groups"),
           div(class="content", 
-              h2("Column 1"),
-              p("Hello World!")
+              visNetworkOutput(outputId = "dendroSelect", width="100%", height = "550px")
           )
       )
     ),
     
     column(
       width=6, 
-      
       div(class="header-3",
           div(class="title", "Selections"),
           div(class="content", 
-              h2("Column 2"),
-              p("Hello World!")
+              uiOutput(outputId = "compare"),
+              br(), br(),
+              uiOutput(outputId = "groupSel")
           )
       )
     )
@@ -38,8 +36,7 @@ tagList(
         
         bsCollapsePanel(
           title = "Differential Analysis Results", value = "de_analysis_options",
-          h2("Column 3"),
-          p("Hello World!")
+          DT::dataTableOutput(outputId = "DGEmulti")
         )
       )
     )
@@ -53,8 +50,7 @@ tagList(
         
         bsCollapsePanel(
           title = "Gene Expression", value = "ge_analysis_options",
-          h2("Column 4"),
-          p("Hello World!")
+          plotly::plotlyOutput(outputId = "genePlotCluster")
         )
       )
     )
@@ -68,8 +64,7 @@ tagList(
         
         bsCollapsePanel(
           title = "Enrichment Results", value = "enrichment_analysis_options",
-          h2("Column 5"),
-          p("Hello World!")
+          DT::dataTableOutput(outputId = "HEmulti")
         )
       )
     )
@@ -83,8 +78,7 @@ tagList(
         
         bsCollapsePanel(
           title = "Single-Sample Enrichment", value = "single_analysis_options",
-          h2("Column 6"),
-          p("Hello World!")
+          plotly::plotlyOutput(outputId = "hePlotCluster")
         )
       )
     )

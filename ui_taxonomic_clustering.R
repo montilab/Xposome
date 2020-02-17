@@ -11,7 +11,8 @@ tagList(
           div(class="title", "Member Search"),
           div(class="content",
               textInput(inputId = "mstring", label="Enter a String:"),
-              selectInput(inputId = "mVal", label="Select a Match:", choices="No Matches", selectize = TRUE)
+              uiOutput("Match"),
+              actionButton(inputId = "Helpgo", label = "Help", class="mybuttons")
           )
       )
     ),
@@ -28,8 +29,7 @@ tagList(
           div(class="header-2",
             div(class="title", "Taxonomer Results"),
             div(class="content", 
-                h2("Column 2"),
-                p("Hello World!")
+                visNetworkOutput(outputId = "dendro", width="100%", height = "600px")
             )
           )
         ),
@@ -41,24 +41,44 @@ tagList(
               div(class="title", "Cluster Information (↑ = Group 1; ↓ = Group 2)"),
               div(class="content", 
                   tabsetPanel(
-                    id="de_tab", 
+                    id="de_tab", selected = "Stability",
                     tabPanel(
                       title = "Stability", value="Stability",
-                      h2("Column 3"),
-                      p("Stability"),
-                      p("Hello World!")
+                      fluidRow(
+                        column(
+                          width = 10, offset = 1,
+                          br(),
+                          selectInput(inputId = "selCov", label = NULL, choices=varOptions)
+                        ),
+                        column(
+                          width = 12,
+                          plotlyOutput(outputId = "heatmapPlot")
+                        ),
+                        column(
+                          width = 10, offset = 1,
+                          uiOutput(outputId = "stabStats")
+                        )
+                      )
                     ),
+                    
                     tabPanel(
                       title = "Group Members", value="Group_Members",
-                      h2("Column 3"),
-                      p("Group Members"),
-                      p("Hello World!")
+                      DT::dataTableOutput(outputId = "infoTab")
                     ),
+                    
                     tabPanel(
                       title = "Meta-Variable Results", value="Meta_Variable_Results",
-                      h2("Column 3"),
-                      p("Meta-Variable Results"),
-                      p("Hello World!")
+                      column(
+                        width=12,
+                        DT::dataTableOutput(outputId = "metaVarTab")
+                      ),
+                      
+                      column(
+                        width=12,
+                        br(), 
+                        actionButton(inputId = "visualizeQvalues", label = "Visualize Q-values", class="mybuttons"),
+                        actionButton(inputId = "resetQvalues", label = "Reset", class="mybuttons")
+                      )
                     )
                   )
               )
@@ -74,8 +94,7 @@ tagList(
             
             bsCollapsePanel(
               title = "Differential Analysis Results", value = "de_analysis_options",
-              h2("Column 4"),
-              p("Hello World!")
+              DT::dataTableOutput(outputId = "DGE")
             )
           )
         )
@@ -89,8 +108,7 @@ tagList(
             
             bsCollapsePanel(
               title = "Gene Expression", value = "ge_analysis_options",
-              h2("Column 5"),
-              p("Hello World!")
+              plotly::plotlyOutput(outputId = "genePlot")
             )
           )
         )
@@ -104,8 +122,7 @@ tagList(
             
             bsCollapsePanel(
               title = "Enrichment Results", value = "enrichment_analysis_options",
-              h2("Column 6"),
-              p("Hello World!")
+              DT::dataTableOutput(outputId = "HE")
             )
           )
         )
@@ -119,8 +136,7 @@ tagList(
             
             bsCollapsePanel(
               title = "Single-Sample Enrichment", value = "single_analysis_options",
-              h2("Column 7"),
-              p("Hello World!")
+              plotly::plotlyOutput(outputId = "pathwayPlot")
             )
           )
         )

@@ -68,6 +68,30 @@ to.hex <- function(x){
   return(rgb(red, green, blue, maxColorValue = 255))
 }
 
+# # ##For testing purposes####
+# source("ggheat.continuous.R")
+# dat <- readRDS(paste0("data/HEPG2/data.RDS"))
+# dat <- readRDS(paste0("data/ADIPO/data.RDS"))
+# 
+# ##Get differential expression gene set####
+# get_de_eset <- function(annot_prof, match_id = "sig_id", hm = FALSE){
+#   
+#   res <- dat[["Gene Expression"]]
+#   ind2 <- match(colnames(res), annot_prof[, match_id])
+#   pData(res) <- annot_prof[ind2,]
+#   
+#   if(hm){
+#     inds <- fData(res)[, "Landmark Gene"] %in% "Yes"
+#     res <- res[inds,]
+#   }
+#   
+#   return(res)
+#   
+# }
+# 
+# eset <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id", hm = FALSE)
+# tas = 0.2
+
 ##Function to create heatmap for heatmap explorer#####
 plot_heatmap_static <- function(eset, tas){
   
@@ -81,6 +105,11 @@ plot_heatmap_static <- function(eset, tas){
       col_breaks = c("+", "-", "N/A"), 
       col_values = sapply(c("purple", "pink", "grey"), to.hex),
       col_labels = c("+", "-", "N/A")
+    ),
+    PPARg_Mod = list(
+      col_breaks = c("N/A", "Yes", "No", "Suspected"), 
+      col_values = sapply(c("grey", "green", "orange", "purple"), to.hex),
+      col_labels = c("N/A", "Yes", "No", "Suspected")
     )
   )
   
@@ -150,6 +179,82 @@ plot_heatmap_static <- function(eset, tas){
   
 }
 
+##Function to create heatmap for heatmap explorer for adipogens#####
+plot_heatmap_static_adipo <- function(eset, tas){
+  
+  col_legend <- list(
+    PPARg_Mod = list(
+      col_breaks = c("N/A", "Yes", "No", "Suspected"), 
+      col_values = sapply(c("grey", "green", "orange", "purple"), to.hex),
+      col_labels = c("N/A", "Yes", "No", "Suspected")
+    )
+  )
+  
+  hmcolors <- function(...) scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, ...)
+  
+  eset <- eset[, pData(eset)[, "TAS"] >= tas]
+  ind.remove <- apply(exprs(eset), 1, function(i){
+    any(is.nan(i))
+  })
+  
+  eset <- eset[!ind.remove, ]
+  
+  hc <- clust_eset(eset)
+  
+  ncols <- ncol(eset)
+  nrows <- nrow(eset)
+  
+  h <- min(nrows*15+200, 3000)
+  w <- max(min(ncols*15+50, 3000), 400)
+  
+  xsize <- 4
+  if (ncols < 500) 
+    xsize <- 5
+  if (ncols < 100)
+    xsize <- 6
+  if(ncols < 10)
+    xsize <- 10
+  if(ncols > 1000)
+    xsize <- 0 
+  
+  ysize <- 4
+  if (nrows < 500) 
+    ysize <- 5
+  if (nrows < 100)
+    ysize <- 6
+  if(nrows < 10)
+    ysize <- 10
+  if(nrows > 1000)
+    ysize <- 0 
+  
+  col_lab <- c("PPARg_Mod")
+  
+  ph2 <- 3*length(col_lab)
+  ph3 <- nrows+20
+  ph1 <- 0.1*(ph2+ph3)
+  
+  p.heights <- c(ph1, ph2, ph3)
+  
+  #render plot#####
+  p <- ggheat.continuous.single(
+    eset = eset, 
+    hc = hc$hc, 
+    hr = hc$hr, 
+    hmcolors = hmcolors,
+    hmtitle = "",
+    col_lab = col_lab, 
+    col_legend = col_legend,
+    ylabstr = "",
+    fout = NA, 
+    p.heights = p.heights,
+    xsize = xsize,
+    ysize = ysize, 
+    ysizelab = 7
+  )
+  
+  return(p)
+  
+}
 
 ##Create reactive hm data#####
 hm_data <- reactiveVal(NULL); 
@@ -160,13 +265,17 @@ observeEvent(input$hm_de_generate, {
   
   req(input$marker_hm, input$marker_tas_hm)
   
-  es <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id", hm = TRUE)
-
+  if(session$clientData$url_search == "?ADIPO"){ 
+    es <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id", hm = FALSE)
+  }else{
+    es <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id", hm = TRUE)
+  }
+  
   hm_data(es)
   hm_key(paste0(session$clientData$url_search, "_", input$marker_hm, "_", input$marker_tas_hm))
   show_morpheus(FALSE) 
   
-})
+}, ignoreInit=TRUE)
 
 ##Observe event when a button is clicked####
 observeEvent(input$hm_es_generate, {
@@ -185,7 +294,7 @@ observeEvent(input$hm_es_generate, {
   hm_key(paste0(session$clientData$url_search, "_", input$marker_hm, "_", input$marker_tas_hm, "_", input$marker_gsname_hm, "_", input$marker_gsmethod_hm))
   show_morpheus(TRUE) 
   
-})
+}, ignoreInit=TRUE)
 
 ##Observe event when a button is clicked####
 observeEvent(input$hm_conn_generate, {
@@ -203,7 +312,7 @@ observeEvent(input$hm_conn_generate, {
   hm_key(paste0(session$clientData$url_search, "_", input$marker_hm, "_", input$marker_tas_hm, "_", input$marker_conn_name_hm))
   show_morpheus(FALSE) 
   
-})
+}, ignoreInit=TRUE)
 
 
 ##Change width and height of plot when the data changed###
@@ -227,7 +336,12 @@ output$hm_plot <- renderCachedPlot({
   
   req(hm_data(), input$marker_tas_hm, hm_key())
   
-  p <- plot_heatmap_static(eset=hm_data(), tas=input$marker_tas_hm)
+  if(session$clientData$url_search != "?ADIPO"){ 
+    p <- plot_heatmap_static(eset=hm_data(), tas=input$marker_tas_hm)
+  }else{
+    p <- plot_heatmap_static_adipo(eset=hm_data(), tas=input$marker_tas_hm)
+  }
+  
   do.call(grid.arrange, p)
   
 }, cacheKeyExpr = { list(hm_key()) })
@@ -238,7 +352,13 @@ output$hm_download_pdf <- downloadHandler(
   filename = paste0("carcinogenome_download_heatmap.pdf"),
   
   content = function(file){
-    p <- plot_heatmap_static(eset=hm_data(), tas=input$marker_tas_hm)
+    
+    if(session$clientData$url_search != "?ADIPO"){ 
+      p <- plot_heatmap_static(eset=hm_data(), tas=input$marker_tas_hm)
+    }else{
+      p <- plot_heatmap_static_adipo(eset=hm_data(), tas=input$marker_tas_hm)
+    }
+    
     nrows <- nrow(hm_data())
     ncols <- ncol(hm_data())
     w <- max(min(ncols*15+50, 3000), 400)
@@ -261,7 +381,13 @@ output$hm_download_png <- downloadHandler(
   filename = paste0("carcinogenome_download_heatmap.png"),
   
   content = function(file){
-    p <- plot_heatmap_static(eset=hm_data(), tas=input$marker_tas_hm)
+    
+    if(session$clientData$url_search != "?ADIPO"){ 
+      p <- plot_heatmap_static(eset=hm_data(), tas=input$marker_tas_hm)
+    }else{
+      p <- plot_heatmap_static_adipo(eset=hm_data(), tas=input$marker_tas_hm)
+    }
+    
     nrows <- nrow(hm_data())
     ncols <- ncol(hm_data())
     w <- max(min(ncols*15+50, 3000), 400)

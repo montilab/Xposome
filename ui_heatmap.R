@@ -14,7 +14,7 @@ tagList(
           selectInput(
             inputId = "marker_hm", 
             label = "Select a marker set:",   
-            choices = c("Please select an option below" = "", "Genes (Landmark)", "Gene Sets", "CMap Connectivity")
+            choices = if(isolate(session$clientData$url_search) == "?ADIPO"){ c("Please select an option below" = "", "Genes", "Gene Sets", "CMap Connectivity") }else{ c("Please select an option below" = "", "Genes (Landmark)", "Gene Sets", "CMap Connectivity") }
           )
         ),
         
@@ -24,11 +24,21 @@ tagList(
             inputId = "marker_tas_hm", label = "TAS range:", min = 0, max = maxTAS, value = 0.2, step = 0.01
           ),
           helpText(style="color: red;", "Warning: TAS < 0.2 is slow to load!")
+        ),
+        
+        column(
+          width=4, 
+          if(isolate(session$clientData$url_search) == "?ADIPO"){
+            conditionalPanel(
+              condition = "input.marker_hm == 'Genes'",
+              sliderInput(inputId = "numberthreshold", label = "Number of genes:", min = 0, max = 1000, value = 500, ticks = FALSE, step = 10)
+            )
+          }
         )
       ),
       
       conditionalPanel(
-        condition = "input.marker_hm == 'Genes (Landmark)'",
+        condition = "input.marker_hm == 'Genes' | input.marker_hm == 'Genes (Landmark)'",
         
         fluidRow(
           column(
@@ -54,7 +64,7 @@ tagList(
                 "NURSA: Nuclear Receptor Signaling Atlas, consensome data for human",
                 sep = "<br>"
               ),
-              choices = c("Hallmark", "C2", "NURSA")
+              choices = if(isolate(session$clientData$url_search) == "?ADIPO"){ c("Hallmark", "C2") }else{ c("Hallmark", "C2", "NURSA") }
             )
           ),
           
@@ -66,10 +76,10 @@ tagList(
               bId = "Bgsmethod_marker_hm",
               helptext = paste(
                 "gsva, ssgea, zscore: from R Bioconductor package GSVA",
-                "gsproj: GeneSetProjection for R package montilab:CBMRtools",
+                "gsproj: GeneSetProjection for R package montilab: CBMRtools",
                 sep = "<br>"
               ),
-              choices = c("gsva", "ssgsea", "zscore", "gsproj")
+              choices = if(isolate(session$clientData$url_search) == "?ADIPO"){  c("gsva", "ssgsea", "zscore") }else{ c("gsva", "ssgsea", "zscore", "gsproj") }
             )
           )
         ),
