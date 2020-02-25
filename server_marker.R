@@ -78,7 +78,7 @@ observeEvent(input$marker_conn_name, {
 # hm = FALSE;
 
 ##Get differential expression gene set####
-get_de_eset <- function(annot_prof, match_id = "sig_id", hm = FALSE){
+get_de_eset <- function(annot_prof, match_id = "sig_id", hm = FALSE, n_genes = NULL){
   
   res <- dat[["Gene Expression"]]
   ind2 <- match(colnames(res), annot_prof[, match_id])
@@ -87,6 +87,13 @@ get_de_eset <- function(annot_prof, match_id = "sig_id", hm = FALSE){
   if(hm){
     inds <- fData(res)[, "Landmark Gene"] %in% "Yes"
     res <- res[inds,]
+  }
+  
+  if(!is.null(n_genes)){
+    mad_gene_list <- apply(exprs(res), 1, mad)
+    mad_gene_list <- sort(mad_gene_list, decreasing = TRUE)[1:n_genes]
+    ind3 <- which(rownames(res) %in% names(mad_gene_list))
+    res <- res[ind3, ]
   }
   
   return(res)

@@ -6,10 +6,11 @@ library(K2Taxonomer)
 library(visNetwork)
 library(plotly)
 library(heatmaply)
+library(RColorBrewer)
 library(DT)
 library(GSVA)
 library(Biobase)
-library(RColorBrewer)
+library(GSEABase)
 library(limma)
 library(dendextend)
 library(tidyverse)
@@ -20,17 +21,14 @@ K2summary <- readRDS("data/ADIPO/K2results.rds")
 # Parse results
 chemical <- K2info(K2summary) # chemical info
 
-# Remove the mixture of chemical of 10 ug/ml
-chemical <- chemical %>% filter(!Concentration %in% "10 ug/ml")
+# The mixture of chemical of 10 ug/ml
+chemical$Concentration[which(chemical$Concentration %in% "10 ug/ml")] <- 10/10^6
 
 # Convert the concentration from M to uM
 chemical$Concentration <- as.numeric(chemical$Concentration) * 10^6
 
 # Getting the profile annotation
 profile <- K2eSet(K2summary)@phenoData@data
-
-# Remove the mixture of chemical of 10 ug/ml
-profile <- profile[which(!profile$Concentration %in% "10 ug/ml"),]
 
 # Getting the differential gene expression for each sig_id
 profile_differential_expression <- K2eSet(K2summary)@assayData[["exprs"]]
@@ -58,6 +56,9 @@ for(i in 1:nrow(chem_replicate)){
     
     chem_replicate$CC[i] <- 1
     
+    w=1 #unweighted
+    profile_differential_expression[,rep] <- w*profile_differential_expression[,rep] 
+    
   }else {
     
     # Calculate the spearman correlation between the pairwise replicates 
@@ -77,30 +78,32 @@ for(i in 1:nrow(chem_replicate)){
       
       for(g in 1:length(rep)){
         #g=1;
-        ModZscores <- w*profile_differential_expression[,rep[which(!rep %in% rep[g])]] 
-        
-        profile_differential_expression[,rep[g]] <- ModZscores
-        
+        profile_differential_expression[,rep[g]] <- w*profile_differential_expression[,rep[g]] 
       }
       
     }else{
       
+      rep_corr <- NULL;
+      
       for(g in 1:length(rep)){
         #g=1;
         corr <- spearman_corr[rep[g],rep[which(!rep %in% rep[g])]]
-        
-        ModZscores <- 0;
-        
-        for(m in 1:length(corr)){
-          #m=2;
-          w=corr[m]/sum(corr) #weighted
-          
-          ModZscores <- w*profile_differential_expression[,names(corr[m])] + ModZscores
-        }
-        
-        profile_differential_expression[,rep[g]] <- ModZscores
-        
+        rep_corr <- c(rep_corr, abs(sum(corr, na.rm=T)));
       }
+      
+      w <- rep_corr/sum(rep_corr, na.rm=TRUE)
+      
+      if(1-sum(w, na.rm=T) > 0.001) {
+        print(rep_corr)
+        print(w)
+        print('incorrect calculation of w!')
+      }
+      
+      for(m in 1:length(rep)){
+        #m=2;
+        profile_differential_expression[,rep[m]]  <- w[m]*profile_differential_expression[,rep[m]]
+      }
+      
     }
     
     #CALCULATE THE CC
@@ -169,63 +172,35 @@ profile_info <- data.frame(sig_id=rownames(profile ), profile %>% select(-Concen
 
 #########################################################
 # 
-# CREATE THE GENE ENRICHMENT SET 
+# CREATE GENE SET ENRICHMENT  
 # 
 #########################################################
-library(limma)
-library(GSVA)
-library(Biobase)
-library(GSEABase)
-
-# Read in analysis results
-K2summary <- readRDS("data/ADIPO/K2results.rds")
-
-# Getting the differential gene expression for each sig_id
-profile_differential_expression <- K2eSet(K2summary)@assayData[["exprs"]]
 
 # Read in the gene set collection
-gsscores_hallmark <- getGmt("data/ADIPO/gct/h.all.v7.0.symbols.gmt")
-gsscores_c2_reactome <- getGmt("data/ADIPO/gct/c2.cp.reactome.v7.0.symbols.gmt")
+gsscores_hallmark <- getGmt("data/Enrichment Gene Set/h.all.v7.0.symbols.gmt")
+gsscores_c2_reactome <- getGmt("data/Enrichment Gene Set/c2.cp.reactome.v7.0.symbols.gmt")
 
 # Run gene set variation analysis for hallmark
 genesetname=c("h.all", "c2.cp.reactome"); geneset=c("gsscores_hallmark", "gsscores_c2_reactome"); method=c("gsva", "ssgsea", "zscore");
+
+# Getting the differential gene expression for each sig_id
+differential_expression <- profile_differential_expression
+
+# Create a null list 
+gsscores <- list();
 
 for(u in 1:length(genesetname)){
   #u=1;
   for(m in 1:length(method)){
     #m=1;
-    gsva_es <- gsva(expr=profile_differential_expression, gset.idx.list=get(paste0(geneset[u])), method=method[m], mx.diff=TRUE)
+    gsva_es <- gsva(expr=differential_expression, gset.idx.list=get(paste0(geneset[u])), method=method[m], mx.diff=TRUE)
     pData <- data.frame(sig_id = colnames(gsva_es))
     rownames(pData) <- colnames(gsva_es)
     phenoData <- new("AnnotatedDataFrame", data=pData)
     eSet <- ExpressionSet(assayData=gsva_es, phenoData=phenoData)
-    write_rds(eSet, paste0("data/ADIPO/gct/gsscores_", genesetname[u], ".v7.0_", method[m], ".RDS"))
+    gsscores[[paste0("gsscores_", genesetname[u], ".v7.0_", method[m])]] <- eSet
   }
 }
-
-# Read in enrichment set files ####
-gsscores.dir <- "data/ADIPO/gct"
-gsscores.files <- list.files(gsscores.dir, pattern = "^gsscores")
-gsscores <- lapply(gsscores.files, function(i)
-  readRDS(file = paste0(gsscores.dir, "/", i))
-)
-
-# Reduce the pheno data
-reduce_pdata <- function(x){
-  sig_id <- as.character(x$sig_id)
-  pdat <- data.frame(sig_id = sig_id)
-  rownames(pdat) <- sig_id
-  pData(x) <- pdat
-  colnames(x) <- sig_id
-  return(x)
-}
-
-gsscores <- lapply(gsscores, function(i){
-  i <- reduce_pdata(i)
-  return(i)
-})
-
-names(gsscores) <- gsscores.files
 
 #########################################################
 # 
@@ -233,19 +208,16 @@ names(gsscores) <- gsscores.files
 # 
 #########################################################
 
-# Read in carcigenome data
-carcinogenome_data <- readRDS("data/ADIPO/data_carcinogenome.rds")
-
 ##Create adipogenome data
 adipogenome <- list()
 
 adipogenome[["Profile Annotation"]] <- profile_info
 adipogenome[["Chemical Annotation"]] <- chemical_info
-differential_expression <- K2eSet(K2summary)
-exprs(differential_expression) <- profile_differential_expression
-adipogenome[["Gene Expression"]] <-  differential_expression
+eSet <- K2eSet(K2summary)
+exprs(eSet) <- profile_differential_expression
+adipogenome[["Gene Expression"]] <-  eSet
 adipogenome[["Gene Set Enrichment"]] <- gsscores
-adipogenome[["Connectivity"]] <- carcinogenome_data[["Connectivity"]]
+adipogenome[["Connectivity"]] <- gsscores
 adipogenome[["title"]] <- "ADIPO Portal"
 adipogenome[["about page"]] <- "introduction_ADIPO.Rmd"
 

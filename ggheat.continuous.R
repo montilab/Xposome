@@ -243,7 +243,27 @@ ggheat.make.groups<-function(eset,
 #' \code{ggheat.continuous} helper function for plotting ggheatmap, see \code{ggheat.continuous.single} and
 #' \code{ggheat.continuous.group} for examples of usage
 #' @export
-ggheat.continuous<-function(eset,
+
+
+# eset=eset;
+# hc=hc; #hcopt for column leave NA for no ordering
+# hr=hr; #hcopt for row leave NA for no ordering
+# hmcolors=hmcolors;
+# col_lab=col_lab;
+# col_values=col_values;
+# col_breaks=col_breaks;
+# col_labels=col_labels;
+# ylabstr="";
+# type="regular";
+# fout =NA;
+# p.heights=p.heights;
+# xsize=xsize;
+# ysize=ysize;
+# ysizelab=7;
+# override.hc=override.hc;
+
+ggheat.continuous <- function(
+  eset,
 	hc = NA, #hcopt for column leave NA for no ordering
 	hr = NA, #hcopt for row leave NA for no ordering
 	hmcolors = NA,
@@ -282,29 +302,29 @@ ggheat.continuous<-function(eset,
 	  plot.background=element_blank()
 	)
 
-	mat<-exprs(eset)
+	mat <- exprs(eset)
 
 	#column dendrogram
 	#default no clustering
-	col_ord<-1:ncol(mat)
-	row_ord<-1:nrow(mat)
+	col_ord <- 1:ncol(mat)
+	row_ord <- 1:nrow(mat)
 
 	if(length(hc) > 1){
-		dd_col<-as.dendrogram(hc)
-		col_ord<-order.dendrogram(dd_col)
+		dd_col <- as.dendrogram(hc)
+		col_ord <- order.dendrogram(dd_col)
 		data_col <- dendro_data(dd_col, draw=FALSE)
 		HC <- ggplot(segment(data_col)) +
 		geom_segment(aes(x=x, y=y, xend=xend, yend=yend)) +
 		scale_x_continuous( expand=c(0,0),
 			limits = c(min(data_col$labels$x)-0.5, max(data_col$labels$x)+0.5)) +
-		scale_y_continuous(expand=c(0.0,0.0))+  theme_none+
+		scale_y_continuous(expand=c(0.0,0.0))+  theme_none +
 		theme(plot.margin = unit(c(0.4,0.1,0,0), "lines")) #extra padding on the top margin
 	} else
 		HC<-NA
 
 	#add override hc if specified
 	if(suppressWarnings(!is.na(override.hc))){
-		dd_col.override<-as.dendrogram(override.hc)
+		dd_col.override <- as.dendrogram(override.hc)
 		data_col <- dendro_data(dd_col.override, draw=FALSE)
 		HC <- ggplot(segment(data_col)) +
 		geom_segment(aes(x=x, y=y, xend=xend, yend=yend)) +
@@ -317,30 +337,30 @@ ggheat.continuous<-function(eset,
 	#order rows
 	#by number of non-zero elements
 	if(length(hr) > 1 ){
-		dd_row<-as.dendrogram(hr)
-		row_ord<-order.dendrogram(dd_row)
+		dd_row <- as.dendrogram(hr)
+		row_ord <- order.dendrogram(dd_row)
 	}
 
-	matcopy<-mat
+	matcopy <- mat
 
 	#quick fix to avoid bug in ordering
 	rn<-rownames(mat)
 	cn<-colnames(mat)
 	if(is.null(rn)) rn <-1:nrow(mat)
 	if(is.null(cn)) cn <-1:ncol(mat)
-	rownames(matcopy)<-paste("R", rn, sep = "")
-	colnames(matcopy)<-paste("C", cn, sep = "")
-	matcopy<-matcopy[row_ord, col_ord]
-	mat<-matcopy
+	rownames(matcopy) <- paste("R", rn, sep = "")
+	colnames(matcopy) <- paste("C", cn, sep = "")
+	matcopy <- matcopy[row_ord, col_ord]
+	mat <- matcopy
 	rownames(mat)<-rn[row_ord]
 	colnames(mat)<-cn[col_ord]
 
 	dt <- data.table(melt(mat))
 	#factor, otherwise order might screw up if they can be coerced into numbers
 	#row levels
-	Var1levels<-rownames(mat)
+	Var1levels <- rownames(mat)
 	#col levels
-	Var2levels<-colnames(mat)
+	Var2levels <- colnames(mat)
 
 	dt$Var1<-factor(dt$Var1, levels= Var1levels)
 	dt$Var2<-factor(dt$Var2, levels= Var2levels)
@@ -359,11 +379,11 @@ ggheat.continuous<-function(eset,
 	}
 
 	if(type %in% c("left", "middle", "regular"))
-		scfill<-hmcolors(guide =FALSE)
+		scfill <- hmcolors(guide =FALSE)
 	else
-		scfill<-hmcolors(guide = guide_legend(title = ""))
+		scfill <- hmcolors(guide = guide_legend(title = ""))
 
-	p<-ggplot(dt, aes(Var2,y=Var1, fill = value ))+
+	p <- ggplot(dt, aes(Var2, y=Var1, fill = value ))+
 		geom_tile( size=1) +
 		scfill +
 		theme(axis.text.x = element_text(angle = 90, size = xsize, hjust = 1,
@@ -381,14 +401,14 @@ ggheat.continuous<-function(eset,
 	if(type %in% c("left", "regular")){
 		p<-p + ylab(ylabstr)
 		if(ysize ==0)
-		p<-p+theme(axis.ticks.y = element_blank())
+		p <- p+theme(axis.ticks.y = element_blank())
 	} else if (type %in% c("middle")){
-		p<-p + theme(axis.title.y = element_blank(),
+		p <- p + theme(axis.title.y = element_blank(),
 			axis.ticks.y = element_blank(),
 			axis.text.y = element_blank(),
 		)
 	} else { #right, account for legend
- 		p<-p + guides(fill = guide_legend(title = "",
+ 		p <- p + guides(fill = guide_legend(title = "",
  			override.aes = list(colour = "black")))+
  		theme(axis.title.y = element_blank(),
 			axis.ticks.y = element_blank(),
@@ -397,15 +417,18 @@ ggheat.continuous<-function(eset,
 			legend.position = "right")
 	}
 
-	#column labels
-	columnlab<-pData(eset)[col_ord, col_lab]
+	#column labels#####
+	columnlab <- data.frame(pData(eset)[col_ord, col_lab])
+	rownames(columnlab) <- rownames(pData(eset))[col_ord]
+	colnames(columnlab) <- col_lab
+	
 	# refactor column labels
 	for(i in colnames(columnlab)){
 		j<-as.character(columnlab[,i])
 		columnlab[,i]<-factor(j, levels = unique(j))
 	}
 
-	if(length(col_lab)>1)
+	if(length(col_lab) >=1)
 		rownames(columnlab)<-1:nrow(columnlab)
 
 	dtcol<-data.table(melt(as.matrix(columnlab)))
@@ -413,12 +436,10 @@ ggheat.continuous<-function(eset,
 	
 	dtcol$value<-paste0(dtcol$Var2, dtcol$value)
 
-
 	text.lab.y<-element_text(size = ysizelab)
 	if(type %in% c("middle", "right")){
 		text.lab.y<-element_blank()
 	}
-
 
 	if(type %in% c("left", "middle", "regular"))
 		scfilllab<-scale_fill_manual(values = col_values, 
@@ -542,6 +563,24 @@ ggheat.continuous<-function(eset,
 #' 	ysizelab = 7,
 #' 	xright = 0.18)
 #' @export
+#' 
+ 
+# eset = eset; 
+# hc = hc$hc; 
+# hr = hc$hr; 
+# hmcolors = hmcolors;
+# hmtitle = "";
+# col_lab = col_lab;
+# col_legend = col_legend;
+# ylabstr = "";
+# fout = NA; 
+# p.heights = p.heights;
+# xsize = xsize;
+# ysize = ysize;
+# ysizelab = 7;
+# xright = 0.24;
+# override.hc = NA;
+
 ggheat.continuous.single <- function(
   eset,
   hc,
@@ -688,8 +727,11 @@ ggheat.continuous.single <- function(
 #' 	xleft = 0.10,
 #' 	xright = 0.24)
 #'
+#' 
 #' @export
-ggheat.continuous.group<-function(esetlist,
+  
+ggheat.continuous.group<-function(
+  esetlist,
 	hclist,
 	hrlist,
 	hmcolors,

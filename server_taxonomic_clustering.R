@@ -181,78 +181,78 @@ observeEvent(input$dendro_selected, {
 
 # Render heatmap of cluster stability ######
 output$heatmapPlot <- renderPlotly({
-  
+
   # Get values to add
   if(!is.null(input$selCov) && input$selCov %in% colnames(info)) {
     values$selCov <- unique(c(values$selCov, input$selCov))
   } else {
     values$selCov <- NULL
   }
-  
+
   if(values$nodeSel %in% names(K2res)){
-    
+
     # Get matrix and sort
     samp_stab <- as.matrix(K2res[[values$nodeSel]]$stability$samples)
     ord <- order(match(colnames(samp_stab), labs))
     samp_stab <- as.matrix(samp_stab)[ord, ord]
-    
+
     # Get sample groups
     modList <- K2res[[values$nodeSel]]$obs
-    
+
     # Create column annotation
     colrowAnnot <- data.frame(Group = c(rep("Group:1", length(modList[[1]])),
                                         rep("Group:2", length(modList[[2]]))),
                               row.names = c(modList[[1]], modList[[2]])
     )[colnames(samp_stab), , drop = FALSE]
-    
+
     # If no selections just color groups
     colSidePalette <- c("#000000", "#808080")
     names(colSidePalette) <- c("Group:1", "Group:2")
-    
+
     # If selections are made add colors
     if(!is.null(values$selCov)){
-      
+
       # Initialize
       colValues <- c()
       colSidePalette <- c()
-      
+
       # Get info for these samples
       infoSub <- info[colnames(samp_stab), values$selCov]
       colrowAnnot <- cbind(infoSub, colrowAnnot)
       colnames(colrowAnnot) <- c(values$selCov, "Group")
-      
+
       # SET VALUES AND COLOR PALLETES
       for (i in values$selCov) {
         colrowAnnot[,i] <- paste(i, colrowAnnot[,i], sep = ":")
         addValues <- info[,i]; addValues <- addValues[!is.na(addValues)]
         addValuesUnique <- unique(addValues)
         colValues <- c(colValues, paste(i, addValuesUnique, sep = ":"))
-        
+
         # If a factor or character add unique values for each unique value
         if ( class(addValues) %in% c("character", "factor") ) {
           colSidePalette <- c(colSidePalette, heatmaply:::default_side_colors(length(addValuesUnique)))
-          
+
           # Otherwise use a color gradient based on z-scored quantile
         } else {
           addValuesNorm <- unique(qnorm(rank(addValues)/(length(addValues)+1)))
           addValuesCut <- rep(NA, length(addValuesNorm))
           cuts <- c(-Inf, -2, -1.5, -1, -0.5, 0.5, 1, 1.5, 2)
-          
+
           for (j in seq(length(cuts))) {
             addValuesCut[addValuesNorm > cuts[j]] <- j
           }
-          
+
           contPallete <- brewer.pal(9, "Greens")[addValuesCut]
           colSidePalette <- c(colSidePalette, contPallete)
         }
       }
-      
+
       # Create pallette of all possible factors
       colSidePalette <- c(colSidePalette, "#000000", "#808080", rep("#D3D3D3", length(values$selCov)))
       names(colSidePalette) <- c(colValues, "Group:1", "Group:2", paste0(values$selCov, ":NA"))
-      
+
     }
-    
+
     hm <- heatmaply(
       x = samp_stab,
       color = rev(RdBu(n = 256)),
@@ -265,18 +265,18 @@ output$heatmapPlot <- renderPlotly({
       dendrogram = FALSE,
       showticklabels = FALSE
     )
-    
+
     # Remove legend
     hm$x$layout$showlegend <- FALSE
-    
+
     # Change value to cosine similarity
     whHeatmap <- which(unlist(lapply(hm$x$data, function(x) x$type == "heatmap"))) # Get heatmap index
     hm$x$data[[whHeatmap]]$text <- sub("value:", "cos similarity:", hm$x$data[[whHeatmap]]$text)
-    
+
     return(hm)
-    
+
   } else {
-    
+
     text = paste("\n No node selected. \n")
     hm <- ggplot() +
       annotate("text", x = 0, y = 0, size=8, label = text) +
@@ -295,10 +295,10 @@ output$heatmapPlot <- renderPlotly({
         panel.grid.minor=element_blank(),
         plot.background=element_blank()
       )
-    
+
     return(ggplotly(hm))
   }
-  
+
 })
 
 # Render stability statistics####
@@ -324,19 +324,19 @@ output$stabStats <- renderUI({
 
 # Render table of information for each node####
 output$infoTab <- renderDataTable({
-  
+
   req(values$nodeSel != "No Selection")
-  
+
   # Get observations
   obs1 <- K2res[[values$nodeSel]]$obs[[1]]
   obs2 <- K2res[[values$nodeSel]]$obs[[2]]
-  
+
   # Format Cluster information
   infoSub <- info[c(obs1, obs2), , drop = FALSE]
   infoSub$Group <- "1"
   infoSub$Group[rownames(infoSub) %in% obs2] <- "2"
   infoSub <- infoSub[ , c(ncol(infoSub), seq(ncol(infoSub) - 1)) ]
-  
+
   datatable(
     infoSub,
     rownames = FALSE,
@@ -345,7 +345,7 @@ output$infoTab <- renderDataTable({
     options = list(
       dom = 'T<"clear">Blfrtip',
       search = list(regex = TRUE, caseInsensitive = FALSE),
-      scrollX = TRUE, 
+      scrollX = TRUE,
       scrollY = "400px",
       paging = FALSE,
       searching = TRUE,
@@ -354,7 +354,7 @@ output$infoTab <- renderDataTable({
       )
     )
   )
-  
+
 })
 
 #############################################
@@ -364,47 +364,47 @@ output$infoTab <- renderDataTable({
 #############################################
 
 # Generate table of meta-variable tests####
-if (!is.null(K2res[[1]]$modTests)) {
-  
+if(!is.null(K2res[[1]]$modTests)) {
+
   # Format table
   K2modTestList <- lapply(K2res, function(x) {
     modTests <- x$modTests
     names(modTests) <- c("1", "2")
     do.call(rbind, modTests)
   })
-  
+
   names(K2modTestList) <- names(K2res)
   K2modTestFram <- do.call(rbind, K2modTestList)[,c("value", "pval", "fdr")]
-  
+
   # Get parent node
   K2modTestFram$Parent <- regmatches(rownames(K2modTestFram), regexpr("^[^.]+", rownames(K2modTestFram)))
-  
+
   # Get direction to chile
   K2modTestFram$Direction <- as.character(gsub("[[:alpha:]]+[.]|[.][[:digit:]]+$", "", rownames(K2modTestFram)))
-  
+
   # Get child
   K2modTestFram$Child <- apply(K2modTestFram[, c("Parent", "Direction")], 1, function(x){
     vSub <- vNetOut$x$edges[vNetOut$x$edges$from == x[1],]
     vSub$to[as.numeric(x[2])]
   })
-  
+
   # Get split
   K2modTestFram$Split <- paste0(K2modTestFram$Parent, K2modTestFram$Direction)
-  
+
   # Format p-values
   K2modTestFram <- K2modTestFram[!is.na(K2modTestFram$pval),]
   K2modTestFram <- K2modTestFram[order(K2modTestFram$pval),]
-  
+
   output$metaVarTab <- renderDataTable({
-    
+
     values$mvTab <- K2modTestFram
-    
+
     K2modTestFram <- K2modTestFram[, c("Split", "Child", "value", "pval", "fdr")]
     colnames(K2modTestFram) <- c("Split", "Node", "Variable", "P Value", "Q Value")
-    
+
     K2modTestFram$`P Value` <- signif(K2modTestFram$`P Value`, 2)
     K2modTestFram$`Q Value` <- signif(K2modTestFram$`Q Value`, 2)
-    
+
     datatable(
       K2modTestFram,
       rownames = FALSE,
@@ -421,18 +421,18 @@ if (!is.null(K2res[[1]]$modTests)) {
         searching = TRUE,
         columnDefs = list(list(className = 'dt-center', targets = "_all"))
       ), selection = "none")
-    
+
   })
-  
+
 } else {
-  
+
   output$metaVarTab <- renderDataTable({
-    
+
     # Set null data table
     values$mvTab <- NULL
-    K2modTestFramNULL <- data.frame("No meta-variable results."); 
+    K2modTestFramNULL <- data.frame("No meta-variable results.");
     colnames(K2modTestFramNULL) <- NULL
-    
+
     datatable(
       K2modTestFramNULL,
       rownames = F,
@@ -447,43 +447,43 @@ if (!is.null(K2res[[1]]$modTests)) {
         searching = TRUE,
         columnDefs = list(list(className = 'dt-left', targets = "_all"))
       ), selection = "single")
-    
+
   })
-  
+
 }
 
 # Clicks to visualize dendrogram by Q-values####
 observeEvent(input$visualizeQvalues,  {
-  
+
   if(!is.null(values$mvTab)) {
-    
+
     mvTabSub <- values$mvTab
-    
+
     # Color breaks
     breaks <- c(1, 0.25, 0.1, 0.05, 0.01, 0.001, 0)
     breakColors <- brewer.pal(7, "Greens")
     mvTabSub$color <- sapply(mvTabSub$pval, function(pval) {
       breakColors[which.min(breaks >= pval)]
     })
-    
+
     # Size breaks
     breaks <- c(1, 0.1, 0.05, 0.01, 0.001, 0.0001, 0)
     breakSize <- seq(length(breaks)) * 7
     mvTabSub$width <- sapply(mvTabSub$pval, function(pval) {
       breakSize[which.min(breaks >= pval)]
     })
-    
+
     # Add 2 values
     values$mvTabSub <- mvTabSub
   }
-  
+
 }, ignoreInit = TRUE)
 
 # Reset the dendrogram ####
 observeEvent(input$resetQvalues,  {
-  
+
   values$mvTabSub <- NULL
-  
+
 })
 
 #############################################
@@ -494,23 +494,23 @@ observeEvent(input$resetQvalues,  {
 
 # Render genetable results####
 output$DGE <- DT::renderDataTable({
-  
+
   DGETABLE=dgeTable; nodeID = values$nodeSelHE; geneList = values$geneList;
 
   # Get exact match for nodeID
   if (!is.null(nodeID)) nodeID <- paste0("^", nodeID, "$")
   if (!is.null(geneList)) geneList <- paste(paste0("^", geneList, "$"), collapse = "|")
-  
+
   # Create data table obect
   datatable(
     DGETABLE,
-    rownames = FALSE, 
-    extensions = 'Buttons', 
+    rownames = FALSE,
+    extensions = 'Buttons',
     escape = FALSE,
     filter = list(position = 'top', clear = FALSE),
     options = list(
       columnDefs = list(
-        list(searchable = FALSE, 
+        list(searchable = FALSE,
              orderable = FALSE,
              width = "3px",
              targets = c(8, 9, 10)),
@@ -521,7 +521,7 @@ output$DGE <- DT::renderDataTable({
       searchCols = list(
         list(search = geneList),
         list(search = nodeID),
-        NULL, NULL, NULL, NULL, NULL, 
+        NULL, NULL, NULL, NULL, NULL,
         NULL, NULL, NULL, NULL
       ),
       scrollX = TRUE,
@@ -555,9 +555,9 @@ output$DGE <- DT::renderDataTable({
       )
     ), selection = 'single') %>%
     formatRound(c("Mean", "Diff"), digits = 2) %>%
-    formatSignif(c("P Value", "FDR"), digits = 2) %>% 
+    formatSignif(c("P Value", "FDR"), digits = 2) %>%
     formatStyle(c("Gene", "Direction", "Mean"), `border-right` = "solid 2px")
-  
+
 })
 
 # Functions for help and download the data ####
@@ -612,15 +612,15 @@ observeEvent(input$geneDL, {
 # Get output when a cell value is clicked ####
 observeEvent(input$DGE_cell_clicked, {
   if(!is.null(input$DGE_cell_clicked$value)){
-    
+
     # Get Value
     dgeVal <- gsub("<label for='|'>&#9992;</label>|'>&#128202;</label>", "", as.character(input$DGE_cell_clicked$value))
-    
+
     # Check that a link was clicked
     if (grepl("PlotRow|SendRow", dgeVal)) {
       rowNum <- as.numeric(sub("PlotRow|SendRow", "", dgeVal))
       GENERow <- dgeTable[rowNum, , drop = FALSE]
-      
+
       # If plotting send the node to plot, otherwise global
       if (grepl("PlotRow", dgeVal)) {
         values$Genep <- GENERow[, "Gene"]
@@ -646,72 +646,72 @@ observeEvent(input$DGE_cell_clicked, {
 #############################################
 
 output$genePlot <- renderPlotly({
-  
+
   if(!is.null(values$nodeSelDGEp)){
-    
+
     eSet = eSet;
     gene = values$Genep;
     obs1 = K2res[[values$nodeSelDGEp]]$obs[[1]];
     obs2 = K2res[[values$nodeSelDGEp]]$obs[[2]];
     cohorts = meta$cohorts;
     vehicle = meta$vehicle;
-    
+
     if(gene %in% rownames(eSet)){
-      
+
       # Format group names
       if(is.null(cohorts)){
         nams <- colnames(eSet)
       } else {
         nams <- pData(eSet)[,cohorts]
       }
-      
+
       nams[nams == vehicle] <- "Vehicle"
-      
+
       # Create data.frame of expression values
       e <- Biobase::exprs(eSet)[gene,]
       df <- data.frame(e = e, ch = nams, stringsAsFactors = F)
-      
+
       # Subset for obs in groups
       df <- df[df$ch %in% c(obs1, obs2, "Vehicle"),]
       df$group <- "Group 1"; df$group[df$ch %in% obs2] <- "Group 2"; df$group[df$ch == "Vehicle"] <- "Vehicle"
-      
+
       # Get per Observation mean
       dfMeans <- df %>%
         group_by(ch) %>%
         summarise(me = mean(e))
       dfMeans$ch <- as.character(dfMeans$ch)
       dfMeans <- dfMeans[order(dfMeans$me, decreasing = T),]
-      
+
       # Sort levels by mean expression
       df$ch <- factor(df$ch, levels = dfMeans$ch)
       df <- merge(df, dfMeans)
-      
+
       # Add levels for boxplots
       df$group2 <- df$group
-      
+
       # Add rows for boxplots
       df2 <- df
       df2$ch <- df$group
       df2$group2 <- "Comparison"
       df2$e2 <- df2$e
       df2$e <- NA
-      
+
       # Concatenate
       df$e2 <- NA
       df <- df[df$ch != "Vehicle",]
       df <- rbind(df, df2)
-      
+
       # Fix levels
       df$ch <- factor(df$ch, levels = c(dfMeans$ch[dfMeans$ch != "Vehicle"], "Group 1", "Vehicle", "Group 2"))
       df$group <- factor(df$group, levels = c("Group 1", "Vehicle", "Group 2"))
       df$group2 <- factor(df$group2, levels = c("Group 1", "Comparison", "Group 2"))
-      
+
       # Remove Means from comparison
       df$me[df$group2 == "Comparison"] <- NA
-      
+
       # Add column names
       colnames(df) <- c("Observation", "Expression", "Group", "Mean", "Group2", "Expression2")
-      
+
       # Plot
       p <- ggplot(data = df, aes(x = Observation, y = Expression)) +
         geom_boxplot(aes(y = Expression2, fill = Group)) +
@@ -719,11 +719,11 @@ output$genePlot <- renderPlotly({
         geom_point(aes(colour = Group), size = 3) +
         geom_point(aes(y = Mean), shape = 3, size = 3) +
         facet_grid(~Group2, scales = "free_x") +
-        scale_colour_manual(values = c("Group 1" = "darkorange", 
-                                       "Vehicle" = "grey", 
+        scale_colour_manual(values = c("Group 1" = "darkorange",
+                                       "Vehicle" = "grey",
                                        "Group 2" = "darkorchid1")) +
-        scale_fill_manual(values = c("Group 1" = "darkorange", 
-                                     "Vehicle" = "grey", 
+        scale_fill_manual(values = c("Group 1" = "darkorange",
+                                     "Vehicle" = "grey",
                                      "Group 2" = "darkorchid1")) +
         scale_x_discrete() +
         theme_bw() +
@@ -735,9 +735,9 @@ output$genePlot <- renderPlotly({
           axis.text.y = element_text(size = 15),
           axis.title.x = element_blank()
         )
-      
+
       p <- ggplotly(p)
-      
+
       # Fix xaxis due to a bug in plotly
       whXaxis <- which(grepl("xaxis", names(p$x$layout)))
       for (i in whXaxis) {
@@ -749,9 +749,9 @@ output$genePlot <- renderPlotly({
       }
       return(p)
     }
-    
+
   } else {
-    
+
     text = paste("\n Select a gene above \n to show observation-level expression.")
     hm <- ggplot() +
       annotate("text", x = 0, y = 0, size=4, label = text) +
@@ -815,7 +815,7 @@ output$HE <- renderDataTable({
         list(search = dgeHits),
         list(search = nodeID),
         list(search = groupID),
-        NULL, NULL, NULL, NULL, NULL, 
+        NULL, NULL, NULL, NULL, NULL,
         NULL, NULL, NULL, NULL, NULL,
         NULL, NULL, NULL, NULL
       ),
@@ -849,7 +849,7 @@ output$HE <- renderDataTable({
     formatRound(c("Mean<br>ssGSEA", "Diff<br>ssGSEA"), digits = 2) %>%
     formatSignif(c("P Value<br>Hyper", "FDR<br>Hyper", "P Value<br>ssGSEA", "FDR<br>ssGSEA"), digits = 2)%>%
     formatStyle(c("Gene Set", "Direction", "N<br>Gene Set", "Diff<br>ssGSEA"), `border-right` = "solid 2px")
-  
+
 })
 
 # Functions for help
@@ -904,15 +904,15 @@ observeEvent(input$hyperDL, {
 # Reactive row selection ####
 observeEvent(input$HE_cell_clicked, {
   if (!is.null(input$HE_cell_clicked$value)) {
-    
+
     # Get Value
     hyperVal <- gsub("<label for='|'>&#9992;</label>|'>&#128202;</label>", "", as.character(input$HE_cell_clicked$value))
-    
+
     # If PlotRow then set nodeSelHE
     if (grepl("PlotRow|SendRow", hyperVal)) {
       rowNum <- as.numeric(sub("PlotRow|SendRow", "", hyperVal))
       HYPERRow <- enrTable[rowNum, , drop = FALSE]
-      
+
       # If plotting send the node to plot, otherwise global
       if (grepl("PlotRow", hyperVal)) {
         values$GeneSetp <- HYPERRow[, "Gene Set"]
@@ -938,7 +938,7 @@ observeEvent(input$HE_cell_clicked, {
 # Render pathwayPlot####
 output$pathwayPlot <- renderPlotly({
   if(!is.null(values$nodeSelHEp)){
-    
+
     # Plot Pathway
     eSet = gSet;
     gene = values$GeneSetp;
@@ -946,9 +946,9 @@ output$pathwayPlot <- renderPlotly({
     obs2 = K2res[[values$nodeSelHEp]]$obs[[2]];
     cohorts = meta$cohorts;
     vehicle = meta$vehicle;
-    
+
     if(gene %in% rownames(eSet)){
-      
+
       # Format group names
       if(is.null(cohorts)){
         nams <- colnames(eSet)
@@ -956,52 +956,52 @@ output$pathwayPlot <- renderPlotly({
         nams <- pData(eSet)[,cohorts]
       }
       nams[nams == vehicle] <- "Vehicle"
-      
+
       # Create data.frame of expression values
       e <- Biobase::exprs(eSet)[gene,]
       df <- data.frame(e = e, ch = nams, stringsAsFactors = F)
-      
+
       # Subset for obs in groups
       df <- df[df$ch %in% c(obs1, obs2, "Vehicle"),]
       df$group <- "Group 1"; df$group[df$ch %in% obs2] <- "Group 2"; df$group[df$ch == "Vehicle"] <- "Vehicle"
-      
+
       # Get per Observation mean
       dfMeans <- df %>%
         group_by(ch) %>%
         summarise(me = mean(e))
       dfMeans$ch <- as.character(dfMeans$ch)
       dfMeans <- dfMeans[order(dfMeans$me, decreasing = T),]
-      
+
       # Sort levels by mean expression
       df$ch <- factor(df$ch, levels = dfMeans$ch)
       df <- merge(df, dfMeans)
-      
+
       # Add levels for boxplots
       df$group2 <- df$group
-      
+
       # Add rows for boxplots
       df2 <- df
       df2$ch <- df$group
       df2$group2 <- "Comparison"
       df2$e2 <- df2$e
       df2$e <- NA
-      
+
       # Concatenate
       df$e2 <- NA
       df <- df[df$ch != "Vehicle",]
       df <- rbind(df, df2)
-      
+
       # Fix levels
       df$ch <- factor(df$ch, levels = c(dfMeans$ch[dfMeans$ch != "Vehicle"], "Group 1", "Vehicle", "Group 2"))
       df$group <- factor(df$group, levels = c("Group 1", "Vehicle", "Group 2"))
       df$group2 <- factor(df$group2, levels = c("Group 1", "Comparison", "Group 2"))
-      
+
       # Remove Means from comparison
       df$me[df$group2 == "Comparison"] <- NA
-      
+
       # Add column names
       colnames(df) <- c("Observation", "Expression", "Group", "Mean", "Group2", "Expression2")
-      
+
       # Plot
       p <- ggplot(data = df, aes(x = Observation, y = Expression)) +
         geom_boxplot(aes(y = Expression2, fill = Group)) +
@@ -1009,11 +1009,11 @@ output$pathwayPlot <- renderPlotly({
         geom_point(aes(colour = Group), size = 3) +
         geom_point(aes(y = Mean), shape = 3, size = 3) +
         facet_grid(~Group2, scales = "free_x") +
-        scale_colour_manual(values = c("Group 1" = "darkorange", 
-                                       "Vehicle" = "grey", 
+        scale_colour_manual(values = c("Group 1" = "darkorange",
+                                       "Vehicle" = "grey",
                                        "Group 2" = "darkorchid1")) +
-        scale_fill_manual(values = c("Group 1" = "darkorange", 
-                                     "Vehicle" = "grey", 
+        scale_fill_manual(values = c("Group 1" = "darkorange",
+                                     "Vehicle" = "grey",
                                      "Group 2" = "darkorchid1")) +
         scale_x_discrete() +
         theme_bw() +
@@ -1025,9 +1025,9 @@ output$pathwayPlot <- renderPlotly({
           axis.text.y = element_text(size = 15),
           axis.title.x = element_blank()
         )
-      
+
       p <- ggplotly(p)
-      
+
       # Fix xaxis due to a bug in plotly
       whXaxis <- which(grepl("xaxis", names(p$x$layout)))
       for (i in whXaxis) {
@@ -1039,10 +1039,10 @@ output$pathwayPlot <- renderPlotly({
       }
       return(p)
     }
-    
-    
+
+
   } else {
-    
+
     text <- paste("\n Select a pathway above \n to show observation-level enrichment. \n")
     hm <- ggplot() +
       annotate("text", x = 0, y = 0, size = 4, label = text) +

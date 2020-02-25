@@ -109,16 +109,16 @@ get_de <- function(
   if(landmark) { eset <- eset[fData(eset)[, landmark_id] %in% landmark_positive,] }
   
   pdat <- pData(eset) 
-  
+  fdat <- data.frame("Gene Symbol" = rownames(eset), stringsAsFactors = FALSE)
+
   if(length(unique(pdat[,col_id]))==length(colnames(exprs(eset)))){
     mat <- exprs(eset)
-    fdat <- fData(eset)
   }else{
-    mat <- data.frame(exprs(eset)) %>% transmute(Avg=rowMeans(.))
-    fdat <- data.frame("Gene Symbol" = rownames(eset), stringsAsFactors = FALSE)
+    mat <- data.frame(exprs(eset)) %>% transmute(Sum=rowMeans(.))
+    header <- paste("Average", header)
   }
   
-  colnames(mat) <- paste(header, " ", unique(pdat[, col_id]), "uM", sep = "")
+  colnames(mat) <- paste0(header, " ", unique(pdat[, col_id]), "uM")
   res <- summarize_eset(mat=exprs(eset), summarize.func=summarize.func, do.scorecutoff=do.scorecutoff, scorecutoff=scorecutoff, do.nmarkers=do.nmarkers, nmarkers=nmarkers)
   
   res.ind <- res$inds
@@ -127,8 +127,9 @@ get_de <- function(
     if(i > 0) return("Up") else return("Down")
   })
   
-  tab <- cbind('Gene Symbol'=fdat$Gene.Symbol[res.ind], Direction = direction, SummaryScore=res.scores, mat[res.ind,, drop = FALSE])
+  tab <- cbind(fdat[res.ind,, drop = FALSE], Direction = direction, SummaryScore=res.scores, mat[res.ind,, drop = FALSE])
   colnames(tab)[colnames(tab) %in% "SummaryScore"] <- "Summary Score"
+  colnames(tab)[colnames(tab) %in% "Gene.Symbol"] <- "Gene Symbol"
   
   #return hyperlink to genecard.org
   tab$"Gene Symbol" <- sapply(as.character(tab$"Gene Symbol"), get_genecard_link)
@@ -217,12 +218,12 @@ summarize_gsproj <- function(
   res <- apply(exprs(eset), 1, match.fun(summarize.func))
   res <- as.numeric(res)
   
+  fData <- data.frame(genesets=rownames(eset), stringsAsFactors = FALSE)
+  
   if(length(unique(pData(eset)[, col_id]))==length(colnames(exprs(eset)))){
     mat <- exprs(eset)
-    fdat <- fData(eset)
   }else{
     mat <- data.frame(exprs(eset)) %>% transmute(Avg=rowMeans(.))
-    fData <- data.frame(genesets=rownames(eset), stringsAsFactors = FALSE)
   }
   
   colnames(mat) <- paste(header, " ", unique(pData(eset)[, col_id]), "uM",sep = "")

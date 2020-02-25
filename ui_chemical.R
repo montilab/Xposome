@@ -15,7 +15,7 @@ tagList(
     
     column(
       width=8,
-      DT::dataTableOutput("chemical_table")
+      DT::dataTableOutput("chemical_table") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="150px")
     )
   ),
   
@@ -124,13 +124,8 @@ tagList(
                     inputId = "gsname",
                     label = "Gene set name",
                     bId= "Bgsname",
-                    helptext = paste(
-                      "Hallmark: MSigDB Hallmark Pathways (v5.0)",
-                      "C2: MSigDB C2 reactome Pathways (v5.0)",
-                      "NURSA: Nuclear Receptor Signaling Atlas, consensome data for human",
-                      sep = "<br>"
-                    ),
-                    choices = if(isolate(session$clientData$url_search) == "?ADIPO"){ c("Hallmark", "C2") }else{ c("Hallmark", "C2", "NURSA") }
+                    helptext = helptext_geneset,
+                    choices = names(dsmap)
                   )
                 ),
                 
@@ -140,12 +135,8 @@ tagList(
                     inputId = "gsmethod",
                     label ="Projection method",
                     bId = "Bgsmethod",
-                    helptext = paste(
-                      "gsva, ssgea, zscore: from R Bioconductor package GSVA",
-                      "gsproj: GeneSetProjection for R package montilab:CBMRtools",
-                      sep = "<br>"
-                    ),
-                    choices = if(isolate(session$clientData$url_search) == "?ADIPO"){  c("gsva", "ssgsea", "zscore") }else{ c("gsva", "ssgsea", "zscore", "gsproj") }
+                    helptext = helptext_method,
+                    choices = names(dsmap_method)
                   )
                 ),
                 

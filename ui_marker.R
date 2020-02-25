@@ -68,13 +68,8 @@ tagList(
               inputId = "marker_gsname",
               label = "Gene set name", 
               bId= "Bgsname_marker",
-              helptext = paste(
-                "Hallmark: MSigDB Hallmark Pathways (v5.0)",
-                "C2: MSigDB C2 reactome Pathways (v5.0)",
-                "NURSA: Nuclear Receptor Signaling Atlas, consensome data for human",
-                sep = "<br>"
-              ),
-              choices = if(isolate(session$clientData$url_search) == "?ADIPO"){ c("Hallmark", "C2") }else{ c("Hallmark", "C2", "NURSA") }
+              helptext = helptext_geneset,
+              choices = names(dsmap)
             )
           ),
           
@@ -84,12 +79,8 @@ tagList(
               inputId = "marker_gsmethod", 
               label ="Projection method", 
               bId = "Bgsmethod_marker",
-              helptext = paste(
-                "gsva, ssgea, zscore: from R Bioconductor package GSVA",
-                "gsproj: GeneSetProjection for R package montilab: CBMRtools",
-                sep = "<br>"
-              ),
-              choices = if(isolate(session$clientData$url_search) == "?ADIPO"){  c("gsva", "ssgsea", "zscore") }else{ c("gsva", "ssgsea", "zscore", "gsproj") }
+              helptext = helptext_method,
+              choices = names(dsmap_method)
             )
           ),
           
@@ -151,41 +142,30 @@ tagList(
     
     br(),
     
-    conditionalPanel(
-      condition = "$('html').hasClass('shiny-busy')",
-      withSpinner(type=4, color="#0dc5c1", div(style="height: 200px"))
-    ),  
-    
-    conditionalPanel(
-      condition = "!$('html').hasClass('shiny-busy')",
+    fluidRow(
+      column(
+        width=12,
+        plotOutput(outputId = "marker_plot_1") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+      ),
       
-      fluidRow(
-        column(
-          width=12,
-          plotOutput(outputId = "marker_plot_1")
-        ),
-        
-        column(
-          width=12,
-          plotOutput(outputId = "marker_plot_2")
-        ),
-        
-        column(
-          width=12,
-          if(isolate({ session$clientData$url_search }) != "?ADIPO"){
-            plotOutput(outputId = "marker_plot_3")
-          }
-        ),
-        
-        column(
-          width=12,
-          uiOutput(outputId = "marker_table_header"),
-          DT::dataTableOutput(outputId = "marker_table")
-        )
+      column(
+        width=12,
+        plotOutput(outputId = "marker_plot_2")
+      ),
+      
+      column(
+        width=12,
+        if(isolate({ session$clientData$url_search }) != "?ADIPO"){
+          plotOutput(outputId = "marker_plot_3")
+        }
+      ),
+      
+      column(
+        width=12,
+        uiOutput(outputId = "marker_table_header"),
+        DT::dataTableOutput(outputId = "marker_table")
       )
     )
   )
 )
-  
-  
-  
+

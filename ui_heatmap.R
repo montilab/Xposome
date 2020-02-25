@@ -31,7 +31,7 @@ tagList(
           if(isolate(session$clientData$url_search) == "?ADIPO"){
             conditionalPanel(
               condition = "input.marker_hm == 'Genes'",
-              sliderInput(inputId = "numberthreshold", label = "Number of genes:", min = 0, max = 1000, value = 500, ticks = FALSE, step = 10)
+              sliderInput(inputId = "numberthreshold", label = "Top number of genes (by MAD):", min = 0, max = 1000, value = 500, ticks = FALSE, step = 10)
             )
           }
         )
@@ -58,13 +58,8 @@ tagList(
               inputId = "marker_gsname_hm",
               label = "Gene set name", 
               bId= "Bgsname_marker_hm",
-              helptext = paste(
-                "Hallmark: MSigDB Hallmark Pathways (v5.0)",
-                "C2: MSigDB C2 reactome Pathways (v5.0)",
-                "NURSA: Nuclear Receptor Signaling Atlas, consensome data for human",
-                sep = "<br>"
-              ),
-              choices = if(isolate(session$clientData$url_search) == "?ADIPO"){ c("Hallmark", "C2") }else{ c("Hallmark", "C2", "NURSA") }
+              helptext = helptext_geneset,
+              choices = names(dsmap)
             )
           ),
           
@@ -74,12 +69,8 @@ tagList(
               inputId = "marker_gsmethod_hm", 
               label ="Projection method", 
               bId = "Bgsmethod_marker_hm",
-              helptext = paste(
-                "gsva, ssgea, zscore: from R Bioconductor package GSVA",
-                "gsproj: GeneSetProjection for R package montilab: CBMRtools",
-                sep = "<br>"
-              ),
-              choices = if(isolate(session$clientData$url_search) == "?ADIPO"){  c("gsva", "ssgsea", "zscore") }else{ c("gsva", "ssgsea", "zscore", "gsproj") }
+              helptext = helptext_method,
+              choices = names(dsmap_method)
             )
           )
         ),
@@ -138,19 +129,10 @@ tagList(
       
     br(), 
     
-    conditionalPanel(
-      condition = "$('html').hasClass('shiny-busy')",
-      withSpinner(type=4, color="#0dc5c1", div(style="height: 200px"))
-    ),  
-    
-    conditionalPanel(
-      condition = "!$('html').hasClass('shiny-busy')",
-      
-      fluidRow(
-        column(
-          width=12,
-          uiOutput(outputId = "heatmap_holder")
-        )
+    fluidRow(
+      column(
+        width=12,
+        uiOutput(outputId = "heatmap_holder") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="400px")
       )
     )
   )

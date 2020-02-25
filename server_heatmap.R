@@ -68,28 +68,46 @@ to.hex <- function(x){
   return(rgb(red, green, blue, maxColorValue = 255))
 }
 
-# # ##For testing purposes####
+#For testing purposes####
 # source("ggheat.continuous.R")
 # dat <- readRDS(paste0("data/HEPG2/data.RDS"))
 # dat <- readRDS(paste0("data/ADIPO/data.RDS"))
 # 
+# annot_prof = dat[["Profile Annotation"]]
+# match_id = "sig_id";
+# hm = FALSE;
+# n_genes = 500;
+# 
 # ##Get differential expression gene set####
-# get_de_eset <- function(annot_prof, match_id = "sig_id", hm = FALSE){
-#   
+# get_de_eset <- function(annot_prof, match_id = "sig_id", hm = FALSE, n_genes = NULL){
+# 
 #   res <- dat[["Gene Expression"]]
 #   ind2 <- match(colnames(res), annot_prof[, match_id])
 #   pData(res) <- annot_prof[ind2,]
-#   
+# 
 #   if(hm){
 #     inds <- fData(res)[, "Landmark Gene"] %in% "Yes"
 #     res <- res[inds,]
 #   }
-#   
+# 
+#   if(!is.null(n_genes)){
+#     mad_gene_list <- apply(exprs(res), 1, mad)
+#     mad_gene_list <- sort(mad_gene_list, decreasing = TRUE)[1:n_genes]
+#     ind3 <- which(rownames(res) %in% names(mad_gene_list))
+#     res <- res[ind3, ]
+#   }
+# 
 #   return(res)
-#   
+# 
 # }
 # 
-# eset <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id", hm = FALSE)
+# annot_prof <- dat[["Profile Annotation"]] %>% mutate(PPARg_Mod=ifelse(is.na(PPARg_Mod), "Vehicle", PPARg_Mod))
+# annot_prof$PPARg_Mod <- factor(annot_prof$PPARg_Mod, levels = c("Yes", "No", "Suspected", "Vehicle"), ordered=is.ordered(c("Yes", "No", "Suspected", "Vehicle")))
+# 
+# eset <- get_de_eset(annot_prof = annot_prof, match_id = "sig_id", hm = FALSE, n_genes = 500)
+# tas = 0.2
+# 
+# eset <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id", hm = TRUE)
 # tas = 0.2
 
 ##Function to create heatmap for heatmap explorer#####
@@ -105,17 +123,13 @@ plot_heatmap_static <- function(eset, tas){
       col_breaks = c("+", "-", "N/A"), 
       col_values = sapply(c("purple", "pink", "grey"), to.hex),
       col_labels = c("+", "-", "N/A")
-    ),
-    PPARg_Mod = list(
-      col_breaks = c("N/A", "Yes", "No", "Suspected"), 
-      col_values = sapply(c("grey", "green", "orange", "purple"), to.hex),
-      col_labels = c("N/A", "Yes", "No", "Suspected")
     )
   )
   
   hmcolors <- function(...) scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, ...)
   
-  eset <- eset[, pData(eset)[, "TAS"] >= tas]
+  eset <- eset[, which(pData(eset)[, "TAS"] >= tas)]
+  
   ind.remove <- apply(exprs(eset), 1, function(i){
     any(is.nan(i))
   })
@@ -184,15 +198,16 @@ plot_heatmap_static_adipo <- function(eset, tas){
   
   col_legend <- list(
     PPARg_Mod = list(
-      col_breaks = c("N/A", "Yes", "No", "Suspected"), 
-      col_values = sapply(c("grey", "green", "orange", "purple"), to.hex),
-      col_labels = c("N/A", "Yes", "No", "Suspected")
+      col_breaks = c("Yes", "No", "Suspected", "Vehicle"), 
+      col_values = sapply(c("green", "orange", "purple", "grey"), to.hex),
+      col_labels = c("Yes", "No", "Suspected", "Vehicle")
     )
   )
   
   hmcolors <- function(...) scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, ...)
   
-  eset <- eset[, pData(eset)[, "TAS"] >= tas]
+  eset <- eset[, which(pData(eset)[, "TAS"] >= tas)]
+  
   ind.remove <- apply(exprs(eset), 1, function(i){
     any(is.nan(i))
   })
@@ -266,13 +281,16 @@ observeEvent(input$hm_de_generate, {
   req(input$marker_hm, input$marker_tas_hm)
   
   if(session$clientData$url_search == "?ADIPO"){ 
-    es <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id", hm = FALSE)
+    annot_prof <- dat[["Profile Annotation"]] %>% mutate(PPARg_Mod=ifelse(is.na(PPARg_Mod), "Vehicle", PPARg_Mod))
+    rownames(annot_prof) <- annot_prof$sig_id
+    es <- get_de_eset(annot_prof = annot_prof, match_id = "sig_id", hm = FALSE, n_genes = input$numberthreshold)
+    hm_key(paste0(session$clientData$url_search, "_", input$marker_hm, "_", input$marker_tas_hm, "_", input$numberthreshold))
   }else{
     es <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id", hm = TRUE)
+    hm_key(paste0(session$clientData$url_search, "_", input$marker_hm, "_", input$marker_tas_hm))
   }
   
   hm_data(es)
-  hm_key(paste0(session$clientData$url_search, "_", input$marker_hm, "_", input$marker_tas_hm))
   show_morpheus(FALSE) 
   
 }, ignoreInit=TRUE)
@@ -326,7 +344,7 @@ output$heatmap_holder <- renderUI({
   w <- max(min(ncols*15+50, 3000), 400)
   h <- min(nrows*15+200, 3000)
   
-  plotOutput(outputId = "hm_plot", width="100%", height=h) %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+  plotOutput(outputId = "hm_plot", width="100%", height=h) %>% withSpinner(type=4, color="#0dc5c1", proxy.height="400px")
   
 })
 
