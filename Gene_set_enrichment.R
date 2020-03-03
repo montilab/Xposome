@@ -18,9 +18,10 @@ ADIPO <- readRDS(paste0("data/ADIPO/data.RDS"))
 # Read in the gene set collection
 gsscores_hallmark <- getGmt("data/Enrichment Gene Set/h.all.v7.0.symbols.gmt")
 gsscores_c2_reactome <- getGmt("data/Enrichment Gene Set/c2.cp.reactome.v7.0.symbols.gmt")
+gsscores_nursa <- getGmt("data/Enrichment Gene Set/nursa_consensome_Cbyfdrvalue_0.01.gmt")
 
 # Run gene set variation analysis for hallmark
-dataset=c("HEPG2", "MCF10A", "ADIPO"); genesetname=c("h.all", "c2.cp.reactome"); geneset=c("gsscores_hallmark", "gsscores_c2_reactome"); method=c("gsva", "ssgsea", "zscore");
+dataset=c("HEPG2", "MCF10A", "ADIPO"); genesetname=c("h.all.v7.0", "c2.cp.reactome.v7.0", "nursa_consensome_Cbyfdrvalue_0.01"); geneset=c("gsscores_hallmark", "gsscores_c2_reactome", "gsscores_nursa"); method=c("gsva", "ssgsea", "zscore");
 
 for(d in 1:length(dataset)){
   #d=3;
@@ -41,7 +42,7 @@ for(d in 1:length(dataset)){
       rownames(pData) <- colnames(gsva_es)
       phenoData <- new("AnnotatedDataFrame", data=pData)
       eSet <- ExpressionSet(assayData=gsva_es, phenoData=phenoData)
-      gsscores[[paste0("gsscores_", genesetname[u], ".v7.0_", method[m])]] <- eSet
+      gsscores[[paste0("gsscores_", genesetname[u], "_", method[m])]] <- eSet
     }
   }
   
