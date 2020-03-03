@@ -40,7 +40,8 @@ maxTAS <- floor(maxTAS/0.1)*0.1
 # Create a list of gene enrichment sets and methods ####
 dsmap <- list(
   Hallmark="gsscores_h.all.v7.0",
-  C2="gsscores_c2.cp.reactome.v7.0"
+  C2="gsscores_c2.cp.reactome.v7.0",
+  NURSA="gsscores_nursa_consensome_Cbyfdrvalue_0.01"
 )  
 
 dsmap_method <- list("gsva"="gsva", "ssgsea"="ssgsea", "zscore"="zscore")
@@ -55,7 +56,6 @@ helptext_geneset <- paste(
 
 helptext_method <- paste(
   "gsva, ssgea, zscore: from R Bioconductor package GSVA",
-  "gsproj: GeneSetProjection for R package montilab: CBMRtools",
   sep = "<br>"
 )
 
