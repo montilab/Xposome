@@ -109,15 +109,8 @@ get_de <- function(
   if(landmark) { eset <- eset[fData(eset)[, landmark_id] %in% landmark_positive,] }
   
   pdat <- pData(eset) 
-  fdat <- data.frame("Gene Symbol" = rownames(eset), stringsAsFactors = FALSE)
-
-  if(length(unique(pdat[,col_id]))==length(colnames(exprs(eset)))){
-    mat <- exprs(eset)
-  }else{
-    mat <- data.frame(exprs(eset)) %>% transmute(Sum=rowMeans(.))
-    header <- paste("Average", header)
-  }
-  
+  fdat <- data.frame(Gene_Symbol = rownames(eset), stringsAsFactors = FALSE)
+  mat <- exprs(eset)
   colnames(mat) <- paste0(header, " ", unique(pdat[, col_id]), "uM")
   res <- summarize_eset(mat=exprs(eset), summarize.func=summarize.func, do.scorecutoff=do.scorecutoff, scorecutoff=scorecutoff, do.nmarkers=do.nmarkers, nmarkers=nmarkers)
   
@@ -127,11 +120,16 @@ get_de <- function(
     if(i > 0) return("Up") else return("Down")
   })
   
-  tab <- cbind(fdat[res.ind,, drop = FALSE], Direction = direction, SummaryScore=res.scores, mat[res.ind,, drop = FALSE])
-  colnames(tab)[colnames(tab) %in% "SummaryScore"] <- "Summary Score"
-  colnames(tab)[colnames(tab) %in% "Gene.Symbol"] <- "Gene Symbol"
+  if(ncol(mat) > 1){
+    tab <- cbind(fdat[res.ind,, drop = FALSE], Direction = direction, SummaryScore=res.scores, mat[res.ind,, drop = FALSE])
+    colnames(tab)[colnames(tab) %in% "SummaryScore"] <- "Summary Score"
+  }else{
+    tab <- cbind(fdat[res.ind,, drop = FALSE], Direction = direction, mat[res.ind,, drop = FALSE])
+  } 
   
-  #return hyperlink to genecard.org
+  colnames(tab)[colnames(tab) %in% "Gene_Symbol"] <- "Gene Symbol"
+
+  #return hyperlink from genecard.org
   tab$"Gene Symbol" <- sapply(as.character(tab$"Gene Symbol"), get_genecard_link)
   
   return(tab)
@@ -148,9 +146,9 @@ output$gene_expression_table <- DT::renderDataTable({
       input = input$chem, 
       tab = dat[["Chemical Annotation"]][, c("Chemical Name", "BUID", "CAS")], 
       eset = dat[["Gene Expression"]], 
-      annot_prof = dat[["Profile Annotation"]],
+      annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
       col_id = col_id,
-      match_id = "sig_id",
+      match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
       header = "ModZScore", 
       landmark = input$landmark_de,
       landmark_id = "Landmark Gene", 
@@ -219,18 +217,16 @@ summarize_gsproj <- function(
   res <- as.numeric(res)
   
   fData <- data.frame(genesets=rownames(eset), stringsAsFactors = FALSE)
-  
-  if(length(unique(pData(eset)[, col_id]))==length(colnames(exprs(eset)))){
-    mat <- exprs(eset)
-  }else{
-    mat <- data.frame(exprs(eset)) %>% transmute(Avg=rowMeans(.))
-  }
-  
-  colnames(mat) <- paste(header, " ", unique(pData(eset)[, col_id]), "uM",sep = "")
+  mat <- exprs(eset)
+  colnames(mat) <- paste(header, " ", unique(pData(eset)[, col_id]), "uM", sep = "")
 
-  res <- cbind(fData, score = res, mat)
-  res <- res[order(res$score, decreasing = TRUE),, drop = FALSE]
-  colnames(res)[colnames(res) %in% "score"]<- "Summary Score"
+  if(ncol(mat) > 1){ 
+    res <- cbind(fData, score = res, mat)
+    res <- res[order(res$score, decreasing = TRUE),, drop = FALSE]
+    colnames(res)[colnames(res) %in% "score"]<- "Summary Score"
+  }else{
+    res <- cbind(fData, mat)
+  }  
   
   return(res)
 }
@@ -250,9 +246,9 @@ get_geneset_link <- function(geneset){
 # tab = dat[["Chemical Annotation"]][, c("Chemical Name", "BUID", "CAS")];
 # gsname = "Hallmark";
 # gsmethod = "gsva";
-# annot_prof = dat[["Profile Annotation"]];
+# annot_prof = dat[["Chemical Annotation"]];
 # col_id = ifelse(dat[["title"]]=="MCF10A Portal", "unique_ID_by_chem", "dose (uM)");
-# match_id = "sig_id";
+# match_id = "Chemical";
 # header = "GS Score";
 # summarize.func = "median";
 
@@ -295,9 +291,9 @@ output$gene_set_enrichment_table <- DT::renderDataTable({
       tab = dat[["Chemical Annotation"]][, c("Chemical Name", "BUID", "CAS")], 
       gsname = input$gsname, 
       gsmethod = input$gsmethod,
-      annot_prof = dat[["Profile Annotation"]], 
+      annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
       col_id = ifelse(dat[["title"]]=="MCF10A Portal", "unique_ID_by_chem", "dose (uM)"), 
-      match_id = "sig_id", 
+      match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
       header = "GS Score",
       summarize.func = input$summarize_gs
     )
@@ -318,6 +314,20 @@ options = list(
   buttons=c('copy','csv','print'))
 )
 
+##For testing purposes####
+# dat <- readRDS(paste0("data/HEPG2/data.RDS"))
+# dat <- readRDS(paste0("data/MCF10A/data.RDS"))
+# dat <- readRDS(paste0("data/ADIPO/data.RDS"))
+# 
+# input = "2-ethylhexanol" #"1-Amino-2-methylanthraquinone" #"Bisphenol A diglycidyl ether"
+# tab = dat[["Chemical Annotation"]][, c("Chemical Name", "BUID", "CAS")];
+# annot_prof = dat[["Chemical Annotation"]];
+# connlist = dat[["Connectivity"]]; 
+# conn_name = "pcl";
+# col_id = ifelse(dat[["title"]]=="MCF10A Portal", "unique_ID_by_chem", "dose (uM)");
+# match_id = "Chemical";
+# header = "Connectivity Score";
+# summarize.func = "median";
 
 ##Get connectivity####
 get_connectivity <- function(
@@ -328,7 +338,7 @@ get_connectivity <- function(
   conn_name,
   col_id,
   match_id = "sig_id",
-  header = "Connectivity Score",
+  header = "Connectivity Summary Score",
   summarize.func = c("mean", "median", "max", "min", "Q1", "Q3")){
   
   i <- get_BUID(input, tab)
@@ -350,11 +360,11 @@ output$connectivity_table <- DT::renderDataTable({
     get_connectivity(
       input = input$chem, 
       tab = dat[["Chemical Annotation"]][, c("Chemical Name", "BUID", "CAS")], 
-      annot_prof = dat[["Profile Annotation"]],
+      annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+      match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
       connlist = dat[["Connectivity"]], 
       conn_name = input$conn_name,
       col_id = ifelse(dat[["title"]]=="MCF10A Portal", "unique_ID_by_chem", "dose (uM)"),
-      match_id = "sig_id",
       header = "Connectivity Score",
       summarize.func = input$summarizefunc_conn
     )

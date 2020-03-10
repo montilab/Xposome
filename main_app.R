@@ -1,14 +1,4 @@
 
-# Preproccessing data #####
-source("startup_1.R", local=TRUE)
-source("startup_2.R", local=TRUE)
-source("server_annotation.R", local=TRUE)
-source("server_chemical.R", local=TRUE)
-source("server_marker.R", local=TRUE)
-source("server_heatmap.R", local=TRUE)
-source("server_taxonomic_clustering.R", local=TRUE)
-source("server_compare_multiple.R", local=TRUE)
-
 # The main page layout ####
 output$pageStub <- renderUI({
   

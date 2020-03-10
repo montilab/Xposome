@@ -281,12 +281,19 @@ observeEvent(input$hm_de_generate, {
   req(input$marker_hm, input$marker_tas_hm)
   
   if(session$clientData$url_search == "?ADIPO"){ 
-    annot_prof <- dat[["Profile Annotation"]] %>% mutate(PPARg_Mod=ifelse(is.na(PPARg_Mod), "Vehicle", PPARg_Mod))
-    rownames(annot_prof) <- annot_prof$sig_id
-    es <- get_de_eset(annot_prof = annot_prof, match_id = "sig_id", hm = FALSE, n_genes = input$numberthreshold)
+    es <- get_de_eset(
+      annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+      match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
+      hm = FALSE, 
+      n_genes = input$numberthreshold
+    )
     hm_key(paste0(session$clientData$url_search, "_", input$marker_hm, "_", input$marker_tas_hm, "_", input$numberthreshold))
   }else{
-    es <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id", hm = TRUE)
+    es <- get_de_eset(
+      annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+      match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
+      hm = TRUE
+    )
     hm_key(paste0(session$clientData$url_search, "_", input$marker_hm, "_", input$marker_tas_hm))
   }
   
@@ -304,8 +311,8 @@ observeEvent(input$hm_es_generate, {
     gslist = dat[["Gene Set Enrichment"]],
     gsname = input$marker_gsname_hm,
     gsmethod = input$marker_gsmethod_hm,
-    annot_prof = dat[["Profile Annotation"]],
-    match_id = "sig_id"
+    annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+    match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id")
   )
 
   hm_data(es)
@@ -322,8 +329,8 @@ observeEvent(input$hm_conn_generate, {
   es <- get_conn_eset(
     connlist = dat[["Connectivity"]],
     conn_name = input$marker_conn_name_hm,
-    annot_prof = dat[["Profile Annotation"]],
-    match_id = "sig_id"
+    annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+    match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id")
   )
   
   hm_data(es)

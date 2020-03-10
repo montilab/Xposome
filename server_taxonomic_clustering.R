@@ -350,7 +350,7 @@ output$infoTab <- renderDataTable({
       paging = FALSE,
       searching = TRUE,
       columnDefs = list(
-        list(className = 'dt-center', targets = "_all")
+        list(className = 'dt-leftr', targets = "_all")
       )
     )
   )

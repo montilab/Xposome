@@ -33,6 +33,9 @@ profile <- K2eSet(K2summary)@phenoData@data
 # Getting the differential gene expression for each sig_id
 profile_differential_expression <- K2eSet(K2summary)@assayData[["exprs"]]
 
+# Get differential gene expression for each chemical
+chemical_differential_expression <- K2data(K2summary)
+
 # Define a chemical data frame to store number of replicates and ModZscores
 chem_replicate <- data.frame(Chemical = unique(chemical$Chemical), N_replicates = NA, CC = NA, SS=NA, TAS = NA, stringsAsFactors = FALSE)
 
@@ -57,7 +60,11 @@ for(i in 1:nrow(chem_replicate)){
     chem_replicate$CC[i] <- 1
     
     w=1 #unweighted
-    profile_differential_expression[,rep] <- w*profile_differential_expression[,rep] 
+    
+    #Calculate the modzscore for the chemical
+    modzscore <-  w*profile_differential_expression[,rep]
+    
+    chemical_differential_expression[,chem_replicate$Chemical[i]] <- modzscore
     
   }else {
     
@@ -76,17 +83,22 @@ for(i in 1:nrow(chem_replicate)){
       
       w=0.5 #unweighted
       
-      for(g in 1:length(rep)){
-        #g=1;
-        profile_differential_expression[,rep[g]] <- w*profile_differential_expression[,rep[g]] 
+      #Calculate the modzscore for the chemical
+      modzscore <- 0
+      
+      for(m in 1:length(rep)){
+        #m=2;
+        modzscore  <- w*profile_differential_expression[,rep[m]] + modzscore
       }
+      
+      chemical_differential_expression[,chem_replicate$Chemical[i]] <- modzscore
       
     }else{
       
       rep_corr <- NULL;
       
       for(g in 1:length(rep)){
-        #g=1;
+        #g=3;
         corr <- spearman_corr[rep[g],rep[which(!rep %in% rep[g])]]
         rep_corr <- c(rep_corr, abs(sum(corr, na.rm=T)));
       }
@@ -99,10 +111,15 @@ for(i in 1:nrow(chem_replicate)){
         print('incorrect calculation of w!')
       }
       
+      #Calculate the modzscore for the chemical
+      modzscore <- 0
+      
       for(m in 1:length(rep)){
         #m=2;
-        profile_differential_expression[,rep[m]]  <- w[m]*profile_differential_expression[,rep[m]]
+        modzscore  <- w[m]*profile_differential_expression[,rep[m]] + modzscore
       }
+      
+      chemical_differential_expression[,chem_replicate$Chemical[i]] <- modzscore
       
     }
     
@@ -120,14 +137,14 @@ for(i in 1:nrow(chem_replicate)){
 # 
 ##########################################################################################
 
-# Get differential gene expression for each chemical (WHICH IS ALREADY IN Z-SCORES)
-chemical_differential_expression <- K2data(K2summary)
+# Get differential gene expression for each chemical
+differential_expression <- K2data(K2summary)
 
 # Calculate signature strength (SS) and TAS
-for(i in 1:ncol(chemical_differential_expression)){
+for(i in 1:ncol(differential_expression)){
   #i=1;
-  chem_replicate$SS[which(chem_replicate$Chemical %in% colnames(chemical_differential_expression)[i])] = length(which(abs(chemical_differential_expression[,i]) >= 2))
-  chem_replicate$TAS[which(chem_replicate$Chemical %in% colnames(chemical_differential_expression)[i])] = sqrt(chem_replicate$SS[which(chem_replicate$Chemical %in% colnames(chemical_differential_expression)[i])]*max(c(0,chem_replicate$CC[which(chem_replicate$Chemical %in% colnames(chemical_differential_expression)[i])]))/nrow(chemical_differential_expression)) 
+  chem_replicate$SS[which(chem_replicate$Chemical %in% colnames(differential_expression)[i])] = length(which(abs(differential_expression[,i]) >= 2))
+  chem_replicate$TAS[which(chem_replicate$Chemical %in% colnames(differential_expression)[i])] = sqrt(chem_replicate$SS[which(chem_replicate$Chemical %in% colnames(differential_expression)[i])]*max(c(0,chem_replicate$CC[which(chem_replicate$Chemical %in% colnames(differential_expression)[i])]))/nrow(differential_expression)) 
 }
 
 TAS <- chem_replicate[, c("Chemical", "TAS")]
@@ -137,7 +154,7 @@ chemical_info <- chemical %>% mutate(BUID=paste0("BUID_", 1:nrow(chemical))) %>%
   left_join(TAS) %>% 
   filter(!is.na(TAS)) %>% 
   rename(
-    "Abbreviation" := Chemical ,
+    "Chemical" := Chemical ,
     "Chemical Name" := Full,
     "BUID" := BUID,
     "CAS" := CAS,
@@ -147,10 +164,9 @@ chemical_info <- chemical %>% mutate(BUID=paste0("BUID_", 1:nrow(chemical))) %>%
     "TAS" := TAS
   ) %>% 
   select(
-    c("Chemical Name", "Abbreviation", "BUID", "CAS", "Source/Use", "dose (uM)", "PPARg_Mod", "TAS")
+    c("Chemical", "Chemical Name", "BUID", "CAS", "Source/Use", "dose (uM)", "PPARg_Mod", "TAS")
   ) 
   
-
 # profile annotation information
 profile_info <- data.frame(sig_id=rownames(profile ), profile %>% select(-Concentration)) %>% 
   left_join(chemical %>% mutate(BUID=paste0("BUID_", 1:nrow(chemical)))) %>% 
@@ -158,7 +174,7 @@ profile_info <- data.frame(sig_id=rownames(profile ), profile %>% select(-Concen
     TAS
   ) %>% 
   rename(
-    "Abbreviation" = Chemical ,
+    "Chemical" = Chemical ,
     "Chemical Name" := Full,
     "BUID" := BUID,
     "CAS" := CAS,
@@ -167,7 +183,7 @@ profile_info <- data.frame(sig_id=rownames(profile ), profile %>% select(-Concen
     "TAS" := TAS
   ) %>% 
   select(
-    c("sig_id", "Chemical Name", "Abbreviation", "BUID", "CAS", "Source/Use", "NileRed", "Plate", "dose (uM)", "PPARg_Mod", "TAS")
+    c("sig_id", "Chemical", "Chemical Name", "BUID", "CAS", "Source/Use", "NileRed", "Plate", "dose (uM)", "PPARg_Mod", "TAS")
   ) 
 
 #########################################################
@@ -179,12 +195,13 @@ profile_info <- data.frame(sig_id=rownames(profile ), profile %>% select(-Concen
 # Read in the gene set collection
 gsscores_hallmark <- getGmt("data/Enrichment Gene Set/h.all.v7.0.symbols.gmt")
 gsscores_c2_reactome <- getGmt("data/Enrichment Gene Set/c2.cp.reactome.v7.0.symbols.gmt")
+gsscores_nursa <- getGmt("data/Enrichment Gene Set/nursa_consensome_Cbyfdrvalue_0.01.gmt")
 
 # Run gene set variation analysis for hallmark
-genesetname=c("h.all", "c2.cp.reactome"); geneset=c("gsscores_hallmark", "gsscores_c2_reactome"); method=c("gsva", "ssgsea", "zscore");
+genesetname=c("h.all.v7.0", "c2.cp.reactome.v7.0", "nursa_consensome_Cbyfdrvalue_0.01"); geneset=c("gsscores_hallmark", "gsscores_c2_reactome", "gsscores_nursa"); method=c("gsva", "ssgsea", "zscore");
 
 # Getting the differential gene expression for each sig_id
-differential_expression <- profile_differential_expression
+expression_set <- chemical_differential_expression
 
 # Create a null list 
 gsscores <- list();
@@ -193,12 +210,12 @@ for(u in 1:length(genesetname)){
   #u=1;
   for(m in 1:length(method)){
     #m=1;
-    gsva_es <- gsva(expr=differential_expression, gset.idx.list=get(paste0(geneset[u])), method=method[m], mx.diff=TRUE)
-    pData <- data.frame(sig_id = colnames(gsva_es))
+    gsva_es <- gsva(expr=expression_set, gset.idx.list=get(paste0(geneset[u])), method=method[m], mx.diff=TRUE)
+    pData <- data.frame(Chemical= colnames(gsva_es))
     rownames(pData) <- colnames(gsva_es)
     phenoData <- new("AnnotatedDataFrame", data=pData)
     eSet <- ExpressionSet(assayData=gsva_es, phenoData=phenoData)
-    gsscores[[paste0("gsscores_", genesetname[u], ".v7.0_", method[m])]] <- eSet
+    gsscores[[paste0("gsscores_", genesetname[u], "_", method[m])]] <- eSet
   }
 }
 
@@ -213,8 +230,21 @@ adipogenome <- list()
 
 adipogenome[["Profile Annotation"]] <- profile_info
 adipogenome[["Chemical Annotation"]] <- chemical_info
-eSet <- K2eSet(K2summary)
-exprs(eSet) <- profile_differential_expression
+
+#create phenotypic data
+pData <- data.frame(Chemical = colnames(chemical_differential_expression))
+rownames(pData) <- colnames(chemical_differential_expression)
+phenoData <- new("AnnotatedDataFrame", data=pData)
+
+#create feature data
+fData <- data.frame(Gene = rownames(chemical_differential_expression))
+rownames(fData) <- rownames(chemical_differential_expression)
+featureData <- new("AnnotatedDataFrame", data=fData)
+
+#create expression set
+expressionSet <- chemical_differential_expression
+eSet <- ExpressionSet(assayData=expressionSet, phenoData=phenoData, featureData=featureData)
+
 adipogenome[["Gene Expression"]] <-  eSet
 adipogenome[["Gene Set Enrichment"]] <- gsscores
 adipogenome[["Connectivity"]] <- gsscores

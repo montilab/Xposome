@@ -15,8 +15,8 @@ get_gs_eset <- function(gslist, gsname, gsmethod, annot_prof, match_id = "sig_id
 # gslist = dat[["Gene Set Enrichment"]];
 # gsname = "Hallmark";
 # gsmethod = "gsva";
-# annot_prof = dat[["Profile Annotation"]];
-# match_id = "sig_id";
+# annot_prof = dat[["Chemical Annotation"]];
+# match_id = "Chemical";
 
 # Output the gene set selection ####
 observeEvent(c(input$marker_gsname, input$marker_gsmethod), {
@@ -29,8 +29,9 @@ observeEvent(c(input$marker_gsname, input$marker_gsmethod), {
         gslist = dat[["Gene Set Enrichment"]], 
         gsname = input$marker_gsname, 
         gsmethod = input$marker_gsmethod, 
-        annot_prof = dat[["Profile Annotation"]],
-        match_id = "sig_id")
+        annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+        match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id")
+      )
     ))
   )
     
@@ -61,8 +62,8 @@ observeEvent(input$marker_conn_name, {
       get_conn_eset(
         connlist = dat[["Connectivity"]], 
         conn_name = input$marker_conn_name, 
-        annot_prof = dat[["Profile Annotation"]],
-        match_id = "sig_id"
+        annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+        match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id")
       )
     ))
   )
@@ -275,7 +276,10 @@ observeEvent(input$de_generate, {
   
   req(input$marker, input$marker_tas, input$marker_view, input$marker_gene)
   
-  es <- get_de_eset(annot_prof = dat[["Profile Annotation"]], match_id = "sig_id")
+  es <- get_de_eset(
+    annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+    match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id")
+  )
   es <- es[, pData(es)[, "TAS"] > input$marker_tas]
   
   marker_data(es)
@@ -294,8 +298,8 @@ observeEvent(input$es_generate, {
     gslist = dat[["Gene Set Enrichment"]],
     gsname = input$marker_gsname,
     gsmethod = input$marker_gsmethod,
-    annot_prof = dat[["Profile Annotation"]],
-    match_id = "sig_id"
+    annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+    match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id")
   )
   es <- es[, pData(es)[, "TAS"] > input$marker_tas]
   
@@ -314,8 +318,8 @@ observeEvent(input$conn_generate, {
   es <- get_conn_eset(
     connlist = dat[["Connectivity"]],
     conn_name = input$marker_conn_name,
-    annot_prof = dat[["Profile Annotation"]],
-    match_id = "sig_id"
+    annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+    match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id")
   )
   es <- es[, pData(es)[, "TAS"] > input$marker_tas]
   
@@ -334,8 +338,8 @@ output$marker_plot_1 <- renderCachedPlot({
   get_de_by_gene_hist(
     input = marker_id(),
     eset = marker_data(),
-    annot_prof = dat[["Profile Annotation"]],
-    match_id = "sig_id",
+    annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+    match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
     col_id = NA,
     header = marker_header(),
     tas = input$marker_tas,
@@ -353,8 +357,8 @@ output$marker_plot_2 <- renderCachedPlot({
   get_de_by_gene_hist(
     input = marker_id(),
     eset = marker_data(),
-    annot_prof = dat[["Profile Annotation"]],
-    match_id = "sig_id",
+    annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+    match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
     col_id = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ "PPARg_Mod" }else{ "Carcinogenicity" },
     col_colors = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ c("grey", "green", "orange", "purple") }else{ c("grey", "green", "orange") },
     col_names = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ c("Vehicle", "Yes", "No", "Suspected") }else{ c("N/A", "-", "+") },
@@ -374,8 +378,8 @@ output$marker_plot_3 <- renderCachedPlot({
   get_de_by_gene_hist(
     input = marker_id(),
     eset = marker_data(),
-    annot_prof = dat[["Profile Annotation"]],
-    match_id = "sig_id",
+    annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+    match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
     col_id = "Genotoxicity",
     col_colors = c("grey","pink", "purple"),
     col_names = c("N/A", "-", "+"),
@@ -411,8 +415,8 @@ output$marker_download_pdf <- downloadHandler(
     p1 <- get_de_by_gene_hist(
       input = marker_id(),
       eset = marker_data(),
-      annot_prof = dat[["Profile Annotation"]],
-      match_id = "sig_id",
+      annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+      match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
       col_id = NA,
       header = marker_header(),
       tas = input$marker_tas,
@@ -423,8 +427,8 @@ output$marker_download_pdf <- downloadHandler(
     p2 <- get_de_by_gene_hist(
       input = marker_id(),
       eset = marker_data(),
-      annot_prof = dat[["Profile Annotation"]],
-      match_id = "sig_id",
+      annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+      match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
       col_id = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ "PPARg_Mod" }else{ "Carcinogenicity" },
       col_colors = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ c("grey", "green", "orange", "purple") }else{ c("grey", "green", "orange") },
       col_names = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ c("Vehicle", "Yes", "No", "Suspected") }else{ c("N/A", "-", "+") },
@@ -439,8 +443,8 @@ output$marker_download_pdf <- downloadHandler(
       p3 <- get_de_by_gene_hist(
         input = marker_id(),
         eset = marker_data(),
-        annot_prof = dat[["Profile Annotation"]],
-        match_id = "sig_id",
+        annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+        match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
         col_id = "Genotoxicity",
         col_colors = c("grey","pink", "purple"),
         col_names = c("N/A", "-", "+"),
@@ -477,8 +481,8 @@ output$marker_download_png <- downloadHandler(
     p1 <- get_de_by_gene_hist(
       input = marker_id(),
       eset = marker_data(),
-      annot_prof = dat[["Profile Annotation"]],
-      match_id = "sig_id",
+      annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+      match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
       col_id = NA,
       header = marker_header(),
       tas = input$marker_tas,
@@ -489,8 +493,8 @@ output$marker_download_png <- downloadHandler(
     p2 <- get_de_by_gene_hist(
       input = marker_id(),
       eset = marker_data(),
-      annot_prof = dat[["Profile Annotation"]],
-      match_id = "sig_id",
+      annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+      match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
       col_id = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ "PPARg_Mod" }else{ "Carcinogenicity" },
       col_colors = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ c("grey", "green", "orange", "purple") }else{ c("grey", "green", "orange") },
       col_names = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ c("Vehicle", "Yes", "No", "Suspected") }else{ c("N/A", "-", "+") },
@@ -505,8 +509,8 @@ output$marker_download_png <- downloadHandler(
       p3 <- get_de_by_gene_hist(
         input = marker_id(),
         eset = marker_data(),
-        annot_prof = dat[["Profile Annotation"]],
-        match_id = "sig_id",
+        annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+        match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
         col_id = "Genotoxicity",
         col_colors = c("grey","pink", "purple"),
         col_names = c("N/A", "-", "+"),
@@ -551,8 +555,8 @@ output$marker_table <-  DT::renderDataTable({
     get_de_by_gene_table(
       input = marker_id(),
       eset = marker_data(),
-      annot_prof = dat[["Profile Annotation"]],
-      match_id = "sig_id",
+      annot_prof = if(isolate({ session$clientData$url_search }) == "?ADIPO"){ dat[["Chemical Annotation"]] }else{ dat[["Profile Annotation"]] },
+      match_id = ifelse(isolate({ session$clientData$url_search }) == "?ADIPO", "Chemical", "sig_id"),
       header = marker_header(),
       tas = input$marker_tas
     )

@@ -50,13 +50,17 @@ tagList(
                 
                 column(
                   width=2,
-                  selectInput(inputId = "summarizefunc_de", label = "Summarization", choices=c("max", "median", "mean", "min", "Q1", "Q3"), selected = defaults[["summarizefunc_de"]])
+                  if(isolate({ session$clientData$url_search }) == "?ADIPO"){
+                    shinyjs::disabled(selectInput(inputId = "summarizefunc_de", label = "Summarization", choices=c("max", "median", "mean", "min", "Q1", "Q3"), selected = defaults[["summarizefunc_de"]]))
+                  }else{
+                    selectInput(inputId = "summarizefunc_de", label = "Summarization", choices=c("max", "median", "mean", "min", "Q1", "Q3"), selected = defaults[["summarizefunc_de"]])
+                  }
                 ),
                 
                 column(
                   width=2,
                   if(isolate({ session$clientData$url_search }) == "?ADIPO"){
-                    checkboxGroupInput(inputId = "filterbyinput_de", label = "Filter by", choices=c("score" = "score"), selected = "score")
+                    shinyjs::disabled(checkboxGroupInput(inputId = "filterbyinput_de", label = "Filter by", choices=c("score" = "score", "number" = "number"), selected = defaults[["filterbyinput_de"]]))
                   }else{
                     checkboxGroupInput(inputId = "filterbyinput_de", label = "Filter by", choices=c("score" = "score", "number" = "number"), selected = defaults[["filterbyinput_de"]])
                   }
@@ -64,7 +68,11 @@ tagList(
                 
                 column(
                   width=2,
-                  sliderInput(inputId = "range_de", label = "Score Threshold", min = -10, max = 10, value = defaults[["range_de"]], step = 0.01)
+                  if(isolate({ session$clientData$url_search }) == "?ADIPO"){
+                    shinyjs::disabled(sliderInput(inputId = "range_de", label = "Score Threshold", min = -10, max = 10, value = defaults[["range_de"]], step = 0.01))
+                  }else{
+                    sliderInput(inputId = "range_de", label = "Score Threshold", min = -10, max = 10, value = defaults[["range_de"]], step = 0.01)
+                  }
                 ),
                 
                 column(
@@ -142,12 +150,23 @@ tagList(
                 
                 column(
                   width=4,
-                  selectInput(
-                    inputId = "summarize_gs",
-                    label = "Sort by:",
-                    choices = c("max", "median", "mean", "min", "Q1", "Q3"),
-                    selected = "median"
-                  )
+                  if(isolate({ session$clientData$url_search }) == "?ADIPO"){
+                    shinyjs::disabled(
+                      selectInput(
+                        inputId = "summarize_gs",
+                        label = "Sort by:",
+                        choices = c("max", "median", "mean", "min", "Q1", "Q3"),
+                        selected = "median"
+                      )
+                    )
+                  }else{
+                    selectInput(
+                      inputId = "summarize_gs",
+                      label = "Sort by:",
+                      choices = c("max", "median", "mean", "min", "Q1", "Q3"),
+                      selected = "median"
+                    )
+                  }
                 )
               )
             )
@@ -194,12 +213,23 @@ tagList(
 
                 column(
                   width=4,
-                  selectInput(
-                    inputId = "summarizefunc_conn",
-                    label = "Sort by:",
-                    choices = c("max", "median", "mean", "min", "Q1", "Q3"),
-                    selected = "median"
-                  )
+                  if(isolate({ session$clientData$url_search }) == "?ADIPO"){
+                    shinyjs::disabled(
+                      selectInput(
+                        inputId = "summarizefunc_conn",
+                        label = "Sort by:",
+                        choices = c("max", "median", "mean", "min", "Q1", "Q3"),
+                        selected = "median"
+                      )
+                    )
+                  }else{
+                    selectInput(
+                      inputId = "summarizefunc_conn",
+                      label = "Sort by:",
+                      choices = c("max", "median", "mean", "min", "Q1", "Q3"),
+                      selected = "median"
+                    )
+                  }
                 )
               )
             )

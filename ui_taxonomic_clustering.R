@@ -7,6 +7,7 @@ tagList(
     
     column(
       width=3, style="background-color: #fec44f;",
+      
       div(class="header-1",
           div(class="title", "Member Search"),
           div(class="content",

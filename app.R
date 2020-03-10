@@ -28,16 +28,6 @@ library(plotly)
 library(heatmaply)
 library(RColorBrewer)
 
-# Loading data files ####
-HEPG2 <- readRDS(paste0("data/HEPG2/data.RDS"))
-MCF10A <- readRDS(paste0("data/MCF10A/data.RDS"))
-ADIPO <- readRDS(paste0("data/ADIPO/data.RDS"))
-
-# Read in analysis results
-K2_HEPG2 <- readRDS("data/HEPG2/K2results.rds")
-K2_MCF10A <- readRDS("data/MCF10A/K2results.rds")
-K2_ADIPO <- readRDS("data/ADIPO/K2results.rds")
-
 ##Create the storage memory to storage cache objects####
 shinyOptions(cache = diskCache("./myapp-cache"))
 
@@ -57,9 +47,16 @@ ui <- bootstrapPage(
       
       ####<!-- home style -->####
       tags$link(type="text/css", rel="stylesheet", href="CSS/style.css"),
-
+      
+      ####<!-- sign-in style -->####
+      tags$link(type="text/css", rel="stylesheet", href="CSS/Util.css"),
+      tags$link(type="text/css", rel="stylesheet", href="CSS/LogInStyle.css"),
+      tags$link(type="text/css", rel="stylesheet", href="CSS/MainStyle.css"),
+      
       ####<!-- javascript -->####
-      tags$script(type="text/javascript", src="JS/google-analytics.js")
+      tags$script(type="text/javascript", src="JS/google-analytics.js"),
+      tags$script(type="text/javascript", src="JS/Javascript.js")
+      
     )
   ),
   
@@ -86,7 +83,8 @@ ui <- bootstrapPage(
         div(class="text-md-right",
             a(href="?home", class="site-link", "Home"),
             a(href="?about", class="site-link", "About"),
-            a(href="?contact", class="site-link", "Contact")
+            a(href="?contact", class="site-link", "Contact"),
+            a(href="?sign_in", class="site-link", "Sign In")
         )
       )
     ),
@@ -129,12 +127,38 @@ server <- function(input, output, session) {
   fname = isolate(session$clientData$url_search)
 
   if(nchar(fname)==0) { fname = "?home" } # blank means home page
-  fname = paste0(substr(fname, 2, nchar(fname)), ".R") # remove leading "?", add ".R"
+  fname = paste0(substr(fname, 2, nchar(fname))) # remove leading "?", add ".R"
 
   #If the files are home, about, and contract, stay in the current page, else go to main_app
   source("ggheat.continuous.R")
-  source(fname, local=TRUE) # load and run server code for this page
   
+  #Read in the data###
+  if(fname %in% c("home", "about", "contact", "sign_in")){
+    
+    source(paste0(fname, ".R"), local=TRUE) # load and run server code for this page
+    
+  }else{
+    
+    # Read in the data ####
+    dat <- readRDS(paste0("data/", fname, "/data.RDS"))
+    K2summary <- readRDS(paste0("data/", fname, "/K2results.rds"))
+    
+    # Preproccessing data #####
+    source("startup_1.R", local=TRUE)
+    source("startup_2.R", local=TRUE)
+    
+    # Run the app###
+    source("main_app.R", local=TRUE)
+    
+    # Server logic ####
+    source("server_annotation.R", local=TRUE)
+    source("server_chemical.R", local=TRUE)
+    source("server_marker.R", local=TRUE)
+    source("server_heatmap.R", local=TRUE)
+    source("server_taxonomic_clustering.R", local=TRUE)
+    source("server_compare_multiple.R", local=TRUE)
+    
+  }  
 }
 
 shinyApp(ui=ui, server=server)
