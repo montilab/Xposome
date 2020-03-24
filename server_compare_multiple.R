@@ -267,10 +267,7 @@ output$compare <- renderUI({
   
   req(length(values$groupList) > 1)
   
-  div(
-    actionButton(inputId = "compareGo", label = strong("Compare Nodes"), class = "mybuttons"),
-    actionButton(inputId = "compareReset", label = strong("Reset"), class = "mybuttons")
-  )
+  actionButton(inputId = "compareGo", label = strong("Compare Nodes"), class = "mybuttons")
   
 })
 

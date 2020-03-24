@@ -198,10 +198,12 @@ gsscores_c2_reactome <- getGmt("data/Enrichment Gene Set/c2.cp.reactome.v7.0.sym
 gsscores_nursa <- getGmt("data/Enrichment Gene Set/nursa_consensome_Cbyfdrvalue_0.01.gmt")
 
 # Run gene set variation analysis for hallmark
-genesetname=c("h.all.v7.0", "c2.cp.reactome.v7.0", "nursa_consensome_Cbyfdrvalue_0.01"); geneset=c("gsscores_hallmark", "gsscores_c2_reactome", "gsscores_nursa"); method=c("gsva", "ssgsea", "zscore");
+genesetname <- c("h.all.v7.0", "c2.cp.reactome.v7.0", "nursa_consensome_Cbyfdrvalue_0.01"); 
+geneset <- c("gsscores_hallmark", "gsscores_c2_reactome", "gsscores_nursa"); 
+method <- c("gsva", "ssgsea", "zscore");
 
 # Getting the differential gene expression for each sig_id
-expression_set <- chemical_differential_expression
+expression_set <- chemical_differential_expression;
 
 # Create a null list 
 gsscores <- list();
@@ -228,6 +230,13 @@ for(u in 1:length(genesetname)){
 ##Create adipogenome data
 adipogenome <- list()
 
+#create the annotation data
+profile_info <- dat[["Profile Annotation"]]
+rownames(profile_info) <- profile_info$sig_id
+
+chemical_info <- dat[["Chemical Annotation"]]
+rownames(chemical_info) <- chemical_info$Chemical
+
 adipogenome[["Profile Annotation"]] <- profile_info
 adipogenome[["Chemical Annotation"]] <- chemical_info
 
@@ -244,8 +253,9 @@ featureData <- new("AnnotatedDataFrame", data=fData)
 #create expression set
 expressionSet <- chemical_differential_expression
 eSet <- ExpressionSet(assayData=expressionSet, phenoData=phenoData, featureData=featureData)
-
 adipogenome[["Gene Expression"]] <-  eSet
+
+#create gene set enrichment and connectivity
 adipogenome[["Gene Set Enrichment"]] <- gsscores
 adipogenome[["Connectivity"]] <- gsscores
 adipogenome[["title"]] <- "ADIPO Portal"

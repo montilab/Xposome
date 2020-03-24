@@ -28,7 +28,7 @@ output$Match <- renderUI({
   valueString <- c("A", rownames(infoMat)[infoInd])
   names(valueString) <- c(nMatches, showString)
   
-  selectInput(inputId = "mVal", label = "Select a Match:", choices = valueString, selectize = TRUE)
+  selectInput(inputId = "mVal", label = "Select a Match:", choices = valueString, selectize = TRUE, width = "100%")
   
 })
 
@@ -79,33 +79,16 @@ observeEvent(input$mVal, {
   
 }, ignoreInit=TRUE)
 
+
+# Create reactive data ####
+dendro_dat <- reactiveVal(vNetOut)
+
 # Render Dendrogram #####
 output$dendro <- renderVisNetwork({
   
-  if(!is.null(values$mvTabSub)) {
-    if(nrow(values$mvTabSub) > 0) {
-      
-      # Change width of edges
-      mEdge <- values$mvTabSub[, c("Parent", "Child", "width")]
-      colnames(mEdge) <- c("from", "to", "width")
-      edgeFram <- merge(vNetOut$x$edges, mEdge, all.x = TRUE, sort = FALSE)
-      edgeFram$width[is.na(edgeFram$width)] <- 1
-      edgeFram$color.inherit <- 'to'
-      vNetOut$x$edges <- edgeFram
-      
-      # Change color of edges
-      mNode <- values$mvTabSub[, c("Child", "color")]
-      colnames(mNode) <- c("id", "color.border")
-      nodeFram <- left_join(vNetOut$x$nodes, mNode)
-      nodeFram$color.border[is.na(nodeFram$color.border)] <- brewer.pal(6, "Greens")[1]
-      nodeFram$color.background <- nodeFram$color.border
-      nodeFram$color.highlight <- 'red'
-      vNetOut$x$nodes <- nodeFram
-      
-    }
-  }
+  req(dendro_dat())
   
-  vNetOut %>%
+  dendro_dat() %>%
     visOptions(
       autoResize = T,
       height = "100%",
@@ -303,7 +286,9 @@ output$heatmapPlot <- renderPlotly({
 
 # Render stability statistics####
 output$stabStats <- renderUI({
+  
   if(values$nodeSel %in% names(K2res)){
+    
     bootProb <- K2res[[values$nodeSel]]$bootP
     nodeStab <- K2res[[values$nodeSel]]$stability$node
     sampStab <- K2res[[values$nodeSel]]$stability$clusters
@@ -311,9 +296,13 @@ output$stabStats <- renderUI({
     outNode <- paste0("<br> Node Stability: <b>", signif(nodeStab, 2), "</b> <br>")
     outStab <- paste0("Cluster Stability: <br> &emsp; Group 1: <b>", signif(sampStab[1], 2), "</b> &emsp; Group 2: <b>",  signif(sampStab[2], 2))
     HTML(paste(outBoot, outNode, outStab))
+    
   } else {
+    
     HTML("")
+    
   }
+  
 })
 
 #############################################
@@ -338,7 +327,7 @@ output$infoTab <- renderDataTable({
   infoSub <- infoSub[ , c(ncol(infoSub), seq(ncol(infoSub) - 1)) ]
 
   datatable(
-    infoSub,
+    data.table.round(infoSub),
     rownames = FALSE,
     extensions = 'Buttons',
     selection = "none",
@@ -354,7 +343,7 @@ output$infoTab <- renderDataTable({
       )
     )
   )
-
+  
 })
 
 #############################################
@@ -406,7 +395,7 @@ if(!is.null(K2res[[1]]$modTests)) {
     K2modTestFram$`Q Value` <- signif(K2modTestFram$`Q Value`, 2)
 
     datatable(
-      K2modTestFram,
+      data.table.round(K2modTestFram, digits=7),
       rownames = FALSE,
       extensions = 'Buttons',
       escape = FALSE,
@@ -421,20 +410,20 @@ if(!is.null(K2res[[1]]$modTests)) {
         searching = TRUE,
         columnDefs = list(list(className = 'dt-center', targets = "_all"))
       ), selection = "none")
-
+    
   })
-
+  
 } else {
-
+  
   output$metaVarTab <- renderDataTable({
-
+    
     # Set null data table
     values$mvTab <- NULL
     K2modTestFramNULL <- data.frame("No meta-variable results.");
     colnames(K2modTestFramNULL) <- NULL
-
+    
     datatable(
-      K2modTestFramNULL,
+      data.table.round(K2modTestFramNULL, digits=7),
       rownames = F,
       extensions = 'Buttons',
       escape = FALSE,
@@ -447,14 +436,14 @@ if(!is.null(K2res[[1]]$modTests)) {
         searching = TRUE,
         columnDefs = list(list(className = 'dt-left', targets = "_all"))
       ), selection = "single")
-
+    
   })
-
+  
 }
 
 # Clicks to visualize dendrogram by Q-values####
 observeEvent(input$visualizeQvalues,  {
-
+  
   if(!is.null(values$mvTab)) {
 
     mvTabSub <- values$mvTab
@@ -474,16 +463,37 @@ observeEvent(input$visualizeQvalues,  {
     })
 
     # Add 2 values
-    values$mvTabSub <- mvTabSub
+    vNetOut <- dendro_dat()
+    
+    # Change width of edges
+    mEdge <- mvTabSub[, c("Parent", "Child", "width")][!duplicated(mvTabSub[, c("Parent", "Child")]),]
+    colnames(mEdge) <- c("from", "to", "width")
+    edgeFram <- merge(vNetOut$x$edges, mEdge, all.x = TRUE, sort = FALSE)
+    edgeFram$width[is.na(edgeFram$width)] <- 1
+    edgeFram$color.inherit <- 'to'
+    vNetOut$x$edges <- edgeFram
+    
+    # Change color of edges
+    mNode <- mvTabSub[, c("Child", "color")][!duplicated(mvTabSub[, c("Child")]),]
+    colnames(mNode) <- c("id", "color.border")
+    nodeFram <- left_join(vNetOut$x$nodes, mNode)
+    nodeFram$color.border[is.na(nodeFram$color.border)] <- brewer.pal(6, "Greens")[1]
+    nodeFram$color.background <- nodeFram$color.border
+    nodeFram$color.highlight <- 'red'
+    vNetOut$x$nodes <- nodeFram
+    
+    # Update the data
+    dendro_dat(vNetOut)
+    
   }
-
+  
 }, ignoreInit = TRUE)
 
 # Reset the dendrogram ####
 observeEvent(input$resetQvalues,  {
 
-  values$mvTabSub <- NULL
-
+  dendro_dat(vNetOut)
+  
 })
 
 #############################################
@@ -503,7 +513,7 @@ output$DGE <- DT::renderDataTable({
 
   # Create data table obect
   datatable(
-    DGETABLE,
+    data.table.round(DGETABLE),
     rownames = FALSE,
     extensions = 'Buttons',
     escape = FALSE,
@@ -536,7 +546,7 @@ output$DGE <- DT::renderDataTable({
           action = DT::JS(
             paste0(
               "function ( e, dt, node, config ) {",
-                "Shiny.setInputValue('geneHelp', true, {priority: 'event'});",
+              "Shiny.setInputValue('geneHelp', true, {priority: 'event'});",
               "}"
             )
           )
@@ -547,7 +557,7 @@ output$DGE <- DT::renderDataTable({
           action = DT::JS(
             paste0(
               "function ( e, dt, node, config ) {",
-                "Shiny.setInputValue('geneDL', true, {priority: 'event'});",
+              "Shiny.setInputValue('geneDL', true, {priority: 'event'});",
               "}"
             )
           )
@@ -557,7 +567,7 @@ output$DGE <- DT::renderDataTable({
     formatRound(c("Mean", "Diff"), digits = 2) %>%
     formatSignif(c("P Value", "FDR"), digits = 2) %>%
     formatStyle(c("Gene", "Direction", "Mean"), `border-right` = "solid 2px")
-
+    
 })
 
 # Functions for help and download the data ####
@@ -792,8 +802,8 @@ output$HE <- renderDataTable({
   colnames(ENRTABLE) <- gsub("_", "<br>", colnames(ENRTABLE))
 
   # Create DT object
-  outDT <- datatable(
-    ENRTABLE,
+  datatable(
+    data.table.round(ENRTABLE),
     rownames = FALSE,
     extensions = 'Buttons',
     escape = FALSE,
@@ -829,18 +839,18 @@ output$HE <- renderDataTable({
           extend = "collection",
           text = 'Help',
           action = DT::JS(
-          "function ( e, dt, node, config ) {",
+            "function ( e, dt, node, config ) {",
             "Shiny.setInputValue('hyperHelp', true, {priority: 'event'});",
-          "}"
+            "}"
           )
         ),
         list(
           extend = "collection",
           text = 'Download All Results',
           action = DT::JS(
-          "function ( e, dt, node, config ) {",
+            "function ( e, dt, node, config ) {",
             "Shiny.setInputValue('hyperDL', true, {priority: 'event'});",
-          "}"
+            "}"
           )
         )
       )

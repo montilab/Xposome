@@ -1,7 +1,6 @@
 
 # The main page layout ####
 output$pageStub <- renderUI({
-  
   fluidRow(
     id="navbar-page", style="background: white; padding-bottom: 20px",
     
@@ -68,7 +67,6 @@ output$pageStub <- renderUI({
       )
     )
   )
-    
 })
 
 # Go back to home page when the logo link is clicked on ####

@@ -18,6 +18,7 @@ library(shinyBS)
 library(shinycssloaders)
 library(shinythemes)
 library(DT)
+library(tictoc)
 library(tidyverse)
 library(reshape2)
 library(promises)
@@ -91,11 +92,20 @@ ui <- bootstrapPage(
     
     ###The main body#####
     fluidRow(
-      id="main-page", style="background: white;",
+      class="main-page", style="background: white;",
       
-      column(
-        width=12,
-        uiOutput("pageStub") %>% withSpinner(color="#0dc5c1", type=4, proxy.height="200px")
+      div(
+        id = "loading-content",
+        div(class="loader", "Loading..."),
+        h4("Loading...", style="color: white; opacity: 0.9;")
+      ),
+      
+      hidden(
+        column(
+          width=12,
+          id = "app-content",
+          uiOutput("pageStub")
+        )
       )
     ),
     
@@ -108,13 +118,12 @@ ui <- bootstrapPage(
         div(class="text-md-center", 
           div(class="copyright",
             p("The Xposome Project: Developed by Monti Lab at Boston University"),
-            HTML("&copy; Monti Lab &diams; 2017 &diams; All rights reserved")
+            HTML(paste0("&copy; Monti Lab &diams; ", as.numeric(format(Sys.Date(), "%Y")), " &diams; All Rights Reserved"))
           )
         )
       )
     )
   )
-  
 )
 
 ##Define Server Login####
@@ -135,7 +144,10 @@ server <- function(input, output, session) {
   #Read in the data###
   if(fname %in% c("home", "about", "contact", "sign_in")){
     
+     # Hide loader####
+    shinyjs::hide(id = "loading-content", anim = TRUE, animType = "fade")    
     source(paste0(fname, ".R"), local=TRUE) # load and run server code for this page
+    shinyjs::show(id = "app-content", anim = TRUE, animType = "fade")    
     
   }else{
     
@@ -146,10 +158,10 @@ server <- function(input, output, session) {
     # Preproccessing data #####
     source("startup_1.R", local=TRUE)
     source("startup_2.R", local=TRUE)
-    
+  
     # Run the app###
     source("main_app.R", local=TRUE)
-    
+
     # Server logic ####
     source("server_annotation.R", local=TRUE)
     source("server_chemical.R", local=TRUE)
@@ -157,6 +169,12 @@ server <- function(input, output, session) {
     source("server_heatmap.R", local=TRUE)
     source("server_taxonomic_clustering.R", local=TRUE)
     source("server_compare_multiple.R", local=TRUE)
+    
+    # Hide loader####
+    shinyjs::hide(id = "loading-content", anim = TRUE, animType = "fade")  
+    
+    # Show content####
+    shinyjs::show(id = "app-content", anim = TRUE, animType = "fade")  
     
   }  
 }
