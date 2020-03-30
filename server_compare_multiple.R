@@ -8,8 +8,8 @@
   # Remove vehicle from mods and make a data frame
   mods <- mods[names(mods) != "Vehicle"]
   mods <- data.frame(mods = as.character(mods), GROUP = names(mods), stringsAsFactors = F)
-  
   modStats <- NULL
+  
   if(length(unique(mods$mods)) > 1) {
     
     # If replicates in data get unique cohorts
@@ -296,6 +296,10 @@ observeEvent(input$compareReset, {
   values$nodeSelHEMulti <- c()
   values$nodeSelDGEMulti <- c()
   values$dgeHitsMulti <- c()
+  values$clusterRes <- NULL
+  values$EnrRes <- NULL
+  values$GeneMultip <- NULL
+  values$GeneSetMultip <- NULL
   
 })
 
@@ -343,6 +347,7 @@ observeEvent(input$compareGo, {
       }
       
       return(HYPERtab)
+      
     }))
     
     # Add type of test
@@ -447,70 +452,95 @@ observeEvent(input$compareGo, {
 # Render geneTable from multiple group analysis
 output$DGEmulti <- renderDataTable({
 
-  req(values$clusterRes)
+  if(!is.null(values$clusterRes)){
 
-  clusterRes = values$clusterRes;
-  nodegroupID = values$nodeSelHEMulti;
-  geneList = values$geneListMulti;
+    clusterRes = values$clusterRes;
+    nodegroupID = values$nodeSelHEMulti;
+    geneList = values$geneListMulti;
+    
+    # Get exact match for nodeID
+    if (!is.null(nodegroupID)) nodeID <- paste0("^", nodegroupID, "$")
+    if (!is.null(geneList)) geneList <- paste(paste0("^", geneList, "$"), collapse = "|")
   
-  # Get exact match for nodeID
-  if (!is.null(nodegroupID)) nodeID <- paste0("^", nodegroupID, "$")
-  if (!is.null(geneList)) geneList <- paste(paste0("^", geneList, "$"), collapse = "|")
-
-  # Create data table obect
-  datatable(
-    clusterRes,
-    rownames = F,
-    extensions = 'Buttons',
-    escape = F,
-    filter = list(position = 'top', clear = FALSE),
-    options = list(
-      columnDefs = list(
-        list(searchable = FALSE,
-             orderable = FALSE,
-             width = "3px",
-             targets = c(6, 7, 8)
+    # Create data table obect
+    datatable(
+      clusterRes,
+      rownames = F,
+      extensions = 'Buttons',
+      escape = F,
+      filter = list(position = 'top', clear = FALSE),
+      options = list(
+        columnDefs = list(
+          list(searchable = FALSE,
+               orderable = FALSE,
+               width = "3px",
+               targets = c(6, 7, 8)
+          ),
+          list(className = 'dt-center', targets = 1:8),
+          list(className = 'dt-left', targets = 0)
         ),
-        list(className = 'dt-center', targets = 1:8),
-        list(className = 'dt-left', targets = 0)
-      ),
-      search = list(regex = TRUE),
-      searchCols = list(
-        list(search = geneList),
-        list(search = nodegroupID),
-        NULL, NULL, NULL, NULL, NULL
-      ),
-      scrollX = TRUE,
-      scrollY = '400px',
-      dom = 'Brtp',
-      paging = T,
-      pageLength = 50,
-      buttons = list(
-        list(
-          extend = "collection",
-          text = 'Help',
-          action = DT::JS(
-            "function ( e, dt, node, config ) {",
-              "Shiny.setInputValue('geneHelpMulti', true, {priority: 'event'});",
-            "}"
-          )
+        search = list(regex = TRUE),
+        searchCols = list(
+          list(search = geneList),
+          list(search = nodegroupID),
+          NULL, NULL, NULL, NULL, NULL
         ),
-        list(
-          extend = "collection",
-          text = 'Download All Results',
-          action = DT::JS(
-            "function ( e, dt, node, config ) {",
-              "Shiny.setInputValue('geneDLMulti', true, {priority: 'event'});",
-            "}"
+        scrollX = TRUE,
+        scrollY = '400px',
+        dom = 'Brtp',
+        paging = T,
+        pageLength = 50,
+        buttons = list(
+          list(
+            extend = "collection",
+            text = 'Help',
+            action = DT::JS(
+              "function ( e, dt, node, config ) {",
+                "Shiny.setInputValue('geneHelpMulti', true, {priority: 'event'});",
+              "}"
+            )
+          ),
+          list(
+            extend = "collection",
+            text = 'Download All Results',
+            action = DT::JS(
+              "function ( e, dt, node, config ) {",
+                "Shiny.setInputValue('geneDLMulti', true, {priority: 'event'});",
+              "}"
+            )
           )
         )
-      )
-    ),
-    selection = "single") %>%
-    formatRound(c("Mean", "Diff"), digits = 2) %>%
-    formatSignif(c("P Value", "FDR"), digits = 2) %>%
-    formatStyle(c("Gene", "NodeGroup", "Mean"), `border-right` = "solid 2px")
+      ),
+      selection = "single") %>%
+      formatRound(c("Mean", "Diff"), digits = 2) %>%
+      formatSignif(c("P Value", "FDR"), digits = 2) %>%
+      formatStyle(c("Gene", "NodeGroup", "Mean"), `border-right` = "solid 2px")
 
+  }else{
+    
+    geTable <- data.frame(Warning="\n No node selected \n", stringsAsFactors = FALSE)
+    colnames(geTable) <- c("Warning Message")
+    
+    datatable(
+      geTable,
+      rownames = FALSE,
+      extensions = 'Buttons',
+      selection = "none",
+      options = list(
+        dom = 'T',
+        search = list(regex = TRUE, caseInsensitive = FALSE),
+        scrollX = TRUE,
+        scrollY = "400px",
+        paging = FALSE,
+        searching = TRUE,
+        columnDefs = list(
+          list(className = 'dt-center', targets = "_all")
+        )
+      )
+    )
+    
+  }
+  
 })
 
 # Functions for help and download the data
@@ -687,11 +717,11 @@ output$genePlotCluster <- renderPlotly({
         scale_fill_manual(values = colMan) +
         scale_x_discrete() +
         theme_bw() +
-        ggtitle(gene) + 
+        ggtitle(gene) + ylab("Expression") +
         theme(
-          plot.margin = margin(10, 10, 10, 10),
+          plot.margin = margin(10, 40, 10, 40),
           legend.position = "none",
-          axis.text.x = element_text(angle = 45, hjust = 0, size = 15),
+          axis.text.x = element_text(angle = 90, hjust = 0, size = 0, color="white"),
           axis.text.y = element_text(size = 15),
           axis.title.x = element_blank()
         )
@@ -700,6 +730,7 @@ output$genePlotCluster <- renderPlotly({
 
       # Fix xaxis due to a bug in plotly
       whXaxis <- which(grepl("xaxis", names(p$x$layout)))
+      
       for (i in whXaxis) {
         ticktext <- p$x$layout[[i]]$ticktext
         if (length(ticktext) == 1) {
@@ -707,12 +738,15 @@ output$genePlotCluster <- renderPlotly({
           p$x$layout[[i]]$ticktext <- c(ticktext,"")
         }
       }
+      
       return(p)
+      
     }
 
   } else {
 
     text = paste("\n Select a gene above \n to show observation-level expression.")
+    
     hm <- ggplot() +
       annotate("text", x = 0, y = 0, size = 4, label = text) +
       theme_bw() +
@@ -728,6 +762,7 @@ output$genePlotCluster <- renderPlotly({
             panel.grid.major=element_blank(),
             panel.grid.minor=element_blank(),
             plot.background=element_blank())
+    
     ggplotly(hm)
 
   }
@@ -743,77 +778,102 @@ output$genePlotCluster <- renderPlotly({
 # Render table of hyperenrichment ####
 output$HEmulti <- renderDataTable({
 
-  req(values$EnrRes)
+  if(!is.null(values$EnrRes)){
 
-  ENRTABLE = values$EnrRes;
-  nodegroupID = values$nodeSelDGEMulti;
-  dgeHits = values$dgeHitsMulti;
-
-  # Get exact match for nodeID
-  if (!is.null(nodegroupID)) nodeID <- paste0("^", nodegroupID, "$")
-  if (!is.null(dgeHits)) dgeHits <- paste0("^", gsub("; ", "$|^", dgeHits), "$")
-
-  # Add line breaks
-  colnames(ENRTABLE) <- gsub("_", "<br>", colnames(ENRTABLE))
-
-  # Create DT object
-  outDT <- datatable(
-    ENRTABLE,
-    rownames = F,
-    extensions = 'Buttons',
-    escape = FALSE,
-    filter = list(position = 'top', clear = FALSE),
-    options = list(
-      columnDefs = list(
-        list(
-          searchable = FALSE,
-          orderable = FALSE,
-          width = "3px",
-          targets = c(12, 13, 14)
+    ENRTABLE = values$EnrRes;
+    nodegroupID = values$nodeSelDGEMulti;
+    dgeHits = values$dgeHitsMulti;
+  
+    # Get exact match for nodeID
+    if (!is.null(nodegroupID)) nodeID <- paste0("^", nodegroupID, "$")
+    if (!is.null(dgeHits)) dgeHits <- paste0("^", gsub("; ", "$|^", dgeHits), "$")
+  
+    # Add line breaks
+    colnames(ENRTABLE) <- gsub("_", "<br>", colnames(ENRTABLE))
+  
+    # Create DT object
+    outDT <- datatable(
+      ENRTABLE,
+      rownames = F,
+      extensions = 'Buttons',
+      escape = FALSE,
+      filter = list(position = 'top', clear = FALSE),
+      options = list(
+        columnDefs = list(
+          list(
+            searchable = FALSE,
+            orderable = FALSE,
+            width = "3px",
+            targets = c(12, 13, 14)
+          ),
+          list(visible = FALSE, targets = 11),
+          list(className = 'dt-center', targets = 1:14),
+          list(className = 'dt-left', targets = 0)
         ),
-        list(visible = FALSE, targets = 11),
-        list(className = 'dt-center', targets = 1:14),
-        list(className = 'dt-left', targets = 0)
-      ),
-      search = list(regex = TRUE),
-      searchCols = list(
-        list(search = dgeHits),
-        list(search = nodegroupID),
-        NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL
-      ),
-      scrollX = TRUE,
-      scrollY = '400px',
-      dom = 'Brtp',
-      paging = T,
-      pageLength = 50,
-      buttons = list(
-        list(
-          extend = "collection",
-          text = 'Help',
-          action = DT::JS(
-            "function ( e, dt, node, config ) {",
-              "Shiny.setInputValue('hyperHelpMulti', true, {priority: 'event'});",
-            "}"
-          )
+        search = list(regex = TRUE),
+        searchCols = list(
+          list(search = dgeHits),
+          list(search = nodegroupID),
+          NULL, NULL, NULL, NULL, NULL,
+          NULL, NULL, NULL, NULL, NULL,
+          NULL, NULL, NULL
         ),
-        list(
-          extend = "collection",
-          text = 'Download All Results',
-          action = DT::JS(
-            "function ( e, dt, node, config ) {",
-              "Shiny.setInputValue('hyperDLMulti', true, {priority: 'event'});",
-            "}"
+        scrollX = TRUE,
+        scrollY = '400px',
+        dom = 'Brtp',
+        paging = T,
+        pageLength = 50,
+        buttons = list(
+          list(
+            extend = "collection",
+            text = 'Help',
+            action = DT::JS(
+              "function ( e, dt, node, config ) {",
+                "Shiny.setInputValue('hyperHelpMulti', true, {priority: 'event'});",
+              "}"
+            )
+          ),
+          list(
+            extend = "collection",
+            text = 'Download All Results',
+            action = DT::JS(
+              "function ( e, dt, node, config ) {",
+                "Shiny.setInputValue('hyperDLMulti', true, {priority: 'event'});",
+              "}"
+            )
           )
         )
-      )
-    ),
-    selection = "single") %>%
-    formatRound(c("Mean<br>ssGSEA", "Diff<br>ssGSEA"), digits = 2) %>%
-    formatSignif(c("P Value<br>Hyper", "FDR<br>Hyper", "P Value<br>ssGSEA", "FDR<br>ssGSEA"), digits = 2)%>%
-    formatStyle(c("Gene Set", "NodeGroup", "N<br>Gene Set", "Mean<br>ssGSEA"), `border-right` = "solid 2px")
+      ),
+      selection = "single") %>%
+      formatRound(c("Mean<br>ssGSEA", "Diff<br>ssGSEA"), digits = 2) %>%
+      formatSignif(c("P Value<br>Hyper", "FDR<br>Hyper", "P Value<br>ssGSEA", "FDR<br>ssGSEA"), digits = 2)%>%
+      formatStyle(c("Gene Set", "NodeGroup", "N<br>Gene Set", "Mean<br>ssGSEA"), `border-right` = "solid 2px")
 
+  }else{
+    
+    enTable <- data.frame(Warning="\n No node selected \n", stringsAsFactors = FALSE)
+    colnames(enTable) <- c("Warning Message")
+
+    datatable(
+      enTable,
+      rownames = FALSE,
+      extensions = 'Buttons',
+      selection = "none",
+      options = list(
+        dom = 'T',
+        search = list(regex = TRUE, caseInsensitive = FALSE),
+        scrollX = TRUE,
+        scrollY = "400px",
+        paging = FALSE,
+        searching = TRUE,
+        columnDefs = list(
+          list(className = 'dt-center', targets = "_all")
+        )
+      )
+    )
+    
+  }
+  
 })
 
 # Functions for help and download the data ####
@@ -901,7 +961,7 @@ observeEvent(input$HEmulti_cell_clicked, {
 # Render plot of hyperenrichment of multiple clusters ####
 output$hePlotCluster <- renderPlotly({
 
-  if (!is.null(values$GeneSetMultip)) {
+  if(!is.null(values$GeneSetMultip)) {
 
     eSet = gSet;
     gene = values$GeneSetMultip;
@@ -989,9 +1049,9 @@ output$hePlotCluster <- renderPlotly({
         theme_bw() +
         ggtitle(gene) + ylab("Enrichment Score") +
         theme(
-          plot.margin = margin(10, 10, 10, 10),
+          plot.margin = margin(10, 40, 10, 40),
           legend.position = "none",
-          axis.text.x = element_text(angle = 45, hjust = 0, size = 15),
+          axis.text.x = element_text(angle = 90, hjust = 0, size = 0, color="white"),
           axis.text.y = element_text(size = 15),
           axis.title.x = element_blank()
         )
@@ -1000,6 +1060,7 @@ output$hePlotCluster <- renderPlotly({
 
       # Fix xaxis due to a bug in plotly
       whXaxis <- which(grepl("xaxis", names(p$x$layout)))
+      
       for (i in whXaxis) {
         ticktext <- p$x$layout[[i]]$ticktext
         if (length(ticktext) == 1) {
@@ -1007,12 +1068,15 @@ output$hePlotCluster <- renderPlotly({
           p$x$layout[[i]]$ticktext <- c(ticktext,"")
         }
       }
+      
       return(p)
+      
     }
 
   } else {
 
     text = paste("\n Select a pathway above \n to show observation-level enrichment. \n")
+    
     hm <- ggplot() +
       annotate("text", x = 0, y = 0, size = 4, label = text) +
       theme_bw() +
@@ -1028,6 +1092,7 @@ output$hePlotCluster <- renderPlotly({
             panel.grid.major=element_blank(),
             panel.grid.minor=element_blank(),
             plot.background=element_blank())
+    
     ggplotly(hm)
 
   }

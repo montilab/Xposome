@@ -1,2 +1,7 @@
 data
+myapp-cache
+rsconnect
+data_clean_up.R
+.Rhistory
 .DS_Store
+

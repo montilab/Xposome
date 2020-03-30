@@ -64,13 +64,16 @@ tagList(
                     
                     tabPanel(
                       title = "Group Members", value="Group_Members",
-                      DT::dataTableOutput(outputId = "infoTab") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+                      br(),
+                      DT::dataTableOutput(outputId = "infoTab") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px"),
+                      checkboxInput(inputId = "viewAll", label = "Display all columns", value = FALSE, width = "100%")
                     ),
                     
                     tabPanel(
                       title = "Meta-Variable Results", value="Meta_Variable_Results",
                       column(
                         width=12,
+                        br(),
                         DT::dataTableOutput(outputId = "metaVarTab") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
                       ),
                       

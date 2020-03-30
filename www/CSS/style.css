@@ -72,21 +72,29 @@ textarea {
   margin: 0;
   font-family: inherit;
   font-size: inherit;
-  line-height: inherit; }
+  line-height: inherit; 
+}
 
 button,
 input {
-  overflow: visible; }
+  overflow: visible; 
+}
 
 button,
 select {
-  text-transform: none; }
+  text-transform: none; 
+}
+
+select option{
+  height: 100px;
+}
 
 button,
 html [type="button"],
 [type="reset"],
 [type="submit"] {
-  -webkit-appearance: button; }
+  -webkit-appearance: button; 
+}
 
 /*---------------------
    style my buttons 
@@ -377,6 +385,7 @@ a.site-link[class=active]{
     padding: 10px 10px 10px 10px;    
     background-color: none;
 	z-index: 9999;
+	height: 600px;
 }
 
 .header-1 .title{

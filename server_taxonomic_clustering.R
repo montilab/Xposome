@@ -17,15 +17,18 @@ output$Match <- renderUI({
   
   req(input$mstring)
   
+  annot_prof <- as.matrix(dat[["Profile Annotation"]])
+  chemicalMat <- infoMat[, which(gsub(" ", "_", colnames(infoMat)) %in% gsub(" ", "_", colnames(annot_prof)))]
+  
   # Find matches in the terminal leafs
-  infoInd <- unique(which(`dim<-`(grepl(input$mstring, infoMat, ignore.case = T), dim(infoMat)), arr.ind=TRUE)[,1])
+  infoInd <- unique(which(`dim<-`(grepl(input$mstring, chemicalMat, ignore.case = T), dim(chemicalMat)), arr.ind=TRUE)[,1])
   
   # Generate string to show
-  showString <- sapply(infoInd, function(row) paste0(paste(paste0(colnames(infoMat), ": ", infoMat[row,]), collapse = ";\n"), "\n"))
+  showString <- sapply(infoInd, function(row) paste0(paste(paste0(colnames(chemicalMat), ": ", chemicalMat[row,]), collapse = ";\n"), "\n"))
   
   # Get number of matches
   nMatches <- paste0(length(infoInd), " matche(s)")
-  valueString <- c("A", rownames(infoMat)[infoInd])
+  valueString <- c("A", rownames(chemicalMat)[infoInd])
   names(valueString) <- c(nMatches, showString)
   
   selectInput(inputId = "mVal", label = "Select a Match:", choices = valueString, selectize = TRUE, width = "100%")
@@ -64,16 +67,24 @@ observeEvent(input$mVal, {
   
   sel <- as.character(vNetOut$x$nodes$id[grep(paste0("^", input$mVal, "<br>|<br>", input$mVal, "<br>|", input$mVal, "$"), vNetOut$x$nodes$title)])
   
-  if(!is.null(input$dendro_selected) & input$dendro_selected != ""){
+  if(length(sel) == 0) { 
     
-    # Select path to a specific member by searching
-    if(!is.null(input$mVal) & input$mVal %in% rownames(info) & !input$dendro_selected %in% sel){
-      pathSel(sel)
-    }
+    pathSel("A") 
     
   }else{
-    
-    pathSel(sel)
+  
+    if(!is.null(input$dendro_selected) & input$dendro_selected != ""){
+      
+      # Select path to a specific member by searching
+      if(!is.null(input$mVal) & input$mVal %in% rownames(info) & !input$dendro_selected %in% sel){
+        pathSel(sel)
+      }
+      
+    }else{
+      
+      pathSel(sel)
+      
+    }
     
   }
   
@@ -86,7 +97,7 @@ dendro_dat <- reactiveVal(vNetOut)
 # Render Dendrogram #####
 output$dendro <- renderVisNetwork({
   
-  req(dendro_dat())
+  req(dendro_dat(), pathSel())
   
   dendro_dat() %>%
     visOptions(
@@ -125,10 +136,15 @@ observeEvent(input$dendro_selected, {
   
   if(is.null(input$dendro_selected) | input$dendro_selected == ""){
     
+    values$nodeSel <- "No Selection"
     updateTextInput(session, inputId = "mstring", value = NA)
-
+    shinyjs::hide(id = "selCov")
+    shinyjs::hide(id = "viewAll")
+                  
   }else{
     
+    shinyjs::show(id = "selCov")
+    shinyjs::show(id = "viewAll")
     node = input$dendro_selected
     sel <- as.character(vNetOut$x$nodes$id[grep(paste0("^", input$mVal, "<br>|<br>", input$mVal, "<br>|", input$mVal, "$"), vNetOut$x$nodes$title)])
     
@@ -314,35 +330,64 @@ output$stabStats <- renderUI({
 # Render table of information for each node####
 output$infoTab <- renderDataTable({
 
-  req(values$nodeSel != "No Selection")
-
-  # Get observations
-  obs1 <- K2res[[values$nodeSel]]$obs[[1]]
-  obs2 <- K2res[[values$nodeSel]]$obs[[2]]
-
-  # Format Cluster information
-  infoSub <- info[c(obs1, obs2), , drop = FALSE]
-  infoSub$Group <- "1"
-  infoSub$Group[rownames(infoSub) %in% obs2] <- "2"
-  infoSub <- infoSub[ , c(ncol(infoSub), seq(ncol(infoSub) - 1)) ]
-
-  datatable(
-    data.table.round(infoSub),
-    rownames = FALSE,
-    extensions = 'Buttons',
-    selection = "none",
-    options = list(
-      dom = 'T<"clear">Blfrtip',
-      search = list(regex = TRUE, caseInsensitive = FALSE),
-      scrollX = TRUE,
-      scrollY = "400px",
-      paging = FALSE,
-      searching = TRUE,
-      columnDefs = list(
-        list(className = 'dt-leftr', targets = "_all")
+  if(values$nodeSel != "No Selection"){
+  
+    # Get observations
+    obs1 <- K2res[[values$nodeSel]]$obs[[1]]
+    obs2 <- K2res[[values$nodeSel]]$obs[[2]]
+  
+    # Format Cluster information
+    infoSub <- info[c(obs1, obs2), , drop = FALSE]
+    infoSub$Group <- "1"
+    infoSub$Group[rownames(infoSub) %in% obs2] <- "2"
+    infoSub <- infoSub[ , c(ncol(infoSub), seq(ncol(infoSub) - 1)) ]
+    
+    if(input$viewAll %in% FALSE){
+      annot_prof <- as.matrix(dat[["Profile Annotation"]])
+      infoDat <- infoSub[, which(gsub(" ", "_", colnames(infoSub)) %in% gsub(" ", "_", c("Group", colnames(annot_prof))))]
+    }else{
+      infoDat <- infoSub
+    }
+    
+    datatable(
+      data.table.round(infoDat),
+      rownames = FALSE,
+      extensions = 'Buttons',
+      selection = "none",
+      options = list(
+        dom = 'T<"clear">Blfrtip',
+        search = list(regex = TRUE, caseInsensitive = FALSE),
+        scrollX = TRUE,
+        scrollY = "400px",
+        paging = FALSE,
+        searching = TRUE,
+        columnDefs = list(
+          list(className = 'dt-left', targets = "_all")
+        )
       )
     )
-  )
+    
+  }else{
+    
+    datatable(
+      data.frame(Warning="\n No node selected. \n", stringsAsFactors = FALSE),
+      rownames = FALSE,
+      extensions = 'Buttons',
+      selection = "none",
+      options = list(
+        dom = 'T',
+        search = list(regex = TRUE, caseInsensitive = FALSE),
+        scrollX = TRUE,
+        scrollY = "400px",
+        paging = FALSE,
+        searching = TRUE,
+        columnDefs = list(
+          list(className = 'dt-center', targets = "_all")
+        )
+      )
+    )
+    
+  }
   
 })
 
@@ -408,7 +453,7 @@ if(!is.null(K2res[[1]]$modTests)) {
         scrollY = "400px",
         paging = FALSE,
         searching = TRUE,
-        columnDefs = list(list(className = 'dt-center', targets = "_all"))
+        columnDefs = list(list(className = 'dt-left', targets = "_all"))
       ), selection = "none")
     
   })
@@ -729,19 +774,15 @@ output$genePlot <- renderPlotly({
         geom_point(aes(colour = Group), size = 3) +
         geom_point(aes(y = Mean), shape = 3, size = 3) +
         facet_grid(~Group2, scales = "free_x") +
-        scale_colour_manual(values = c("Group 1" = "darkorange",
-                                       "Vehicle" = "grey",
-                                       "Group 2" = "darkorchid1")) +
-        scale_fill_manual(values = c("Group 1" = "darkorange",
-                                     "Vehicle" = "grey",
-                                     "Group 2" = "darkorchid1")) +
+        scale_colour_manual(values = c("Group 1" = "darkorange", "Vehicle" = "grey", "Group 2" = "darkorchid1")) +
+        scale_fill_manual(values = c("Group 1" = "darkorange", "Vehicle" = "grey", "Group 2" = "darkorchid1")) +
         scale_x_discrete() +
         theme_bw() +
-        ggtitle(paste0(gene)) +
+        ggtitle(paste0(gene)) + ylab("Expression") +
         theme(
           plot.margin = margin(10, 10, 10, 10),
           legend.position = "none",
-          axis.text.x = element_text(angle = 45, hjust = 0, size = 15),
+          axis.text.x = element_text(angle = 90, hjust = 0, size = 0, color="white"),
           axis.text.y = element_text(size = 15),
           axis.title.x = element_blank()
         )
@@ -750,6 +791,7 @@ output$genePlot <- renderPlotly({
 
       # Fix xaxis due to a bug in plotly
       whXaxis <- which(grepl("xaxis", names(p$x$layout)))
+      
       for (i in whXaxis) {
         ticktext <- p$x$layout[[i]]$ticktext
         if (length(ticktext) == 1) {
@@ -757,7 +799,9 @@ output$genePlot <- renderPlotly({
           p$x$layout[[i]]$ticktext <- c(ticktext,"")
         }
       }
+      
       return(p)
+      
     }
 
   } else {
@@ -965,6 +1009,7 @@ output$pathwayPlot <- renderPlotly({
       } else {
         nams <- pData(eSet)[,cohorts]
       }
+      
       nams[nams == vehicle] <- "Vehicle"
 
       # Create data.frame of expression values
@@ -1019,19 +1064,15 @@ output$pathwayPlot <- renderPlotly({
         geom_point(aes(colour = Group), size = 3) +
         geom_point(aes(y = Mean), shape = 3, size = 3) +
         facet_grid(~Group2, scales = "free_x") +
-        scale_colour_manual(values = c("Group 1" = "darkorange",
-                                       "Vehicle" = "grey",
-                                       "Group 2" = "darkorchid1")) +
-        scale_fill_manual(values = c("Group 1" = "darkorange",
-                                     "Vehicle" = "grey",
-                                     "Group 2" = "darkorchid1")) +
+        scale_colour_manual(values = c("Group 1" = "darkorange", "Vehicle" = "grey", "Group 2" = "darkorchid1")) +
+        scale_fill_manual(values = c("Group 1" = "darkorange", "Vehicle" = "grey", "Group 2" = "darkorchid1")) +
         scale_x_discrete() +
         theme_bw() +
         ggtitle(gene) + ylab("Enrichment Score") +
         theme(
           plot.margin = margin(10, 10, 10, 10),
           legend.position = "none",
-          axis.text.x = element_text(angle = 45, hjust = 0, size = 15),
+          axis.text.x = element_text(angle = 90, hjust = 0, size = 0, color="white"),
           axis.text.y = element_text(size = 15),
           axis.title.x = element_blank()
         )
@@ -1040,6 +1081,7 @@ output$pathwayPlot <- renderPlotly({
 
       # Fix xaxis due to a bug in plotly
       whXaxis <- which(grepl("xaxis", names(p$x$layout)))
+      
       for (i in whXaxis) {
         ticktext <- p$x$layout[[i]]$ticktext
         if (length(ticktext) == 1) {
@@ -1047,13 +1089,16 @@ output$pathwayPlot <- renderPlotly({
           p$x$layout[[i]]$ticktext <- c(ticktext,"")
         }
       }
+      
       return(p)
+      
     }
 
 
   } else {
 
     text <- paste("\n Select a pathway above \n to show observation-level enrichment. \n")
+    
     hm <- ggplot() +
       annotate("text", x = 0, y = 0, size = 4, label = text) +
       theme_bw() +
@@ -1069,7 +1114,9 @@ output$pathwayPlot <- renderPlotly({
             panel.grid.major=element_blank(),
             panel.grid.minor=element_blank(),
             plot.background=element_blank())
+    
     ggplotly(hm)
+    
   }
 })
 
