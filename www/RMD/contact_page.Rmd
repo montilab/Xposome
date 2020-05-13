@@ -1,0 +1,21 @@
+---
+title: "Contact Page"
+output:
+  html_document:
+  toc: true
+  theme: united
+---
+
+# Questions? Comments?
+
+</br>
+
+<a href="mailto:rchau88@bu.edu">Email us</a>
+
+</br>
+              
+This project is supported by Superfund Research Program at Boston University ([BUSRP](http://www.bu.edu/sph/research/research-landing-page/superfund-research-program-at-boston-university), [NIH/LINCS](http://www.lincsproject.org), and [Find the Cause Breast Cancer Foundation](http://findthecausebcf.org))
+
+</br>
+
+<img src="IMAGES/logo.png" style="width: 100%; height:100%;">

@@ -1,36 +1,17 @@
 
 
-/*//////////////////////////////////////////////////////////////////
-[ RESTYLE TAG ]*/
 
-body, html {
-  height: 100%;
-}
-
-/*---------------------------------------------*/
-
-input:focus::-webkit-input-placeholder { color:transparent; }
-input:focus:-moz-placeholder { color:transparent; }
-input:focus::-moz-placeholder { color:transparent; }
-input:focus:-ms-input-placeholder { color:transparent; }
-
-input::-webkit-input-placeholder {color: #999999;}
-input:-moz-placeholder {color: #999999;}
-input::-moz-placeholder {color: #999999;}
-input:-ms-input-placeholder {color: #999999;}
 
 /*//////////////////////////////////////////////////////////////////
-[ login ]*/
+[ login ]*/ 
 
-.limiter {
-  width: 100%;
-  margin: 0;
-  font-family: Arial;
+.signin-page {
+    margin: 0 0 0 0;
+	padding: 20px 20px 20px 20px;
 }
 
-.container-login100 {
-  width: 100%;  
-  min-height: 100vh;
+.login-container {
+  padding: 0 0 0 0;
   display: -webkit-box;
   display: -webkit-flex;
   display: -moz-box;
@@ -39,41 +20,27 @@ input:-ms-input-placeholder {color: #999999;}
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  background: #ebeeef;
-}
-
-
-.wrap-login100 {
-  width: 670px;
-  background: #fff;
   border-radius: 10px;
-  overflow: hidden;
-  position: relative;
+  border: 2px solid lightgray;
 }
 
 /*==================================================================
 [ Title form ]*/
-.login100-form-title {
+
+.login-form {
   width: 100%;
-  position: relative;
-  z-index: 1;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -moz-box;
-  display: -ms-flexbox;
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: column;
-  align-items: center;
+  display: table;
+  table-layout: fixed; 
+  background-color: #08306b;
+  padding: 70px 15px 70px 15px;
+  border-top-right-radius: 8px;
+  border-top-left-radius: 8px;
+  border-bottom-right-radius: 1px;
+  border-bottom-left-radius: 1px;}
 
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
-
-  padding: 70px 15px 74px 15px;
-}
-
-.login100-form-title-1 {
+.login-form-title {
+  float: none;
+  display: table-cell;
   font-family: Arial;
   font-size: 30px;
   color: #fff;
@@ -82,135 +49,59 @@ input:-ms-input-placeholder {color: #999999;}
   text-align: center;
 }
 
-.login100-form-title::before {
-  content: "";
-  display: block;
-  position: absolute;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  background-color: #08306b;
-}
-
-
 /*==================================================================
 [ Form ]*/
 
-.login100-form {
+.login-validate-form {
   width: 100%;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -moz-box;
-  display: -ms-flexbox;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  padding: 43px 88px 53px 190px;
+  margin: 30px 20px 50px 20px;
 }
 
 
 /*------------------------------------------------------------------
 [ Input ]*/
 
-.wrap-input100 {
+.wrap-input {
   width: 100%;
-  position: relative;
+  display: table;
+  table-layout: fixed; 
   border-bottom: 1px solid #b2b2b2;
-}
-
-.label-input100 {
-  font-family: Arial;
-  font-size: 15px;
-  color: #808080;
-  line-height: 1.2;
-  text-align: right;
-
-  position: absolute;
-  top: 14px;
-  left: -105px;
-  width: 80px;
+  margin-bottom: 20px;
 }
 
 /*---------------------------------------------*/
-.input100 {
+
+.logininput {
+  width: 100%;
+  float: none;
+  display: table-cell;
+  vertical-align: center;
   font-family: Arial;
   font-size: 15px;
   color: #555555;
-  line-height: 1.2;
-
-  display: block;
-  width: 100%;
   background: transparent;
-  padding: 0 5px;
-}
-
-.focus-input100 {
-  position: absolute;
-  display: block;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-}
-
-.focus-input100::before {
-  content: "";
-  display: block;
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 0;
-  height: 1px;
-
-  -webkit-transition: all 0.6s;
-  -o-transition: all 0.6s;
-  -moz-transition: all 0.6s;
-  transition: all 0.6s;
-
-  background: #57b846;
-}
-
-
-/*---------------------------------------------*/
-input.input100 {
-  height: 45px;
+  height: 50px;
   outline: none;
   border: none;
 }
 
-
-.input100:focus + .focus-input100::before {
-  width: 100%;
-}
-
-.has-val.input100 + .focus-input100::before {
-  width: 100%;
+.login-error-message{
+	color: red;
+	font-weight: bold;
+	text-align: center;
+	padding: 30px 0 30px 0;
 }
 
 /*------------------------------------------------------------------
 [ Button ]*/
-.container-login100-form-btn {
+
+.login-form-btn-container {
   width: 100%;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -moz-box;
-  display: -ms-flexbox;
-  display: flex;
-  flex-wrap: wrap;
+  display: table;
+  table-layout: fixed;
 }
 
-.login100-form-btn {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -moz-box;
-  display: -ms-flexbox;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0 20px;
+.login-btn {
   min-width: 160px;
   height: 50px;
   background-color: rgba(54,84,99,0.7);
@@ -220,44 +111,14 @@ input.input100 {
   font-size: 16px;
   color: #fff;
   line-height: 1.2;
-
-  -webkit-transition: all 0.4s;
-  -o-transition: all 0.4s;
-  -moz-transition: all 0.4s;
-  transition: all 0.4s;
 }
 
-.login100-form-btn:hover {
+.login-btn:hover {
   background-color: #08306b;
   color: white;
 }
 
-.login100-form-btn:focus {
+.login-btn:focus {
   background-color: #08306b;
   color: white;
-}
-
-
-/*------------------------------------------------------------------
-[ Responsive ]*/
-
-@media (max-width: 576px) {
-  .login100-form {
-    padding: 43px 15px 57px 117px;
-  }
-}
-
-@media (max-width: 480px) {
-  .login100-form {
-    padding: 43px 15px 57px 15px;
-  }
-
-  .label-input100 {
-    text-align: left;
-    position: unset;
-    top: unset;
-    left: unset;
-    width: 100%;
-    padding: 0 5px;
-  }
 }
