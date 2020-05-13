@@ -43,7 +43,9 @@ fluidRow(
         fluidRow(
           column(
             width=4,
-            selectInput(inputId = "marker_gene", label = "Select a gene:", choices = "")
+            shinyjs::disabled(
+              selectInput(inputId = "marker_gene", label = "Select a gene:", choices = "")
+            )
           )
         ),
         
@@ -51,9 +53,7 @@ fluidRow(
           column(
             width=12,
             br(),
-            shinyjs::disabled(
-              actionButton(inputId = "de_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
-            )
+            actionButton(inputId = "de_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
           )
         )
       ),
@@ -86,7 +86,9 @@ fluidRow(
           
           column(
             width=4,
-            selectInput(inputId="marker_gs", label="Select a gene set:", choices = "")
+            shinyjs::disabled(
+              selectInput(inputId="marker_gs", label="Select a gene set:", choices = "")
+            )
           )
         ),
         
@@ -94,9 +96,7 @@ fluidRow(
           column(
             width=12,
             br(),
-            shinyjs::disabled(
-              actionButton(inputId = "gs_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
-            )
+            actionButton(inputId = "es_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
           )
         )
       ),
@@ -116,7 +116,9 @@ fluidRow(
           
           column(
             width=4,
-            selectInput(inputId = "marker_conn", label = "Select a gene set:", choices = "")
+            shinyjs::disabled(
+              selectInput(inputId = "marker_conn", label = "Select a gene set:", choices = "")
+            )
           )
         ),
         
@@ -124,9 +126,7 @@ fluidRow(
           column(
             width=12,
             br(),
-            shinyjs::disabled(
-              actionButton(inputId = "conn_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
-            )
+            actionButton(inputId = "conn_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
           )
         )
       )
@@ -134,12 +134,15 @@ fluidRow(
   ),
   
   conditionalPanel(
-    condition = "input.de_generate >= 1 | input.gs_generate >= 1 | input.conn_generate >= 1",
+    condition = "input.de_generate >= 1 | input.es_generate >= 1 | input.conn_generate >= 1",
     
     fluidRow(
       column(
         width=12,
-        plotlyOutput(outputId = "marker_plot_1") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="300px")
+        div(class="text-md-right",
+            downloadButton(outputId = "marker_download_pdf", label = "Download pdf", class="mybuttons"),
+            downloadButton(outputId = "marker_download_png", label = "Download png", class="mybuttons")
+        )
       )
     ),
     
@@ -148,26 +151,25 @@ fluidRow(
     fluidRow(
       column(
         width=12,
-        plotlyOutput(outputId = "marker_plot_2")
-      )
-    ),
-    
-    br(),
-    
-    fluidRow(
+        plotOutput(outputId = "marker_plot_1") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+      ),
+      
       column(
         width=12,
-        plotlyOutput(outputId = "marker_plot_3")
-      )
-    ),
-    
-    br(),
-    
-    fluidRow(
+        plotOutput(outputId = "marker_plot_2")
+      ),
+      
+      column(
+        width=12,
+        if(experimental_design() == "Multiple replicates"){
+          plotOutput(outputId = "marker_plot_3")
+        }
+      ),
+      
       column(
         width=12,
         uiOutput(outputId = "marker_table_header"),
-        DT::dataTableOutput(outputId = "marker_table") 
+        DT::dataTableOutput(outputId = "marker_table") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
       )
     )
   )

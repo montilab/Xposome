@@ -1,7 +1,9 @@
 
 
-#Taxonomic Clustering Page####
-tagList(
+#Taxonomic Compare Multiple Page####
+div(
+  class="portal-compare-multiple",
+  
   fluidRow(
     class="col-container-3",
     
@@ -43,7 +45,7 @@ tagList(
           div(class="title", "Differential Analysis Results"),
           div(class="content",
               DT::dataTableOutput(outputId = "DGEmulti")
-        )
+          )
       )
     )
   ),

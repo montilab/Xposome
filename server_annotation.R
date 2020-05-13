@@ -5,17 +5,18 @@ output$annotation_table <- DT::renderDataTable({
    
   req(input$annot_table_selection) 
   
+  ## Hide loader and show content ####
+  shinyjs::hide(id = "loading-annotation", anim = TRUE, animType = "fade")
+  
   if(input$annot_table_selection == "Chemicals"){
-   
-      table <- dat[["Chemical Annotation"]]
-      
+    
+    chemical_dat() 
+    
   }else if(input$annot_table_selection == "Samples"){
     
-      table <- dat[["Profile Annotation"]]
-      
+    profile_dat()
+    
   }
-  
-  return(data.table.round(table))
   
 }, escape = FALSE, extensions = 'Buttons', server = TRUE, rownames=FALSE, selection = "none",
 options = list(

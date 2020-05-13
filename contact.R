@@ -4,18 +4,15 @@
 output$pageStub <- renderUI({
   
   #####<!-- START CONTRACT PAGE -->
-  div(
-    id="home-page",
+  fluidRow(
+    class="contact-page",
     
-    tags$section(
-      class="header-section", style="background: white;",
-      fluidRow(
-        column(
-          width=12,
-          includeHTML("contact.html")
-        )
-      )
+    column(
+      width=12,
+      
+      includeMarkdown(paste0("www/RMD/contact_page.Rmd"))
     )
+    
   )#####<!-- END CONTRACT PAGE -->
 
 })

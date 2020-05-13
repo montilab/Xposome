@@ -450,7 +450,7 @@ observeEvent(input$compareGo, {
 #############################################
 
 # Render geneTable from multiple group analysis
-output$DGEmulti <- renderDataTable({
+output$DGEmulti <- DT::renderDataTable({
 
   if(!is.null(values$clusterRes)){
 
@@ -466,18 +466,15 @@ output$DGEmulti <- renderDataTable({
     datatable(
       clusterRes,
       rownames = F,
-      extensions = 'Buttons',
       escape = F,
+      selection = "single",
+      extensions = 'Buttons',
       filter = list(position = 'top', clear = FALSE),
       options = list(
         columnDefs = list(
-          list(searchable = FALSE,
-               orderable = FALSE,
-               width = "3px",
-               targets = c(6, 7, 8)
-          ),
+          list(className = 'dt-left', targets = 0),
           list(className = 'dt-center', targets = 1:8),
-          list(className = 'dt-left', targets = 0)
+          list(searchable = FALSE, orderable = FALSE, targets = c(6, 7, 8))
         ),
         search = list(regex = TRUE),
         searchCols = list(
@@ -510,8 +507,7 @@ output$DGEmulti <- renderDataTable({
             )
           )
         )
-      ),
-      selection = "single") %>%
+      )) %>%
       formatRound(c("Mean", "Diff"), digits = 2) %>%
       formatSignif(c("P Value", "FDR"), digits = 2) %>%
       formatStyle(c("Gene", "NodeGroup", "Mean"), `border-right` = "solid 2px")
@@ -527,15 +523,8 @@ output$DGEmulti <- renderDataTable({
       extensions = 'Buttons',
       selection = "none",
       options = list(
-        dom = 'T',
-        search = list(regex = TRUE, caseInsensitive = FALSE),
-        scrollX = TRUE,
-        scrollY = "400px",
-        paging = FALSE,
-        searching = TRUE,
-        columnDefs = list(
-          list(className = 'dt-center', targets = "_all")
-        )
+        dom = 'T',       
+        columnDefs = list(list(className = 'dt-center', targets = "_all"))
       )
     )
     
@@ -776,7 +765,7 @@ output$genePlotCluster <- renderPlotly({
 #############################################
 
 # Render table of hyperenrichment ####
-output$HEmulti <- renderDataTable({
+output$HEmulti <- DT::renderDataTable({
 
   if(!is.null(values$EnrRes)){
 
@@ -795,20 +784,16 @@ output$HEmulti <- renderDataTable({
     outDT <- datatable(
       ENRTABLE,
       rownames = F,
-      extensions = 'Buttons',
       escape = FALSE,
+      extensions = 'Buttons',
+      selection = "single",
       filter = list(position = 'top', clear = FALSE),
       options = list(
         columnDefs = list(
-          list(
-            searchable = FALSE,
-            orderable = FALSE,
-            width = "3px",
-            targets = c(12, 13, 14)
-          ),
-          list(visible = FALSE, targets = 11),
+          list(className = 'dt-left', targets = 0),
           list(className = 'dt-center', targets = 1:14),
-          list(className = 'dt-left', targets = 0)
+          list(searchable = FALSE, orderable = FALSE, targets = c(12, 13, 14)),
+          list(visible = FALSE, targets = 11)
         ),
         search = list(regex = TRUE),
         searchCols = list(
@@ -843,8 +828,7 @@ output$HEmulti <- renderDataTable({
             )
           )
         )
-      ),
-      selection = "single") %>%
+      )) %>%
       formatRound(c("Mean<br>ssGSEA", "Diff<br>ssGSEA"), digits = 2) %>%
       formatSignif(c("P Value<br>Hyper", "FDR<br>Hyper", "P Value<br>ssGSEA", "FDR<br>ssGSEA"), digits = 2)%>%
       formatStyle(c("Gene Set", "NodeGroup", "N<br>Gene Set", "Mean<br>ssGSEA"), `border-right` = "solid 2px")
@@ -861,14 +845,7 @@ output$HEmulti <- renderDataTable({
       selection = "none",
       options = list(
         dom = 'T',
-        search = list(regex = TRUE, caseInsensitive = FALSE),
-        scrollX = TRUE,
-        scrollY = "400px",
-        paging = FALSE,
-        searching = TRUE,
-        columnDefs = list(
-          list(className = 'dt-center', targets = "_all")
-        )
+        columnDefs = list(list(className = 'dt-center', targets = "_all"))
       )
     )
     
@@ -931,8 +908,7 @@ observeEvent(input$HEmulti_cell_clicked, {
     
     # Get Value
     hyperVal <- gsub("<label for='|'>&#9992;</label>|'>&#128202;</label>",
-                     "",
-                     as.character(input$HEmulti_cell_clicked$value))
+                     "", as.character(input$HEmulti_cell_clicked$value))
     
     # If PlotRow then set nodeSelHE
     if (grepl("PlotRow|SendRow", hyperVal)) {

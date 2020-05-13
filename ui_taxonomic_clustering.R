@@ -1,50 +1,79 @@
 
 
 #Taxonomic Clustering Page####
-tagList(
+div(
+  class="portal-taxonomer",
+  
   fluidRow(
     class="col-container-1",
     
     column(
-      width=3, style="background-color: #fec44f; width: 30%; border: 1px solid lightgray;",
+      width=12,
       
-      div(class="header-1",
-          div(class="title", "Member Search"),
-          div(class="content",
-              textInput(inputId = "mstring", label="Enter a String:", width = "100%"),
-              uiOutput("Match"),
-              actionButton(inputId = "Helpgo", label = "Help", class="mybuttons")
-          )
+      div(
+        class="header-1",
+        div(class="title", "Member Search"),
+        div(class="content",
+            fluidRow(
+              column(
+                width=6,
+                textInput(inputId = "mstring", label="Enter a String:", width = "100%"),
+                actionButton(inputId = "searchString", label = "Search", class="mybuttons"),
+                actionButton(inputId = "Helpgo", label = "Help", class="mybuttons")
+              ), 
+              
+              column(
+                width = 6,
+                uiOutput("Match")
+              )
+            )
+        )
       )
-    ),
+    )
+  ),
+  
+  tags$table(
+    id="clusteringTable",
     
-    column(
-      width=9, style="background: lightgray; width: 70%;",
-      
-      fluidRow(
-        class="col-container-2",
-        
-        column(
-          width=6, style="background: white; width: 100%;",
-          
-          div(class="header-2",
-            div(class="title", "Taxonomer Results"),
-            div(class="content", 
-                visNetworkOutput(outputId = "dendro", width="100%", height = "600px") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+    tags$tbody(
+      tags$tr(
+        tags$td(
+          fluidRow(
+            class="col-container-2", 
+            
+            column(
+              width=12,
+              
+              div(
+                class="header-2",
+                div(class="title", "Taxonomer Results"),
+                div(class="content", 
+                    visNetworkOutput(outputId = "dendro", width="100%", height = "650px") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+                )
+              )
             )
           )
         ),
         
-        column(
-          width=6, style="background: white; width: 100%;",
-          
-          div(class="header-2",
-              div(class="title", "Cluster Information (↑ = Group 1; ↓ = Group 2)"),
-              div(class="content", 
+        tags$td(
+          fluidRow(
+            class="col-container-2", 
+            
+            column(
+              width=12, 
+              
+              div(
+                class="header-2",
+                div(class="title", HTML("Cluster Information (&#8593; = Group 1; &#8595; = Group 2)")),
+                div(
+                  class="content", 
+                  
                   tabsetPanel(
-                    id="de_tab", selected = "Stability",
+                    id="taxonomer_tab", selected = "Stability",
+                    
                     tabPanel(
                       title = "Stability", value="Stability",
+                      
                       fluidRow(
                         column(
                           width = 10, offset = 1,
@@ -63,90 +92,105 @@ tagList(
                     ),
                     
                     tabPanel(
-                      title = "Group Members", value="Group_Members",
-                      br(),
-                      DT::dataTableOutput(outputId = "infoTab") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px"),
-                      checkboxInput(inputId = "viewAll", label = "Display all columns", value = FALSE, width = "100%")
+                      title = "Group Members", value="Group Members",
+                      
+                      fluidRow(
+                        column(
+                          width=12,
+                          br(),
+                          DT::dataTableOutput(outputId = "infoTab") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px"),
+                          checkboxInput(inputId = "viewAll", label = "Display all columns", value = FALSE, width = "100%")
+                        )
+                      )
                     ),
                     
                     tabPanel(
-                      title = "Meta-Variable Results", value="Meta_Variable_Results",
-                      column(
-                        width=12,
-                        br(),
-                        DT::dataTableOutput(outputId = "metaVarTab") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
-                      ),
+                      title = "Meta-Variable Results", value="Meta Variable Results",
                       
-                      column(
-                        width=12,
-                        br(), 
-                        actionButton(inputId = "visualizeQvalues", label = "Visualize Q-values", class="mybuttons"),
-                        actionButton(inputId = "resetQvalues", label = "Reset", class="mybuttons")
+                      fluidRow(
+                        column(
+                          width=12,
+                          br(),
+                          DT::dataTableOutput(outputId = "metaVarTab") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+                        ),
+                        
+                        column(
+                          width=12,
+                          br(), 
+                          actionButton(inputId = "visualizeQvalues", label = "Visualize Q-values", class="mybuttons"),
+                          actionButton(inputId = "resetQvalues", label = "Reset", class="mybuttons")
+                        )
                       )
                     )
                   )
+                )
               )
+            )
           )
         )
-      ),
+      )
+    )
+  ),
+  
+  fluidRow(
+    class="col-container-3",
+    
+    column(
+      width=12,
       
-      fluidRow(
-        class="col-container-3",
-        
-        column(
-          width=12, style="background: white; width: 100%;",
-          
-          div(class="header-3",
-              div(class="title", "Differential Analysis Results"),
-              div(class="content",
-                  DT::dataTableOutput(outputId = "DGE") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
-              )
-          )
+      div(
+        class="header-3",
+        div(class="title", "Differential Analysis Results"),
+        div(class="content",
+            DT::dataTableOutput(outputId = "DGE") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
         )
-      ),
+      )
+    )
+  ),
+  
+  fluidRow(
+    class="col-container-3",
+    
+    column(
+      width=12,
       
-      fluidRow(
-        class="col-container-3",
-        
-        column(
-          width=12, style="background: white; width: 100%;",
-          
-          div(class="header-3",
-              div(class="title", "Gene Expression"),
-              div(class="content",
-                  plotly::plotlyOutput(outputId = "genePlot") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
-              )
-          )
+      div(
+        class="header-3",
+        div(class="title", "Gene Expression"),
+        div(class="content",
+            plotly::plotlyOutput(outputId = "genePlot") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
         )
-      ),
+      )
+    )
+  ),
+  
+  fluidRow(
+    class="col-container-3",
+    
+    column(
+      width=12,
       
-      fluidRow(
-        class="col-container-2",
-        
-        column(
-          width=12, style="background: white; width: 100%;",
-          
-          div(class="header-3",
-              div(class="title", "Enrichment Results"),
-              div(class="content",
-                  DT::dataTableOutput(outputId = "HE") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
-              )
-          )
+      div(
+        class="header-3",
+        div(class="title", "Enrichment Results"),
+        div(class="content",
+            DT::dataTableOutput(outputId = "HE") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
         )
-      ),
+      )
+    )
+  ),
+  
+  fluidRow(
+    class="col-container-3",
+    
+    column(
+      width=12,
       
-      fluidRow(
-        class="col-container-3",
-        
-        column(
-          width=12, style="background: white; width: 100%;",
-          
-          div(class="header-3",
-              div(class="title", "Single-Sample Enrichment"),
-              div(class="content",
-                  plotly::plotlyOutput(outputId = "pathwayPlot") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
-              )
-          )
+      div(
+        class="header-3",
+        div(class="title", "Single-Sample Enrichment"),
+        div(class="content",
+            plotly::plotlyOutput(outputId = "pathwayPlot") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
         )
       )
     )

@@ -353,17 +353,14 @@ output$infoTab <- renderDataTable({
       data.table.round(infoDat),
       rownames = FALSE,
       extensions = 'Buttons',
-      selection = "none",
+      selection = "single",
       options = list(
         dom = 'T<"clear">Blfrtip',
         search = list(regex = TRUE, caseInsensitive = FALSE),
         scrollX = TRUE,
         scrollY = "400px",
         paging = FALSE,
-        searching = TRUE,
-        columnDefs = list(
-          list(className = 'dt-left', targets = "_all")
-        )
+        searching = TRUE
       )
     )
     
@@ -375,12 +372,7 @@ output$infoTab <- renderDataTable({
       extensions = 'Buttons',
       selection = "none",
       options = list(
-        dom = 'T',
-        search = list(regex = TRUE, caseInsensitive = FALSE),
-        scrollX = TRUE,
-        scrollY = "400px",
-        paging = FALSE,
-        searching = TRUE,
+        dom = 'T',         
         columnDefs = list(
           list(className = 'dt-center', targets = "_all")
         )
@@ -440,10 +432,11 @@ if(!is.null(K2res[[1]]$modTests)) {
     K2modTestFram$`Q Value` <- signif(K2modTestFram$`Q Value`, 2)
 
     datatable(
-      data.table.round(K2modTestFram, digits=7),
+      K2modTestFram,
       rownames = FALSE,
-      extensions = 'Buttons',
       escape = FALSE,
+      extensions = 'Buttons',
+      selection = "single",
       options = list(
         deferRender = FALSE,
         dom = 'T<"clear">Blfrtip',
@@ -452,9 +445,9 @@ if(!is.null(K2res[[1]]$modTests)) {
         scrollX = TRUE,
         scrollY = "400px",
         paging = FALSE,
-        searching = TRUE,
-        columnDefs = list(list(className = 'dt-left', targets = "_all"))
-      ), selection = "none")
+        searching = TRUE
+      )
+    )
     
   })
   
@@ -468,19 +461,19 @@ if(!is.null(K2res[[1]]$modTests)) {
     colnames(K2modTestFramNULL) <- NULL
     
     datatable(
-      data.table.round(K2modTestFramNULL, digits=7),
-      rownames = F,
-      extensions = 'Buttons',
+      K2modTestFramNULL,
+      rownames = FALSE,
       escape = FALSE,
+      extensions = 'Buttons',
+      selection = "single",
       options = list(
-        deferRender = FALSE,
-        dom = 'T<"clear">Blfrtip',
-        buttons=c('copy','csv','print'),
-        search = list(regex = TRUE, caseInsensitive = FALSE),
-        paging = FALSE,
-        searching = TRUE,
-        columnDefs = list(list(className = 'dt-left', targets = "_all"))
-      ), selection = "single")
+        columnDefs = list(
+          list(className = 'dt-center', targets = "_all")
+        ),
+        deferRender = FALSE, 
+        dom = 'T'
+      )
+    )
     
   })
   
@@ -541,6 +534,7 @@ observeEvent(input$resetQvalues,  {
   
 })
 
+
 #############################################
 #
 # DIFFERENTIAL ANALYSIS RESULTS #####
@@ -558,19 +552,17 @@ output$DGE <- DT::renderDataTable({
 
   # Create data table obect
   datatable(
-    data.table.round(DGETABLE),
+    DGETABLE,
     rownames = FALSE,
-    extensions = 'Buttons',
     escape = FALSE,
-    filter = list(position = 'top', clear = FALSE),
+    extensions = 'Buttons',
+    selection = 'single',
+    filter = list(position = 'top', clear = TRUE),
     options = list(
       columnDefs = list(
-        list(searchable = FALSE,
-             orderable = FALSE,
-             width = "3px",
-             targets = c(8, 9, 10)),
+        list(className = 'dt-left', targets = 0),
         list(className = 'dt-center', targets = 1:10),
-        list(className = 'dt-left', targets = 0)
+        list(searchable = FALSE, orderable = FALSE, targets = c(8, 9, 10))
       ),
       search = list(regex = TRUE),
       searchCols = list(
@@ -591,7 +583,7 @@ output$DGE <- DT::renderDataTable({
           action = DT::JS(
             paste0(
               "function ( e, dt, node, config ) {",
-              "Shiny.setInputValue('geneHelp', true, {priority: 'event'});",
+                "Shiny.setInputValue('geneHelp', true, {priority: 'event'});",
               "}"
             )
           )
@@ -602,13 +594,13 @@ output$DGE <- DT::renderDataTable({
           action = DT::JS(
             paste0(
               "function ( e, dt, node, config ) {",
-              "Shiny.setInputValue('geneDL', true, {priority: 'event'});",
+                "Shiny.setInputValue('geneDL', true, {priority: 'event'});",
               "}"
             )
           )
         )
       )
-    ), selection = 'single') %>%
+    )) %>%
     formatRound(c("Mean", "Diff"), digits = 2) %>%
     formatSignif(c("P Value", "FDR"), digits = 2) %>%
     formatStyle(c("Gene", "Direction", "Mean"), `border-right` = "solid 2px")
@@ -822,7 +814,9 @@ output$genePlot <- renderPlotly({
             panel.grid.major=element_blank(),
             panel.grid.minor=element_blank(),
             plot.background=element_blank())
+    
     ggplotly(hm)
+    
   }
 })
 
@@ -833,7 +827,7 @@ output$genePlot <- renderPlotly({
 #############################################
 
 # Render hyperenrichment table#####
-output$HE <- renderDataTable({
+output$HE <- DT::renderDataTable({
 
   ENRTABLE = enrTable; nodeID = values$nodeSelDGE; groupID = values$groupDGE; dgeHits = values$dgeHits;
 
@@ -847,22 +841,18 @@ output$HE <- renderDataTable({
 
   # Create DT object
   datatable(
-    data.table.round(ENRTABLE),
+    ENRTABLE,
     rownames = FALSE,
-    extensions = 'Buttons',
     escape = FALSE,
+    extensions = 'Buttons',
+    selection = 'single',
     filter = list(position = 'top', clear = FALSE),
     options = list(
       columnDefs = list(
-        list(
-          searchable = FALSE,
-          orderable = FALSE,
-          width = "3px",
-          targets = c(14, 15, 16)
-        ),
-        list(visible = FALSE, targets=c(12, 13)),
+        list(className = 'dt-left', targets = 0),
         list(className = 'dt-center', targets = 1:16),
-        list(className = 'dt-left', targets = 0)
+        list(searchable = FALSE, orderable = FALSE, targets = c(14, 15, 16)),
+        list(visible = FALSE, targets=c(12, 13))
       ),
       search = list(regex = TRUE),
       searchCols = list(
@@ -884,7 +874,7 @@ output$HE <- renderDataTable({
           text = 'Help',
           action = DT::JS(
             "function ( e, dt, node, config ) {",
-            "Shiny.setInputValue('hyperHelp', true, {priority: 'event'});",
+              "Shiny.setInputValue('hyperHelp', true, {priority: 'event'});",
             "}"
           )
         ),
@@ -893,13 +883,12 @@ output$HE <- renderDataTable({
           text = 'Download All Results',
           action = DT::JS(
             "function ( e, dt, node, config ) {",
-            "Shiny.setInputValue('hyperDL', true, {priority: 'event'});",
+              "Shiny.setInputValue('hyperDL', true, {priority: 'event'});",
             "}"
           )
         )
       )
-    ),
-    selection = 'single') %>%
+    )) %>%
     formatRound(c("Mean<br>ssGSEA", "Diff<br>ssGSEA"), digits = 2) %>%
     formatSignif(c("P Value<br>Hyper", "FDR<br>Hyper", "P Value<br>ssGSEA", "FDR<br>ssGSEA"), digits = 2)%>%
     formatStyle(c("Gene Set", "Direction", "N<br>Gene Set", "Diff<br>ssGSEA"), `border-right` = "solid 2px")
@@ -1119,4 +1108,6 @@ output$pathwayPlot <- renderPlotly({
     
   }
 })
+
+
 

@@ -1,17 +1,13 @@
 
 
-#About page#####
+#Portal About Page#####
 fluidRow(
-  column(
-    width=12,
-    includeMarkdown(paste0("introduction_", substr(session$clientData$url_search, 2, nchar(session$clientData$url_search)), ".Rmd")) 
-  ),
+  class="portal-about",
   
   column(
     width=12,
-    img(src="IMAGES/logo.png", align = "left", width = "100%")
+    includeMarkdown(paste0("www/RMD/introduction_", fname, ".Rmd")) 
   )
 )
-
 
 
