@@ -15,24 +15,13 @@ fluidRow(
     )
   ),
   
-  br(),
-  
-  column(
-    width=12, 
-    div(
-      id="loading-annotation",
-      div(class="loader"),
-      h4("Loading...", id="loading_text")
-    )
-  ),
-  
   column(
     width=12,
-    DT::dataTableOutput("annotation_table") 
+      DT::dataTableOutput("annotation_table") %>% withSpinner(type=4, color="#0dc5c1")
   )
 )
-  
-  
+
+
 
 
 

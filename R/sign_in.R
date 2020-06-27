@@ -1,13 +1,25 @@
-# 
-# ## Create reactive values ####
-# projectlist <- reactiveVal(projectlist)
-# loginlist <- reactiveVal(loginlist)
 
-## Warning message ####
+
+## Create reactive values ####
+projectdata <- reactiveVal(NULL)
+logindata <- reactiveVal(NULL)
+
+## Warning message for main project and login table ####
 project_table_message <- reactiveVal(NULL)
 login_table_message <- reactiveVal(NULL)
+
+## Warning message for add project function####
 addprojectwarningmsg <- reactiveVal(NULL)
+addinputwarningmsg <- reactiveVal(NULL)
+addcompoundvarwarningmsg <- reactiveVal(NULL)
+addexposurevarwarningmsg <- reactiveVal(NULL)
+addexposurephenotypevarwarningmsg <- reactiveVal(NULL)
+addenrichmentversionwarningmsg <- reactiveVal(NULL)
+
+## Warning message for edit project function####
 editprojectwarningmsg <- reactiveVal(NULL)
+
+## Warning message for add and edit user function###
 adduserwarningmsg <- reactiveVal(NULL)
 edituserwarningmsg <- reactiveVal(NULL)
 
@@ -92,9 +104,9 @@ observeEvent(input$SignInButton, {
   ## Check the login message ####
   if(nrow(Log) > 0){
     
+    projectdata(projectInfo)
+    logindata(logInfo)
     LogInMessage$Msg <- paste0("")
-    projectlist(projectInfo)
-    loginlist(logInfo)
     UserLog$Logged <- TRUE;
     
   }else{
@@ -159,7 +171,8 @@ output$uiMain <- renderUI({
         actionButton(class="mybuttons", inputId="AddProject", label=strong("Add"), width="70px"),
         actionButton(class="mybuttons", inputId="RemoveProject", label=strong("Remove"), width="70px"),
         actionButton(class="mybuttons", inputId="EditProject", label=strong("Edit"), width="70px"),
-        actionButton(class="mybuttons", inputId="SaveProject", label=strong("Save"), width="70px")
+        actionButton(class="mybuttons", inputId="SaveProject", label=strong("Save"), width="70px"),
+        helpText(em("Note: you must save your changes to get the updated data and tables.", style="font-size: 9pt;"))
       )
     ),
 
@@ -178,7 +191,8 @@ output$uiMain <- renderUI({
         actionButton(class="mybuttons", inputId="AddUser", label=strong("Add"), width="70px"),
         actionButton(class="mybuttons", inputId="RemoveUser", label=strong("Remove"), width="70px"),
         actionButton(class="mybuttons", inputId="EditUser", label=strong("Edit"), width="70px"),
-        actionButton(class="mybuttons", inputId="SaveUser", label=strong("Save"), width="70px")
+        actionButton(class="mybuttons", inputId="SaveUser", label=strong("Save"), width="70px"),
+        helpText(em("Note: you must save your changes to get the updated data and tables.", style="font-size: 9pt;"))
       )
     )
   )##<!-- Header top area end -->
@@ -195,14 +209,14 @@ output$uiMain <- renderUI({
 ## Output the project table ####
 output$projecttable <- DT::renderDataTable({
   
-  req(projectlist())
+  req(projectdata())
   
-  table <- projectlist()
+  table <- projectdata()
   colnames(table) <- gsub("_", " ", colnames(table))
   
   return(table)
   
-}, escape = FALSE, server = TRUE, rownames=FALSE, selection = "single", options = list())
+}, escape = FALSE, server = TRUE, rownames=FALSE, selection = "single")
 
 
 ## Output project table message ####
@@ -210,7 +224,7 @@ output$ProjectTableMessage <- renderUI({
   
   req(project_table_message())
   
-  p(style="color:red;", project_table_message())
+  p(style="color:red;", HTML(project_table_message()))
   
 })
 
@@ -240,7 +254,7 @@ AddProject <- function() {
           width=12,
           strong(span(style="color:red;", "*"), "Description:", style="text-align: left;"),
           HTML(paste0("<textarea style='width: 100%; height: 150px; padding: 10px; margin-top: 5px;' id='Add_Description' placeholder='Write a short description about the project...'></textarea>")),
-          helpText(em("Note: you can use HTML tags inside the description box for styling and formatting", style="font-size: 9pt;"))
+          helpText(em("Note: you can use HTML tags inside the description box for styling and formatting text", style="font-size: 9pt;"))
         )
       ),
       br(),
@@ -253,36 +267,46 @@ AddProject <- function() {
       br(),
       fluidRow(
         column(
+          width=12,
+          shinyjs::hidden(
+            div(
+              id = "loading-content",
+              div(class="loader"),
+              h4("Processing...", id="loading_text")
+            )
+          )
+        )
+      ),
+      br(),
+      fluidRow(
+        column(
           width = 6,
           
           ## Import files ####
-          h4("Experimental Design:", style="padding-bottom: 10px;"),
-          radioButtons(inputId = "Add_Experimental_Design", label = NULL, choices = c("Multiple doses", "Multiple replicates"), inline = TRUE),
+          h4("Import Files:", style="padding-bottom: 10px;"),
+          fileInput(inputId = "add_intro_file", label = strong(span(style="color:red;", "*"), "Choose an introduction file ", downloadLink(outputId = "add_intro_template_rmd", label = em(style="font-size: 11px", "template.rmd")))),
+          uiOutput(outputId='add_intro_file_msg'),
           br(),
           
-          ## Import files ####
-          h4("Import Files:", style="padding-bottom: 10px;"),
-          fileInput(inputId = "add_intro_file", label = strong(span(style="color:red;", "*"), "Choose an introduction file ", downloadLink(outputId = "add_intro_template", label = em(style="font-size: 11px", "template.rmd")))),
-          HTML(paste0("<input class='fileInputMsg' id='add_intro_file_msg' type='text' value='' tabindex='-1' disabled/>")),
           fileInput(inputId = "add_pro_file", label = strong(span(style="color:red;", "*"), "Choose a profile annotation file")),
-          HTML(paste0("<input class='fileInputMsg' id='add_pro_file_msg' type='text' value='' tabindex='-1' disabled/>")),
           fileInputRadioButtonsWithTooltip(
             inputId="add_pro_file_type", label="File type:", bId="add_pro_template", helptext="", choices=c(".csv", ".RDS"), selected=NULL, inline=TRUE
           ),
+          uiOutput(outputId='add_pro_file_msg'),
           br(),
           
           fileInput(inputId = "add_chem_file", label = strong(span(style="color:red;", "*"), "Choose a chemical annotation file")),
-          HTML(paste0("<input class='fileInputMsg' id='add_chem_file_msg' type='text' value='' tabindex='-1' disabled/>")),
           fileInputRadioButtonsWithTooltip(
             inputId="add_chem_file_type", label="File type:", bId="add_chem_template", helptext="", choices=c(".csv", ".RDS"), selected=NULL, inline=TRUE
           ),
+          uiOutput(outputId='add_chem_file_msg'),
           br(),
           
           fileInput(inputId = "add_ge_file", label = strong(span(style="color:red;", "*"), "Choose a gene expression file")),
-          HTML(paste0("<input class='fileInputMsg' id='add_ge_file_msg' type='text' value='' tabindex='-1' disabled/>")),
           fileInputRadioButtonsWithTooltip(
             inputId="add_ge_file_type", label="File type:", bId="add_ge_template", helptext="", choices=c(".csv", ".RDS"), selected=NULL, inline=TRUE
           ),
+          uiOutput(outputId='add_ge_file_msg'),
           br(),
           
           radioButtons(inputId = "add_conn_option", label = "Add connectivity map?", choices = c("Yes", "No"), inline = TRUE),
@@ -290,52 +314,89 @@ AddProject <- function() {
           conditionalPanel(
             condition = "input.add_conn_option == 'Yes'",
             fileInput(inputId = "add_conn_pcl_file", label = strong(span(style="color:red;", "*"), "Choose a connectivity map file (Perturbagen Classes)")),
-            HTML(paste0("<input class='fileInputMsg' id='add_conn_pcl_file_msg' type='text' value='' tabindex='-1' disabled/>")),
             fileInputRadioButtonsWithTooltip(
               inputId="add_conn_pcl_file_type", label="File type:", bId="add_conn_pcl_template", helptext="", choices=c(".csv", ".RDS"), selected=NULL, inline=TRUE
             ),
+            uiOutput(outputId='add_conn_pcl_file_msg'),
             br(),
+            
             fileInput(inputId = "add_conn_pert_file", label = strong(span(style="color:red;", "*"), "Choose a connectivity map file (Perturbagens)")),
-            HTML(paste0("<input class='fileInputMsg' id='add_conn_pert_file_msg' type='text' value='' tabindex='-1' disabled/>")),
             fileInputRadioButtonsWithTooltip(
               inputId="add_conn_pert_file_type", label="File type:", bId="add_conn_pert_template", helptext="", choices=c(".csv", ".RDS"), selected=NULL, inline=TRUE
-            )
+            ),
+            uiOutput(outputId='add_conn_pert_file_msg')
           )
         ),
         
         column(
           width=6,
           
+          ##Getting the exposure variables ####
+          selectInputWithTooltip(inputId = "add_variable_compound", label=strong(span(style="color:red;", "*"), "Select a compound variable:"), bId="add_var_compound", helptext="Some description here", choices=c("Please import a profile annotation file" = ""), multiple = FALSE),
+          uiOutput(outputId = 'add_variable_compound_msg'),
+          selectInputWithTooltip(inputId = "add_variable_exposure", label=strong(span(style="color:red;", "*"), "Select a list of additional exposure variables:"), bId="add_var_exposure", helptext="Some description here", choices=c("Please import a profile annotation file" = ""), multiple = TRUE),
+          uiOutput(outputId = 'add_variable_exposure_msg'),
+          
           ## Calculations ####
           h4("Calculations:", style="padding-bottom: 10px;"),
-          checkboxInput(inputId = "Add_TAS", label = "TAS", value=TRUE),         
-          checkboxInput(inputId = "Add_Modzscores", label = "Mod-Zscores", value=FALSE),
+          checkboxInput(inputId = "Add_Landmark", label = "Landmark Gene", value=FALSE), 
+          conditionalPanel(
+            condition="input.Add_Landmark == true",
+            uiOutput(outputId = "Add_Tas_Modz")
+          ),
           br(),
           
+          #uiOutput(outputId  = 'Add_Taxonomer_Analysis')
           ## Gene set enrichment ####
           h4("GSVA Gene Set Enrichment:", style="padding-bottom: 10px;"),
           radioButtonsWithTooltip(
-            inputId = "add_cur_gs_enrichment_option",
+            inputId = "add_cur_enrichment_option",
             label = "Use existed gene set",
-            bId= "add_cur_gs_enrichment",
+            bId = "add_cur_enrichment",
             helptext = "Gene sets include the MSigDB collections (Hallmark, C2 reactome pathways), and gene targets of various nuclear receptors (NURSA)",
             choices = c("Yes", "No")
           ),
           conditionalPanel(
-            condition = "input.add_cur_gs_enrichment_option == 'No'",
+            condition = "input.add_cur_enrichment_option == 'No'",
             numericInput(inputId = "Add_New_Enrichment_Version", label = strong(span(style="color:red;", "*"), "New version", span(style="color:red;", "(# must greater than 0)")), value = NULL),
+            uiOutput(outputId = 'add_enrichment_version_msg'),
             fileInput(inputId = "add_hallmark_file", label = strong(span(style="color:red;", "*"), "Choose a hallmark gene set ", downloadLink(outputId = "add_hallmark_template_gmt", label = em(style="font-size: 11px", "template.gmt")))),
             uiOutput(outputId = "add_hallmark_file_msg"),
-            fileInput(inputId = "add_C2_file", label = strong(span(style="color:red;", "*"), "Choose a C2 reactome pathways gene set", downloadLink(outputId = "add_c2_template_gmt", label = em(style="font-size: 11px", "template.gmt")))),
-            uiOutput(outputId = "add_C2_file_msg"),
-            fileInput(inputId = "add_NURSA_file", label = strong(span(style="color:red;", "*"), "Choose a NURSA gene set ", downloadLink(outputId = "add_nursa_template_gmt", label = em(style="font-size: 11px", "template.gmt")))),
-            uiOutput(outputId = "add_NURSA_file_msg")
+            fileInput(inputId = "add_c2_file", label = strong(span(style="color:red;", "*"), "Choose a C2 reactome pathways gene set", downloadLink(outputId = "add_c2_template_gmt", label = em(style="font-size: 11px", "template.gmt")))),
+            uiOutput(outputId = "add_c2_file_msg"),
+            fileInput(inputId = "add_nursa_file", label = strong(span(style="color:red;", "*"), "Choose a NURSA gene set ", downloadLink(outputId = "add_nursa_template_gmt", label = em(style="font-size: 11px", "template.gmt")))),
+            uiOutput(outputId = "add_nursa_file_msg")
           ),
           conditionalPanel(
-            condition = "input.add_cur_gs_enrichment_option == 'Yes'",
-            uiOutput(outputId = "GS_Enrichment_Cur_Version_Option")
+            condition = "input.add_cur_enrichment_option == 'Yes'",
+            uiOutput(outputId = "Enrichment_Cur_Version_Option")
           ),
-          shinyjs::disabled(radioButtons(inputId = "add_gsva_method", label = "GSVA methods:", choices = c("All", "gsva", "ssGSEA", "zscore"), inline = TRUE))
+          shinyjs::disabled(radioButtons(inputId = "add_gsva_method", label = "GSVA methods:", choices = c("All", "gsva"="gsva", "ssGSEA"="ssgsea", "zscore"="zscore"), inline = TRUE)),
+          br(),
+          
+          ## Gene set enrichment ####
+          h4("K2Taxonomer Analysis:", style="padding-bottom: 10px;"),
+          selectInputWithTooltip(inputId = "add_variable_exposure_phenotype", label=strong(span(style="color:red;", "*"), "Select a list of exposure phenotype:"), bId="add_var_exposure_phenotype", helptext="Some description here", choices=c("Please import a chemical annotation file" = ""), multiple = TRUE),
+          uiOutput(outputId = 'add_variable_exposure_phenotype_msg'),
+          DT::dataTableOutput(outputId = "add_metavar_variable_test"),
+          br(),
+          
+          conditionalPanel(
+            condition = "input.add_conn_option == 'Yes'",
+            shinyjs::hidden(checkboxInput(inputId = "add_connectivity_var", label = "Add Connectivity Variables", value = FALSE))
+          ),
+          
+          ## Additional parameters ####
+          h4("Additional Parameters:"),
+          selectInputWithTooltip(inputId = "add_feature_metric", label="Feature filtering:", bId="add_feature_filtering_metric", helptext="Some description here", choices = c("sd"="sd", "mad"="mad", "Sn"="Sn", "Qn"="Qn", "F"="F", "square"="square"), selected = "sd"),       
+          radioButtons(inputId = "add_ssGSEA_method", label = "ssGSEA methods:", choices = c("gsva"="gsva", "ssGSEA"="ssgsea", "zscore"="zscore", "plage"="plage"), inline = TRUE)
+        )
+      ),
+      br(),
+      fluidRow(
+        column(
+          width=12,
+          uiOutput("add_input_message")
         )
       ),
       br(),
@@ -351,9 +412,9 @@ AddProject <- function() {
 }
 
 # add current existing gs enrichment version ####
-output$GS_Enrichment_Cur_Version_Option <- renderUI({
+output$Enrichment_Cur_Version_Option <- renderUI({
   
-  version <- unique(projectlist()$GS_Enrichment_Version)
+  version <- unique(projectdata()$Enrichment_Version)
   
   selectInput(inputId = "Add_Enrichment_Version", label = paste0("GS enrichment version:"), choices = version)
   
@@ -372,7 +433,52 @@ output$AddProjectWarningMessage <- renderUI({
   
   req(addprojectwarningmsg())
   
-  p(style="color:red;", addprojectwarningmsg())
+  p(style="color:red;", HTML(addprojectwarningmsg()))
+  
+})
+
+## Output the enrichment version warning message ###
+output$add_enrichment_version_msg <- renderUI({
+  
+  req(addenrichmentversionwarningmsg())
+  
+  p(style="color:red;", HTML(addenrichmentversionwarningmsg()))
+  
+})
+
+##Create message for variable selection
+output$add_variable_compound_msg <- renderUI({
+  
+  req(addcompoundvarwarningmsg())
+  
+  p(style="color:red;", HTML(addcompoundvarwarningmsg()))
+  
+})
+
+##Create message for variable selection
+output$add_variable_exposure_msg <- renderUI({
+  
+  req(addexposurevarwarningmsg())
+  
+  p(style="color:red;", HTML(addexposurevarwarningmsg()))
+  
+})
+
+##Create message for variable selection
+output$add_variable_exposure_phenotype_msg <- renderUI({
+  
+  req(addexposurephenotypevarwarningmsg())
+  
+  p(style="color:red;", HTML(addexposurephenotypevarwarningmsg()))
+  
+})
+
+##Create message for variable selection
+output$add_input_message <- renderUI({
+  
+  req(addinputwarningmsg())
+  
+  p(style="color:red; text-align:center;", HTML(addinputwarningmsg()))
   
 })
 
@@ -403,7 +509,7 @@ EditProject <- function(table) {
         ),
         column(
           width=3,
-          numericInput(inputId = "Edit_Enrichment_Version", label=strong(span(style="color:red;", "*"), "GS enrichment version:"), value=table$GS_Enrichment_Version)
+          numericInput(inputId = "Edit_Enrichment_Version", label=strong(span(style="color:red;", "*"), "GS enrichment version:"), value=table$Enrichment_Version)
         ), 
         column(
           width=12,
@@ -415,19 +521,14 @@ EditProject <- function(table) {
           width=12,
           strong(span(style="color:red;", "*"), "Description:", style="text-align: left;"),
           HTML(paste0("<textarea style='width: 100%; height: 150px; padding: 10px; margin-top: 5px;' id='Edit_Description' placeholder='Write a short description about the project...'>", table$Description,"</textarea>")),
-          helpText(em("Note: you can use HTML tags inside the description box for styling and formatting", style="font-size: 9pt;"))
+          helpText(em("Note: you can use HTML tags inside the description box for styling and formatting text", style="font-size: 9pt;"))
         )
       ),
       br(),
       fluidRow(
         column(
           width=6,
-          
-          ## Import files ####
-          h4("Experimental Design:", style="padding-bottom: 10px;"),
-          radioButtons(inputId = "Edit_Experimental_Design", label = NULL, choices = c("Multiple doses", "Multiple replicates"), selected=table$Experimental_Design, inline = TRUE),
-          br(),
-          
+
           ## Modify input files ####
           h4("Modify Input Files:", style="padding-bottom: 10px;"),
           radioButtons(inputId = "edit_files", label = NULL, choices = c("None", "All", "Introduction Page", "Profile Annotation", "Chemical Annotation", "Gene Expression", "Connectivity Map")),
@@ -568,39 +669,39 @@ EditProject <- function(table) {
             
             ## Redo enrichment analysis ####
             h4("Modify Enrichment Analysis:", style="padding-bottom: 10px;"),
-            radioButtons(inputId = "edit_gs_enrichment_option", label = NULL, choices = c("None", "Current version", "New version"), inline=TRUE),
+            radioButtons(inputId = "edit_enrichment_option", label = NULL, choices = c("None", "Current version", "New version"), inline=TRUE),
             conditionalPanel(
-              condition = "input.edit_gs_enrichment_option == 'New version'",
-              numericInput(inputId = "edit_gs_enrichment_version", label = strong(span(style="color:red;", "*"), "New version", span(style="color:red;", "(# must be greater than 0)")), value = NULL)
+              condition = "input.edit_enrichment_option == 'New version'",
+              numericInput(inputId = "edit_enrichment_version", label = strong(span(style="color:red;", "*"), "New version", span(style="color:red;", "(# must be greater than 0)")), value = NULL)
             ),
             conditionalPanel(
-              condition = "input.edit_gs_enrichment_option == 'Current version'",
+              condition = "input.edit_enrichment_option == 'Current version'",
               selectInputWithTooltip(
-                inputId = "edit_gs_enrichment_set",
+                inputId = "edit_enrichment_set",
                 label = "Gene set name",
-                bId= "gs_enrichment_set",
+                bId= "enrichment_set",
                 helptext = "Gene sets include the MSigDB collections (Hallmark, C2 reactome pathways), and gene targets of various nuclear receptors (NURSA)",
                 choices = c("All"="All", "Hallmark"="Hallmark", "C2 reactome pathways"="C2", "NURSA"="NURSA")
               )
             ),
             conditionalPanel(
-              condition = "input.edit_gs_enrichment_option == 'New version' | (input.edit_gs_enrichment_option == 'Current version' && input.edit_gs_enrichment_set == 'Hallmark') | (input.edit_gs_enrichment_option == 'Current version' && input.edit_gs_enrichment_set == 'All')",
+              condition = "input.edit_enrichment_option == 'New version' | (input.edit_enrichment_option == 'Current version' && input.edit_enrichment_set == 'Hallmark') | (input.edit_enrichment_option == 'Current version' && input.edit_enrichment_set == 'All')",
               fileInput(inputId = "edit_hallmark_file", label = strong(span(style="color:red;", "*"), "Choose a hallmark gene set ", downloadLink(outputId = "edit_hallmark_template_gmt", label = em(style="font-size: 11px", "template.gmt"))))
             ),
             conditionalPanel(
-              condition = "input.edit_gs_enrichment_option == 'New version' | (input.edit_gs_enrichment_option == 'Current version' && input.edit_gs_enrichment_set == 'C2') | (input.edit_gs_enrichment_option == 'Current version' && input.edit_gs_enrichment_set == 'All')",
+              condition = "input.edit_enrichment_option == 'New version' | (input.edit_enrichment_option == 'Current version' && input.edit_enrichment_set == 'C2') | (input.edit_enrichment_option == 'Current version' && input.edit_enrichment_set == 'All')",
               fileInput(inputId = "edit_C2_file", label = strong(span(style="color:red;", "*"), "Choose a C2 reactome pathways gene set ", downloadLink(outputId = "edit_c2_template_gmt", label = em(style="font-size: 11px", "template.gmt"))))
             ),
             conditionalPanel(
-              condition = "input.edit_gs_enrichment_option == 'New version' | (input.edit_gs_enrichment_option == 'Current version' && input.edit_gs_enrichment_set == 'NURSA') | (input.edit_gs_enrichment_option == 'Current version' && input.edit_gs_enrichment_set == 'All')",
+              condition = "input.edit_enrichment_option == 'New version' | (input.edit_enrichment_option == 'Current version' && input.edit_enrichment_set == 'NURSA') | (input.edit_enrichment_option == 'Current version' && input.edit_enrichment_set == 'All')",
               fileInput(inputId = "edit_NURSA_file", label = strong(span(style="color:red;", "*"), "Choose a NURSA gene set ", downloadLink(outputId = "edit_nursa_template_gmt", label = em(style="font-size: 11px", "template.gmt"))))
             ),
             conditionalPanel(
-              condition = "input.edit_gs_enrichment_option == 'Current version'",
+              condition = "input.edit_enrichment_option == 'Current version'",
               radioButtons(inputId = "edit_gsva_method", label = "GSVA methods:", choices = c("All", "gsva", "ssGSEA", "zscore"), inline = TRUE)
             ),
             conditionalPanel(
-              condition = "input.edit_gs_enrichment_option == 'New version'",
+              condition = "input.edit_enrichment_option == 'New version'",
               shinyjs::disabled(
                 radioButtons(inputId = "edit_new_gsva_method", label = "GSVA methods:", choices = c("All", "gsva", "ssGSEA", "zscore"), inline = TRUE)
               )
@@ -632,7 +733,7 @@ output$EditProjectWarningMessage <- renderUI({
   
   req(editprojectwarningmsg())
   
-  p(style="color:red;", editprojectwarningmsg())
+  p(style="color:red;", HTML(editprojectwarningmsg()))
   
 })
 
@@ -643,7 +744,7 @@ observeEvent(input$EditProject, {
 
   if(length(input$projecttable_rows_selected) > 0){
     project_table_message("")
-    table <- projectlist()
+    table <- projectdata()
     showModal(EditProject(table=table[row,]))
   }else{
     project_table_message("Please select a project to make changes")
@@ -654,8 +755,10 @@ observeEvent(input$EditProject, {
 ## Observe when change button is clicked ####
 observeEvent(input$Edit_Project_Update_Button, {
   
+  req(projectdata())
+  
   row <- input$projecttable_rows_selected
-  proj_dat <- data.frame(projectlist())
+  proj_dat <- data.frame(projectdata())
   
   Project=trimws(input$Edit_Project_Name);
   Cell_Line=trimws(input$Edit_Cell_Line_Name);
@@ -663,23 +766,23 @@ observeEvent(input$Edit_Project_Update_Button, {
   Description=trimws(input$Edit_Description);  
   
   if(!input$edit_files %in% c("None", "Introduction", "Connectivity Map")){
-    GS_Enrichment_Version=trimws(input$Edit_Enrichment_Version)
+    Enrichment_Version=trimws(input$Edit_Enrichment_Version)
   }else{
-    if(input$edit_gs_enrichment_option == 'New version'){
-      GS_Enrichment_Version=trimws(input$edit_gs_enrichment_version)
+    if(input$edit_enrichment_option == 'New version'){
+      Enrichment_Version=trimws(input$edit_enrichment_version)
     }else{
-      GS_Enrichment_Version=trimws(input$Edit_Enrichment_Version)
+      Enrichment_Version=trimws(input$Edit_Enrichment_Version)
     }
   }
   
-  if(Project=="" | Cell_Line=="" | Portal=="" | is.na(GS_Enrichment_Version) | is.character(as.numeric(GS_Enrichment_Version)) | as.numeric(GS_Enrichment_Version) <= 0 | Description==""){
+  if(Project=="" | Cell_Line=="" | Portal=="" | is.na(Enrichment_Version) | is.character(as.numeric(Enrichment_Version)) | as.numeric(Enrichment_Version) <= 0 | Description==""){
     
     editprojectwarningmsg("Please fill in the required (*) fields.")
     
   }else{
     
-    proj_dat[row,] <- c(Project, Cell_Line, Portal, GS_Enrichment_Version, Description)
-    projectlist(proj_dat)
+    proj_dat[row,] <- c(Project, Cell_Line, Portal, Enrichment_Version, Description)
+    projectdata(proj_dat)
     editprojectwarningmsg("")
     project_table_message(paste0("Project ", Project, ' has been updated.'))
     removeModal()
@@ -733,8 +836,9 @@ observeEvent(input$RemoveProject, {
 observeEvent(input$Remove_Project_Yes_Button, {
   
   row <- input$projecttable_rows_selected
-  proj_dat <- data.frame(projectlist())
-  projectlist(proj_dat[-row,])
+  proj_dat <- data.frame(projectdata())
+  projectdata(proj_dat[-row,])
+  project_table_message(paste0("Project ", proj_dat$Project[row], " has been removed. Click 'Save' to implement this changes."))
   removeModal()
   
 })
@@ -781,7 +885,7 @@ observeEvent(input$SaveProject, {
 ## Observe when save project yes button is clicked ####
 observeEvent(input$Save_Project_Yes_Button, {
   
-  data <- projectlist()
+  data <- projectdata()
   write.csv(data, paste0("data/Project_List.csv"), row.names = FALSE)
   project_table_message("Project list has been saved.")
   removeModal()
@@ -790,6 +894,8 @@ observeEvent(input$Save_Project_Yes_Button, {
 
 ## Observe when save project no button is clicked ####
 observeEvent(input$Save_Project_No_Button, {
+  data <- read.csv(paste0("data/Project_List.csv"), header = TRUE)
+  projectdata(data)
   removeModal()
 })
 
@@ -848,7 +954,7 @@ output$AddUserWarningMessage <- renderUI({
   
   req(adduserwarningmsg())
   
-  p(style="color:red;", adduserwarningmsg())
+  p(style="color:red;", HTML(adduserwarningmsg()))
 
 })
 
@@ -869,7 +975,7 @@ observeEvent(input$Add_User_Add_Button, {
   Password=trimws(input$addpassword);
   Status="Moderator";
   
-  login_dat <- data.frame(loginlist())
+  login_dat <- data.frame(logindata())
   new_user <- data.frame(
     Firstname=Firstname, 
     Lastname=Lastname, 
@@ -895,7 +1001,7 @@ observeEvent(input$Add_User_Add_Button, {
     }else{
       adduserwarningmsg("")
       newlogin <- login_dat %>% rbind(new_user)
-      loginlist(newlogin)
+      logindata(newlogin)
       login_table_message(paste0(Username, ' ', Password, ' has been added.'))
       removeModal()
     }
@@ -960,7 +1066,7 @@ observeEvent(input$EditUser, {
   
   if(length(input$logintable_rows_selected) > 0){
     login_table_message("")
-    table <- loginlist()
+    table <- logindata()
     showModal(EditUser(table=table[row,]))
   }else{
     login_table_message("Please select a user to make changes")
@@ -978,7 +1084,7 @@ observeEvent(input$Edit_User_Update_Button, {
   Status="Moderator";
   
   row <- input$logintable_rows_selected
-  login_dat <- data.frame(loginlist())
+  login_dat <- data.frame(logindata())
   
   if(Firstname=="" | Lastname=="" | Username=="" | Password==""){
     
@@ -987,7 +1093,7 @@ observeEvent(input$Edit_User_Update_Button, {
   }else{
     
     login_dat[row,] <- c(Firstname, Lastname, Username, Password, "Moderator")
-    loginlist(login_dat)
+    logindata(login_dat)
     edituserwarningmsg("")
     login_table_message(paste0("User ", Username, " has been modified."))
     removeModal()
@@ -1006,7 +1112,7 @@ output$EditUserWarningMessage <- renderUI({
   
   req(edituserwarningmsg())
   
-  p(style="color:red;", edituserwarningmsg())
+  p(style="color:red;", HTML(edituserwarningmsg()))
   
 })
 
@@ -1051,8 +1157,8 @@ observeEvent(input$RemoveUser, {
 observeEvent(input$Remove_User_Yes_Button, {
   
   row <- input$logintable_rows_selected
-  login_dat <- data.frame(loginlist())
-  loginlist(login_dat[-row,])
+  login_dat <- data.frame(logindata())
+  logindata(login_dat[-row,])
   removeModal()
   
 })
@@ -1098,7 +1204,7 @@ observeEvent(input$SaveUser, {
 ## Observe when save user yes button is clicked ####
 observeEvent(input$Save_User_Yes_Button, {
   
-  data <- loginlist()
+  data <- logindata()
   write.csv(data, paste0("data/User_Login_List.csv"), row.names = FALSE)
   login_table_message("Login list has been saved.")
   removeModal()
@@ -1115,21 +1221,25 @@ output$LoginTableMessage <- renderUI({
   
   req(login_table_message())
   
-  p(style="color:red;", login_table_message())
+  p(style="color:red;", HTML(login_table_message()))
   
 })
 
 ## Output the user log in table ####
 output$logintable <- DT::renderDataTable({
   
-  req(loginlist())
+  req(logindata())
   
-  loginlist()
+  logindata()
   
 }, escape = FALSE, server = TRUE, rownames=FALSE, selection = "single", options = list(columnDefs = list(list(className = 'dt-center', targets = "_all"))))
 
 ## CLICKING THE LOG-OUT BUTTON ####
 observeEvent(input$LogOut, {
+  
+  ##remove warning message####
+  project_table_message("")
+  login_table_message("")
   
   ##Change the log status to FALSE
   ##AND go back to the login screen
@@ -1144,12 +1254,25 @@ observeEvent(input$LogOut, {
 #######################################################
 
 ##Download introduction template#####
-output$add_intro_template <- downloadHandler(
+output$add_intro_template_rmd <- downloadHandler(
   
   filename = paste0("introduction_template.Rmd"),
   
   content = function(file){
     file.copy("data/Template/introduction.Rmd", file)
+  },
+  
+  contentType = "application"
+  
+)
+
+##Download profile annotation template#####
+output$add_pro_template_csv <- downloadHandler(
+  
+  filename = paste0("profile_annotation_template.csv"),
+  
+  content = function(file){
+    file.copy("data/Template/profile_annotation.csv", file)
   },
   
   contentType = "application"
@@ -1170,6 +1293,19 @@ output$add_pro_template_rds <- downloadHandler(
 )
 
 ##Download chemical annotation template#####
+output$add_chem_template_csv <- downloadHandler(
+  
+  filename = paste0("chemical_annotation_template.csv"),
+  
+  content = function(file){
+    file.copy("data/Template/chemical_annotation.csv", file)
+  },
+  
+  contentType = "application"
+  
+)
+
+##Download chemical annotation template#####
 output$add_chem_template_rds <- downloadHandler(
   
   filename = paste0("chemical_annotation_template.RDS"),
@@ -1183,7 +1319,20 @@ output$add_chem_template_rds <- downloadHandler(
 )
 
 ##Download gene expression template#####
-output$add_ge_template_gmt <- downloadHandler(
+output$add_ge_template_csv <- downloadHandler(
+  
+  filename = paste0("gene_expression_template.csv"),
+  
+  content = function(file){
+    file.copy("data/Template/gene_expression.csv", file)
+  },
+  
+  contentType = "application"
+  
+)
+
+##Download gene expression template#####
+output$add_ge_template_rds <- downloadHandler(
   
   filename = paste0("gene_expression_template.RDS"),
   
@@ -1195,13 +1344,50 @@ output$add_ge_template_gmt <- downloadHandler(
   
 )
 
-##Download connectivity template#####
-output$add_conn_template_gmt <- downloadHandler(
+##Download connectivity template (pertubargens class)#####
+output$add_conn_pcl_template_csv <- downloadHandler(
   
-  filename = paste0("connectivity_template.RDS"),
+  filename = paste0("connectivity_pertubargen_class_template.csv"),
   
   content = function(file){
-    file.copy("data/Template/connectivity.RDS", file)
+    file.copy("data/Template/connectivity_pcl.csv", file)
+  },
+  
+  contentType = "application"
+  
+)
+
+output$add_conn_pcl_template_rds <- downloadHandler(
+  
+  filename = paste0("connectivity_pertubargen_class_template.RDS"),
+  
+  content = function(file){
+    file.copy("data/Template/connectivity_pcl.RDS", file)
+  },
+  
+  contentType = "application"
+  
+)
+
+##Download connectivity template (pertubargens)#####
+output$add_conn_pert_template_csv <- downloadHandler(
+  
+  filename = paste0("connectivity_pertubargens_template.csv"),
+  
+  content = function(file){
+    file.copy("data/Template/connectivity_pert.csv", file)
+  },
+  
+  contentType = "application"
+  
+)
+
+output$add_conn_pert_template_rds <- downloadHandler(
+  
+  filename = paste0("connectivity_pertubargens_template.RDS"),
+  
+  content = function(file){
+    file.copy("data/Template/connectivity_pert.RDS", file)
   },
   
   contentType = "application"
@@ -1254,12 +1440,25 @@ output$add_nursa_template_gmt <- downloadHandler(
 #######################################################
 
 ##Download introduction template#####
-output$edit_intro_template_rds <- downloadHandler(
+output$edit_intro_template_rmd <- downloadHandler(
   
   filename = paste0("introduction_template.Rmd"),
   
   content = function(file){
     file.copy("data/Template/introduction.Rmd", file)
+  },
+  
+  contentType = "application"
+  
+)
+
+##Download profile annotation template#####
+output$edit_pro_template_csv <- downloadHandler(
+  
+  filename = paste0("profile_annotation_template.csv"),
+  
+  content = function(file){
+    file.copy("data/Template/profile_annotation.csv", file)
   },
   
   contentType = "application"
@@ -1280,12 +1479,38 @@ output$edit_pro_template_rds <- downloadHandler(
 )
 
 ##Download chemical annotation template#####
+output$edit_chem_template_csv <- downloadHandler(
+  
+  filename = paste0("chemical_annotation_template.csv"),
+  
+  content = function(file){
+    file.copy("data/Template/chemical_annotation.csv", file)
+  },
+  
+  contentType = "application"
+  
+)
+
+##Download chemical annotation template#####
 output$edit_chem_template_rds <- downloadHandler(
   
   filename = paste0("chemical_annotation_template.RDS"),
   
   content = function(file){
     file.copy("data/Template/chemical_annotation.RDS", file)
+  },
+  
+  contentType = "application"
+  
+)
+
+##Download gene expression template#####
+output$edit_ge_template_csv <- downloadHandler(
+  
+  filename = paste0("gene_expression_template.csv"),
+  
+  content = function(file){
+    file.copy("data/Template/gene_expression.csv", file)
   },
   
   contentType = "application"
@@ -1305,13 +1530,50 @@ output$edit_ge_template_rds <- downloadHandler(
   
 )
 
-##Download connectivity template#####
-output$edit_conn_template_rds <- downloadHandler(
+##Download connectivity template (pertubargens class)#####
+output$edit_conn_pcl_template_csv <- downloadHandler(
   
-  filename = paste0("connectivity_template.RDS"),
+  filename = paste0("connectivity_pertubargen_class_template.csv"),
   
   content = function(file){
-    file.copy("data/Template/connectivity.RDS", file)
+    file.copy("data/Template/connectivity_pcl.csv", file)
+  },
+  
+  contentType = "application"
+  
+)
+
+output$edit_conn_pcl_template_rds <- downloadHandler(
+  
+  filename = paste0("connectivity_pertubargen_class_template.RDS"),
+  
+  content = function(file){
+    file.copy("data/Template/connectivity_pcl.RDS", file)
+  },
+  
+  contentType = "application"
+  
+)
+
+##Download connectivity template (pertubargens)#####
+output$edit_conn_pert_template_csv <- downloadHandler(
+  
+  filename = paste0("connectivity_pertubargens_template.csv"),
+  
+  content = function(file){
+    file.copy("data/Template/connectivity_pert.csv", file)
+  },
+  
+  contentType = "application"
+  
+)
+
+output$edit_conn_pert_template_rds <- downloadHandler(
+  
+  filename = paste0("connectivity_pertubargens_template.RDS"),
+  
+  content = function(file){
+    file.copy("data/Template/connectivity_pert.RDS", file)
   },
   
   contentType = "application"

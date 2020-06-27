@@ -11,34 +11,34 @@ output$pageStub <- renderUI({
       ###About####
       tabPanel(
         title="About", value="About",
-        source("ui_about.R", local=TRUE)$value
+        source("R/ui_about.R", local=TRUE)$value
       ),
       
       ###Annotation#####
       tabPanel(
         title="Annotation", value="Annotation",
-        source("ui_annotation.R", local=TRUE)$value
+        source("R/ui_annotation.R", local=TRUE)$value
       ),
 
       ###Chemical Explorer#####
       tabPanel(
         title = "Chemical Explorer", value = "Chemical Explorer",
-        #"hello"
-        source("ui_chemical.R", local=TRUE)$value
+        #"Hello World!"
+        source("R/ui_chemical.R", local=TRUE)$value
       ),
 
       ###Marker Explorer####
       tabPanel(
         title = "Marker Explorer", value = "Marker Explorer",
-        #"hello"
-        source("ui_marker.R", local=TRUE)$value
+        #"Hello World!"
+        source("R/ui_marker.R", local=TRUE)$value
       ),
 
       ###Heatmap Explorer####
       tabPanel(
         title = "Heatmap Explorer", value = "Heatmap Explorer",
-        #"hello"
-        source("ui_heatmap.R", local=TRUE)$value
+        #"Hello World!"
+        source("R/ui_heatmap.R", local=TRUE)$value
       ),
 
       ###Taxonomic Clustering####
@@ -46,20 +46,15 @@ output$pageStub <- renderUI({
         title = "Taxonomic Clustering",
 
         tabPanel(
-          title = "Instructions", value = "Instructions",
-          source("ui_taxonomic_clustering_instructions.R", local=TRUE)$value
-        ),
-
-        tabPanel(
           title = "K2 Taxanomer Results", value = "K2 Taxanomer Results",
           #"Hello World!"
-          source("ui_taxonomic_clustering.R", local=TRUE)$value
+          source("R/ui_taxonomic_clustering.R", local=TRUE)$value
         ),
 
         tabPanel(
           title = "Compare Multiple", value = "Compare Multiple",
           #"Hello World!"
-          source("ui_compare_multiple.R", local=TRUE)$value
+          source("R/ui_compare_multiple.R", local=TRUE)$value
         )
       )
     )

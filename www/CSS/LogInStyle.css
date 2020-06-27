@@ -21,7 +21,7 @@
   justify-content: center;
   align-items: center;
   border-radius: 10px;
-  border: 2px solid lightgray;
+  border: 1px solid lightgray;
 }
 
 /*==================================================================
@@ -33,10 +33,11 @@
   table-layout: fixed; 
   background-color: #08306b;
   padding: 70px 15px 70px 15px;
-  border-top-right-radius: 8px;
-  border-top-left-radius: 8px;
-  border-bottom-right-radius: 1px;
-  border-bottom-left-radius: 1px;}
+  border-top-right-radius: 10px;
+  border-top-left-radius: 10px;
+  border-bottom-right-radius: 1.5px;
+  border-bottom-left-radius: 1.5px;
+}
 
 .login-form-title {
   float: none;

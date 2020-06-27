@@ -2,16 +2,19 @@
 
 ##Shiny Packages####
 library(BiocManager)
-options(repos = BiocManager::repositories())
 library(data.table) #
 library(ggdendro) #
 library(jsonlite)
+library(tidyverse)
+library(magrittr)
+library(ipc)
 
 ##Shiny Packages####
 library(K2Taxonomer)
 library(visNetwork) #
 library(Biobase) #
 library(GSVA) #
+library(GSEABase) #read in gmt files
 library(limma) #
 library(dendextend) #
 
@@ -28,10 +31,11 @@ library(heatmaply)
 library(RColorBrewer) #
 library(promises)
 library(future)
-plan(multiprocess)
+plan(multisession)
 
-##Create the storage memory to storage cache objects####
-shinyOptions(cache = diskCache("./myapp-cache"))
+##Shiny options####
+options(repos = BiocManager::repositories())
+options(shiny.maxRequestSize=100*1024^2)
 
 ##Define ui logic####
 ui <- bootstrapPage(
@@ -49,7 +53,7 @@ ui <- bootstrapPage(
       
       ####<!-- css style -->####
       tags$link(type="text/css", rel="stylesheet", href="CSS/LogInStyle.css"),
-      tags$link(type="text/css", rel="stylesheet", href="CSS/MainStyle.css"),
+      tags$link(type="text/css", rel="stylesheet", href="CSS/ModeratorStyle.css"),
       
       ####<!-- overall style -->####
       tags$link(type="text/css", rel="stylesheet", href="CSS/style.css"),
@@ -88,7 +92,7 @@ ui <- bootstrapPage(
         
         div(class="text-md-right",
             a(onclick="curlinkFun('home')", href="?home", id="home", class="site-link", "Home"),
-            a(onclick="curlinkFun('about')", href="?about", id="about", class="site-link", "About"),
+            a(onclick="curlinkFun('about')", href="?about", id="about", class="site-link",  "About"),
             a(onclick="curlinkFun('contact')", href="?contact", id="contact", class="site-link", "Contact"),
             a(onclick="curlinkFun('sign_in')", href="?sign_in", id="sign_in", class="site-link", "Sign In")
         )
@@ -99,21 +103,9 @@ ui <- bootstrapPage(
     fluidRow(
       class="body-container", style="padding: 0 0 0 0; margin: 0 0 0 0;",
       
-      column(
-        width=12, style="padding: 0 0 0 0; margin: 0 0 0 0;",
-
-        shinyjs::hidden(
-          div(
-            id = "loading-content",
-            div(class="loader"),
-            h4("Loading...", id="loading_text")
-          )
-        )
-      ),
-      
       column(style="padding: 0 0 0 0; margin: 0 0 0 0;",
         width=12,
-        uiOutput("pageStub")
+        uiOutput("pageStub") %>% withSpinner(type=4, color="#0dc5c1")
       )
     ),
     
@@ -136,188 +128,374 @@ ui <- bootstrapPage(
 ##Define Server Login####
 server <- function(input, output, session) {
   
+  cat("Session started.\n")                                 # this prints when a session starts
+  onSessionEnded(function() { cat("Session ended.\n\n")  })  # this prints when a session ends
+  
+  ##Create a queue object---- 
+  queue <- shinyQueue();
+  
+  ##Execute signals every 100 milliseconds----
+  queue$consumer$start(100); 
+  
+  ##To signal STOP to the future-----
+  interruptor <- AsyncInterruptor$new();
+  
   # Update the clock every 5s to prevent app from being inactive and grey out####
   output$clock <- renderText({
     invalidateLater(5000)
     Sys.time()
   })
-  
+
   # UI object files ####
-  source("ui_input.R")
-
+  source("R/ui_input.R")
+  
+  # Preproccessing data #####
+  source("R/carcinogenome_startup.R", local=TRUE)
+  source("R/taxonomer_startup.R", local=TRUE)  
+  
+  # Morpheus heatmap ####
+  source("R/morpheus_heatmap.R", local=TRUE)
+  
+  # TAS, Modzscores calculation ####
+  source("R/tas_modzscores_calculation.R", local=TRUE)
+  
   ## Read in the project list ####
-  projectlist <- reactiveVal({
-    read.csv(paste0("data/Project_List.csv"), header = TRUE, as.is = TRUE)
+  projectlist <- read_csv(paste0("data/Project_List.csv"))
+  
+  #load server code for page specified in URL
+  fname = isolate({ session$clientData$url_search })
+  
+  if(nchar(fname)==0) { fname = "?home" } # blank means home page
+  fname = paste0(substr(fname, 2, nchar(fname))) # remove leading "?"
+  
+  # Read in the profile data ####
+  profile_dat <- reactive({
+
+    future({
+      readRDS(paste0("data/", fname, "/Profile_Annotation.RDS"))
+    }) %...!% { return(NULL) }
+    
   })
   
-  ## Read in the login list ####
-  loginlist <- reactiveVal({
-      read.csv(paste0("data/User_Login_List.csv"), header = TRUE, as.is = TRUE)
+  # Read in the chemical data ####
+  chemical_dat <- reactive({
+    
+    future({
+      readRDS(paste0("data/", fname, "/Chemical_Annotation.RDS"))
+    }) %...!% { return(NULL) }
+    
   })
   
-  ## Create reactive values ####
-  profile_dat <- reactiveVal(NULL);
-  chemical_dat <- reactiveVal(NULL);
-  expression_dat <- reactiveVal(NULL);
-  gs_enrichment_dat <- reactiveVal(NULL);
-  connectivity_dat <- reactiveVal(NULL);
-  #K2summary <- reactiveVal(NULL);
+  # Read in the expression data ####
+  expression_dat <- reactive({
+    
+    future({
+      readRDS(paste0("data/", fname, "/Expression_Set.RDS"))
+    }) %...!% { return(NULL) }
+    
+  })
   
-  # Observe when url changes ####
-  observeEvent(session$clientData$url_search, {
+  # Read in the connectivity data ####
+  connectivity_dat <- reactive({
     
-    if(session$clientData$url_search==""){ 
-      fname = "home"
-    }else{ 
-      fname = gsub("\\?", "", isolate({ session$clientData$url_search }))
-    }
+    future({
+      readRDS(paste0("data/", fname, "/Connectivity.RDS"))
+    }) %...!% { return(NULL) }
     
-   ## Get the R files for the selected page ####
-   if(fname %in% c("home", "about", "contact", "sign_in")){
-     
-     ## load and run server code for this page ####
-     source("moderator_page.R", local=TRUE)
-     source("add_project.R", local=TRUE)
-     source(paste0(fname, ".R"), local=TRUE) 
-     
-   }else{
-     
-     ## Hide loader and show content ####
-     shinyjs::show(id = "loading-content", anim = TRUE, animType = "fade")
-     
-     # Read in the profile data ####
-     future({
-       df <- readRDS(paste0("data/", fname, "/Profile_Annotation.RDS"))
-       df
-     }) %...>% profile_dat()
-     
-     # Read in the chemical data ####
-     future({
-       df <- readRDS(paste0("data/", fname, "/Chemical_Annotation.RDS"))
-       df
-     }) %...>% chemical_dat()
-     
-     # Read in the expression data ####
-     future({
-       df <- readRDS(paste0("data/", fname, "/Expression_Set.RDS"))
-       df
-     }) %...>% expression_dat()
-     
-     # Read in the connectivity data ####
-     future({
-       df <- readRDS(paste0("data/", fname, "/Connectivity.RDS"))
-       df
-     }) %...>% connectivity_dat()
-     
-     # Read in the gs enrichment data ####
-     future({
-       df <- readRDS(paste0("data/", fname, "/GS_Enrichment.RDS"))
-       df
-     }) %...>% gs_enrichment_dat()
-     
-     # # Read in K2 Taxonomver data ####
-     # future({
-     #   df <- readRDS(paste0("data/", fname, "/K2results.RDS"))
-     #   df
-     # }) %...>% K2summary()
-     
-     # Read in K2 Taxonomver data ####
-     K2summary <- readRDS(paste0("data/", fname, "/K2results.rds"))
-     
-     # Preproccessing data #####
-     source("carcinogenome_startup.R", local=TRUE)
-     source("taxonomer_startup.R", local=TRUE)     
-     
-     # # Run the main app###
-     source("main_app.R", local=TRUE)  
-     
-     # Server logic ####
-     source("server_annotation.R", local=TRUE)
-     source("server_chemical.R", local=TRUE)
-     source("server_marker.R", local=TRUE)
-     source("server_heatmap.R", local=TRUE)
-     source("server_taxonomic_clustering.R", local=TRUE)
-     source("server_compare_multiple.R", local=TRUE)
-     
-     ## Hide loader and show content ####
-     shinyjs::hide(id = "loading-content", anim = TRUE, animType = "fade", time=1)
-
-   }
-   
-  }, ignoreNULL = FALSE)
+  })
   
-  ## Create reactive values####
-  gs_enrichment_version <- reactiveVal(NULL);
-  experimental_design <- reactiveVal(NULL);
-  helptext_geneset <- reactiveVal(NULL);
-  dsmap <- reactiveVal(NULL);
+  # Read in the gs enrichment data ####
+  gs_enrichment_dat <- reactive({
+    
+    future({
+      readRDS(paste0("data/", fname, "/GS_Enrichment.RDS"))
+    }) %...!% { return(NULL) }
+    
+  })
   
-  observeEvent(projectlist(), {
+  # Read in K2 Taxonomver data ####
+  taxonomer_results <- reactive({
+  
+    future({
+      
+      ##Shiny Packages####
+      require(K2Taxonomer)
+      require(visNetwork) #
+      require(Biobase) #
+      require(BiocGenerics)
+      
+      # Read in K2 Taxonomver data ####
+      K2summary <- readRDS(paste0("data/", fname, "/K2results.RDS"))
+      #print("hello1")
+      
+      # Parse results
+      info <- K2info(K2summary)  # Profile information
+      infoMat <- as.matrix(info) # Format information
+      meta <- K2meta(K2summary) # Get meta data
+      #print("hello2")
+      
+      #Create variable options
+      varOptions <- sort(colnames(info))
+      names(varOptions) <- varOptions
+      
+      if(!is.null(meta$cohorts)) {
+        varOptions <- varOptions[varOptions != meta$cohorts]
+      } else {
+        varOptions <- varOptions[varOptions != "sampleID"]
+      }
+      #print("hello3")
+      
+      K2res <- K2results(K2summary) # Format K2 results
+      
+      # Get IDs of each group ####
+      obsMap <- unlist(lapply(K2res, function(x) x$obs), recursive = F)
+      
+      dataMatrix <- K2data(K2summary) # Format dataMatrix
+      genesets <- K2genesets(K2summary) # Get geneset lists
+      gene2Pathway <- K2gene2Pathway(K2summary) # Get gene2pathway matching
+      eSet <- K2eSet(K2summary) # Get expression set
+      gSet <- K2gSet(K2summary) # Get gene set projection expression set
+      #print("hello4")
+      
+      # Create static dendrogram
+      K2dendrogram <- K2dendro(K2summary)
+      
+      ## Get sample order ####
+      labs <- get_leaves_attr(K2dendrogram, "label")
+      
+      # Create interactive dendrogram ####
+      vNetOut <- K2visNetwork(K2summary)
+      #print("hello5")
+      
+      # If too many observations in terminal labels, unlabel them
+      if (max(lengths(regmatches(vNetOut$x$nodes$label, gregexpr("\n", vNetOut$x$nodes$label)))) > 20 ) {
+        
+        # Fix font size
+        vNetOut$x$nodes$font.size <- 25
+        vNetOut$x$nodes$font.size[vNetOut$x$nodes$shape == "box"] <- 0
+        
+        # Change shape
+        vNetOut$x$nodes$shape[vNetOut$x$nodes$shape == "box"] <- "square"
+      }
+      
+      # Get the mod test table
+      if(!is.null(K2res[[1]]$modTests)){
+        
+        # Format table
+        K2modTestList <- lapply(K2res, function(x) {
+          modTests <- x$modTests
+          names(modTests) <- c("1", "2")
+          do.call(rbind, modTests)
+        })
+        
+        names(K2modTestList) <- names(K2res)
+        K2modTestFram <- do.call(rbind, K2modTestList)[,c("value", "pval", "fdr")]
+        
+        # Get parent node
+        K2modTestFram$Parent <- regmatches(rownames(K2modTestFram), regexpr("^[^.]+", rownames(K2modTestFram)))
+        
+        # Get direction to chile
+        K2modTestFram$Direction <- as.character(gsub("[[:alpha:]]+[.]|[.][[:digit:]]+$", "", rownames(K2modTestFram)))
+        
+        # Get child
+        K2modTestFram$Child <- apply(K2modTestFram[, c("Parent", "Direction")], 1, function(x){
+          vSub <- vNetOut$x$edges[vNetOut$x$edges$from == x[1],]
+          vSub$to[as.numeric(x[2])]
+        })
+        
+        # Get split
+        K2modTestFram$Split <- paste0(K2modTestFram$Parent, K2modTestFram$Direction)
+        
+        # Format p-values
+        K2modTestFram <- K2modTestFram[!is.na(K2modTestFram$pval),]
+        K2modTestFram <- K2modTestFram[order(K2modTestFram$pval),]
+        
+        # Get unrenamed variables of mod test for qvalues formatting
+        mvTabSub <- K2modTestFram
+        
+        K2modTestFram <- K2modTestFram[, c("Split", "Child", "value", "pval", "fdr")]
+        colnames(K2modTestFram) <- c("Split", "Node", "Variable", "P Value", "Q Value")
+        
+        K2modTestFram$`P Value` <- signif(K2modTestFram$`P Value`, 2)
+        K2modTestFram$`Q Value` <- signif(K2modTestFram$`Q Value`, 2)
+        
+        # Color breaks for q values
+        breaks <- c(1, 0.25, 0.1, 0.05, 0.01, 0.001, 0)
+        breakColors <- brewer.pal(7, "Greens")
+        mvTabSub$color <- sapply(mvTabSub$pval, function(pval) {
+          breakColors[which.min(breaks >= pval)]
+        })
+        
+        # Size breaks
+        breaks <- c(1, 0.1, 0.05, 0.01, 0.001, 0.0001, 0)
+        breakSize <- seq(length(breaks)) * 7
+        mvTabSub$width <- sapply(mvTabSub$pval, function(pval) {
+          breakSize[which.min(breaks >= pval)]
+        })
+        
+        # Add 2 values
+        vNetOut_qvalues <- vNetOut
+        #print("hello6")
+        
+        # Change width of edges
+        mEdge <- mvTabSub[, c("Parent", "Child", "width")][!duplicated(mvTabSub[, c("Parent", "Child")]),]
+        colnames(mEdge) <- c("from", "to", "width")
+        edgeFram <- merge(vNetOut_qvalues$x$edges, mEdge, all.x = TRUE, sort = FALSE)
+        edgeFram$width[is.na(edgeFram$width)] <- 1
+        edgeFram$color.inherit <- 'to'
+        vNetOut_qvalues$x$edges <- edgeFram
+        
+        # Change color of edges
+        mNode <- mvTabSub[, c("Child", "color")][!duplicated(mvTabSub[, c("Child")]),]
+        colnames(mNode) <- c("id", "color.border")
+        nodeFram <- left_join(vNetOut_qvalues$x$nodes, mNode)
+        nodeFram$color.border[is.na(nodeFram$color.border)] <- brewer.pal(6, "Greens")[1]
+        nodeFram$color.background <- nodeFram$color.border
+        nodeFram$color.highlight <- 'red'
+        vNetOut_qvalues$x$nodes <- nodeFram
+        
+      }else{
+        
+        K2modTestFram <- NULL
+        
+      }
+      
+      # Get differential gene expression results
+      dgeTable <- getDGETable(K2summary)
+      #print("hello7")
+      
+      ## Get the gene link
+      dgeTable$Link <- sapply(as.character(dgeTable$gene), get_dgeTable_link)
+      
+      # Reorder columns
+      dgeTable <- dgeTable[,c("gene", "split", "mod", "direction", "pval", "fdr", "coef", "mean", "Link")]
+      
+      # Format numbers to fit in table
+      for (i in c("pval", "fdr")) {
+        if(i %in% colnames(dgeTable)){
+          dgeTable[,i] <- signif(dgeTable[,i], digits = 2)
+        }
+      }
+      
+      # Format numbers to fit in table
+      for (i in c("coef", "mean")) {
+        if(i %in% colnames(dgeTable)){
+          dgeTable[,i] <- round(dgeTable[,i], digits = 2)
+        }
+      }
+      
+      # Rename columns
+      colnames(dgeTable) <- c("Gene", "Node", "Group", "Direction", "P Value", "FDR", "Diff", "Mean", "Link")
+      
+      # Get gene set enrichment results
+      enrTable <- getEnrichmentTable(K2summary)
+      
+      # Remove unnecessary columns
+      enrTable <- enrTable[, !colnames(enrTable) %in% c("B", "ntot", "t")]
+      
+      # Add links to gene sets
+      enrTable$Link <- sapply(as.character(enrTable$category), get_enrTablelink)
+      
+      # Format numbers to fit in table
+      for (i in c("pval_hyper", "fdr_hyper", "pval_limma", "fdr_limma")) {
+        if(i %in% colnames(enrTable)){
+          enrTable[,i] <- signif(enrTable[,i], digits = 2)
+        }
+      }
+      
+      # Format numbers to fit in table
+      for (i in c("coef", "mean")) {
+        if(i %in% colnames(enrTable)){
+          enrTable[,i] <- round(enrTable[,i], digits = 2)
+        }
+      }
+      
+      colnames(enrTable) <- c("Gene Set", "Node", "Group", "Direction", "P Value_Hyper", "FDR_Hyper", "N_Overlap", "N_Sig. Genes", "N_Gene Set", "P Value_ssGSEA", "FDR_ssGSEA", "Diff_ssGSEA", "Mean_ssGSEA", "Hits", "Link")
+      #print("hello8")
+      
+      # return a list of objects
+      results <- list(
+        info=info,
+        infoMat=infoMat,
+        meta=meta,
+        K2res=K2res,
+        dataMatrix=dataMatrix,
+        genesets=genesets,
+        gene2Pathway=gene2Pathway,
+        eSet=eSet,
+        gSet=gSet,
+        dgeTable=dgeTable,
+        enrTable=enrTable,
+        K2dendrogram=K2dendrogram,
+        vNetOut=vNetOut,
+        vNetOut_qvalues=vNetOut_qvalues,
+        K2modTestFram=K2modTestFram,
+        options=list(
+          varOptions=varOptions,
+          labs=labs,
+          obsMap=obsMap
+        )
+      )
+      
+      return(results)
+      
+    }) %...!% { return(NULL) }
     
-    req(session$clientData$url_search)
+  })
+  
+  ## Get the R files for the selected page ####
+  if(fname %in% c("home", "about", "contact", "sign_in")){
     
-    fname = gsub("\\?", "", isolate({ session$clientData$url_search }))
-    version <- projectlist()$GS_Enrichment_Version[which(projectlist()$Portal == fname)]
-    design <- projectlist()$Experimental_Design[which(projectlist()$Portal == fname)]
-
-    ##Getting the genes set enrichment version 
-    gs_enrichment_version(version)
+    ## load and run server code for this page ####
+    source(paste0("R/", fname, ".R"), local=TRUE) 
+    source("R/moderator_page.R", local=TRUE)
+    source("R/add_project.R", local=TRUE)
     
-    ##Getting the experimental design
-    experimental_design(design)
+  }else{
+    
+    #get input options####
+    gs_enrichment_version <- projectlist$Enrichment_Version[which(projectlist$Portal == fname)]
+    landmark <- projectlist$Landmark_Gene[which(projectlist$Portal == fname)]
+    exposure_phenotype <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype[which(projectlist$Portal == fname)]), ",", fixed=TRUE)) %>% trimws()
     
     ##Getting the helpext for different gene set enrichment
-    helptext_geneset(
-      paste(
-        "Hallmark: MSigDB Hallmark Pathways (v", version, ")", "<br>",
-        "C2: MSigDB C2 reactome Pathways (v",  version, ")", "<br>",
-        "NURSA: Nuclear Receptor Signaling Atlas, consensome data for human",
-        sep = ""
-      )
+    helptext_geneset <- paste(
+      "Hallmark: MSigDB Hallmark Pathways (v", gs_enrichment_version, ")", "<br>",
+      "C2: MSigDB C2 reactome Pathways (v",  gs_enrichment_version, ")", "<br>",
+      "NURSA: Nuclear Receptor Signaling Atlas, consensome data for human",
+      sep = ""
     )
     
     ##Getting the gene set scores for diffrent gsva methods
-    dsmap(
-      list(
-        Hallmark=paste0("gsscores_h.all.v", version, ".0"),
-        C2=paste0("gsscores_c2.cp.reactome.v", version, ".0"),
-        NURSA=paste0("gsscores_nursa_consensome_Cbyfdrvalue_0.01")
-      )
+    dsmap <- list(
+      Hallmark=paste0("gsscores_h.all.v", gs_enrichment_version, ".0"),
+      C2=paste0("gsscores_c2.cp.reactome.v", gs_enrichment_version, ".0"),
+      NURSA=paste0("gsscores_nursa_consensome_Cbyfdrvalue_0.01")
     )
     
-  }, ignoreNULL = TRUE)
-
-  ## Create reactive values####
-  annot_var <- reactiveVal(NULL);
-  gene_set <- reactiveVal(NULL);
-  
-  observeEvent(expression_dat(), {
+    # # Run the main app###
+    source("R/main_app.R", local=TRUE)  
     
-    req(expression_dat())
+    # Server logic ####
+    source("R/server_annotation.R", local=TRUE)
+    source("R/server_chemical.R", local=TRUE)
+    source("R/server_marker.R", local=TRUE)
+    source("R/server_heatmap.R", local=TRUE)
+    source("R/server_taxonomic_clustering.R", local=TRUE)
+    source("R/server_compare_multiple.R", local=TRUE)
     
-    eset <- expression_dat()
-    
-    if(colnames(pData(eset)) %in% "Sig_Id"){
-      annot_var("Sig_Id")
-    }else if(colnames(pData(eset)) %in% "Chemical_Id"){
-      annot_var("Chemical_Id")
-    }
-    
-  }, ignoreInit = TRUE)
+  }
   
   ## Create reactive values####
-  maxTAS <- reactiveVal(NULL);
-  
-  observeEvent(profile_dat(), {
-    
-    req(profile_dat())
-    
-    minProf<- 3
-    max <- profile_dat()$TAS[order(profile_dat()$TAS, decreasing = TRUE)][minProf]
-    max <- floor(max/0.1)*0.1    
-    maxTAS(max)
-    
-  }, ignoreInit = TRUE)
+  annot_var <- reactive({
+    promise_all(pro_ann=profile_dat(), eset=expression_dat()) %...>% with({
+      if(all(colnames(eset) %in% pro_ann$Sig_Id)){
+        return("Sig_Id")
+      }else{
+        return("Chemical_Id")
+      }
+    })
+  })
   
 }
 

@@ -18,7 +18,7 @@ div(
               column(
                 width=6,
                 textInput(inputId = "mstring", label="Enter a String:", width = "100%"),
-                actionButton(inputId = "searchString", label = "Search", class="mybuttons"),
+                actionButton(inputId = "search_string", label = "Search", class="mybuttons"),
                 actionButton(inputId = "Helpgo", label = "Help", class="mybuttons")
               ), 
               
@@ -48,7 +48,7 @@ div(
                 class="header-2",
                 div(class="title", "Taxonomer Results"),
                 div(class="content", 
-                    visNetworkOutput(outputId = "dendro", width="100%", height = "650px") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+                    visNetworkOutput(outputId="dendro", width="auto", height="650px") %>% withSpinner(type=4, color="#0dc5c1")
                 )
               )
             )
@@ -78,15 +78,16 @@ div(
                         column(
                           width = 10, offset = 1,
                           br(),
-                          selectInput(inputId = "selCov", label = NULL, choices=varOptions)
+                          selectInput(inputId = "selCov", label = NULL, choices=c("Add Annotation to Heatmap:" = ""))
                         ),
                         column(
                           width = 12,
-                          plotlyOutput(outputId = "heatmapPlot") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+                          plotlyOutput(outputId = "heatmapPlot", width = "auto") %>% withSpinner(type=4, color="#0dc5c1")
                         ),
                         column(
                           width = 10, offset = 1,
-                          uiOutput(outputId = "stabStats")
+                          uiOutput(outputId = "stabStats"),
+                          br(), br()
                         )
                       )
                     ),
@@ -98,8 +99,9 @@ div(
                         column(
                           width=12,
                           br(),
-                          DT::dataTableOutput(outputId = "infoTab") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px"),
-                          checkboxInput(inputId = "viewAll", label = "Display all columns", value = FALSE, width = "100%")
+                          DT::dataTableOutput(outputId = "infoTab") %>% withSpinner(type=4, color="#0dc5c1"),
+                          checkboxInput(inputId = "viewAll", label = "Display all columns", value = FALSE, width = "100%"),
+                          br(), br()
                         )
                       )
                     ),
@@ -111,14 +113,15 @@ div(
                         column(
                           width=12,
                           br(),
-                          DT::dataTableOutput(outputId = "metaVarTab") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+                          DT::dataTableOutput(outputId = "metaVarTab") %>% withSpinner(type=4, color="#0dc5c1")
                         ),
                         
                         column(
                           width=12,
                           br(), 
                           actionButton(inputId = "visualizeQvalues", label = "Visualize Q-values", class="mybuttons"),
-                          actionButton(inputId = "resetQvalues", label = "Reset", class="mybuttons")
+                          actionButton(inputId = "resetQvalues", label = "Reset", class="mybuttons"),
+                          br(), br()
                         )
                       )
                     )
@@ -142,7 +145,7 @@ div(
         class="header-3",
         div(class="title", "Differential Analysis Results"),
         div(class="content",
-            DT::dataTableOutput(outputId = "DGE") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+            DT::dataTableOutput(outputId = "DGE") %>% withSpinner(type=4, color="#0dc5c1")
         )
       )
     )
@@ -158,7 +161,7 @@ div(
         class="header-3",
         div(class="title", "Gene Expression"),
         div(class="content",
-            plotly::plotlyOutput(outputId = "genePlot") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+            plotly::plotlyOutput(outputId = "genePlot", width = "auto") %>% withSpinner(type=4, color="#0dc5c1")
         )
       )
     )
@@ -174,7 +177,7 @@ div(
         class="header-3",
         div(class="title", "Enrichment Results"),
         div(class="content",
-            DT::dataTableOutput(outputId = "HE") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+            DT::dataTableOutput(outputId = "HE") %>% withSpinner(type=4, color="#0dc5c1")
         )
       )
     )
@@ -190,7 +193,7 @@ div(
         class="header-3",
         div(class="title", "Single-Sample Enrichment"),
         div(class="content",
-            plotly::plotlyOutput(outputId = "pathwayPlot") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+            plotly::plotlyOutput(outputId = "pathwayPlot", width = "auto") %>% withSpinner(type=4, color="#0dc5c1")
         )
       )
     )

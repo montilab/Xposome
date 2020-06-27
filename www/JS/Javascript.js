@@ -1,4 +1,7 @@
 
+// resize plotly dimension
+var dimension = [0, 0];
+
 // initiate all links 
 var alllinks = ["home", "about", "contact", "sign_in"];
 
@@ -25,6 +28,10 @@ shinyjs.init = function() {
       
     }
     
+    dimension[0] = window.innerWidth;
+    dimension[1] = window.innerHeight;
+    Shiny.onInputChange("dimension", dimension);
+
     Shiny.onInputChange("hm_de_generate", 0);
     Shiny.onInputChange("hm_es_generate", 0);
     Shiny.onInputChange("hm_conn_generate", 0);

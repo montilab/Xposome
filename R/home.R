@@ -20,12 +20,12 @@ output$pageStub <- renderUI({
 ## output main table ####
 output$main_table <- DT::renderDataTable({
   
-  req(projectlist())
+  req(projectlist) 
   
-  projectlist <- projectlist(); Project <- NULL;
+  projectlist <- projectlist; Project <- NULL;
   
   for(i in 1:nrow(projectlist)){
-    Project <- c(Project, paste0('<a href="?', projectlist$Portal[i], '" class="portal-link" id="', projectlist$Portal[i], '">', projectlist$Project[i], '</a>'))
+    Project <- c(Project, paste0('<a onclick="curlinkFun(&#39;', projectlist$Portal[i], '&#39;)" href="?', projectlist$Portal[i], '" class="portal-link" id="', projectlist$Portal[i], '">', projectlist$Project[i], '</a>'))
   }
   
   table <- data.frame(
@@ -36,13 +36,12 @@ output$main_table <- DT::renderDataTable({
   colnames(table) <- c("Project", "Cell line", "Description")
   
   return(table)
-  
+
 }, escape = FALSE, server = TRUE, rownames=FALSE, selection = "none", 
 options = list(
   dom="T",
   columnDefs = list(
     list(className = 'dt-center', targets = "_all")
-  ),
-  rowCallback = JS( 'function(row, data) { $("td:eq(2)", row).css("text-align", "left"); }')
+  )
 ))
 

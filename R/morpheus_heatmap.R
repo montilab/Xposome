@@ -1,13 +1,4 @@
 
-
-#########################################################
-# 
-# CREATE THE GENE ENRICHMENT SET 
-# 
-#########################################################
-library(Biobase)
-library(jsonlite)
-
 ##CREATE JSON FILES#####
 CreateJSON <- function(outputpath, dataset, genesetname, ge, proann, feature, nr, nc, marker){
   
@@ -51,7 +42,7 @@ CreateJSON <- function(outputpath, dataset, genesetname, ge, proann, feature, nr
       proann[,l] <- dat
     }
   }
-
+  
   #Clean up na in character and numeric string in feature data
   character_cols <- sapply(colnames(feature), function(x){ !is.numeric(feature[,x]) })
   character_cols <- names(which(character_cols))
@@ -205,12 +196,11 @@ CreateJSON <- function(outputpath, dataset, genesetname, ge, proann, feature, nr
 }
 
 ##CREATE HTML FILES#####
-CreateHTML <- function(outputpath, dataset, genesetname, proann, marker, cluster=FALSE){
+CreateHTML <- function(outputpath, dataset, genesetname, proann, feature, marker, cluster=FALSE){
   
   #Create column annotation####
-  phenovar <- colnames(proann);
-  columnseries <- NULL;
-  n <- ifelse(length(phenovar) >= 10, 10, length(phenovar));
+  columnseries <- NULL; phenovar <- colnames(proann);
+  n <- ifelse(length(phenovar) >= 100, 10, length(phenovar));
   
   for(v in 1:n){
     #v=1;
@@ -219,6 +209,23 @@ CreateHTML <- function(outputpath, dataset, genesetname, proann, marker, cluster
       paste0(
         paste0('\t\t\t\t{', '\n'),
         paste0('\t\t\t\t\tfield: ', '"', phenovar[v], '"', ', display: ["color"]', '\n'),
+        paste0('\t\t\t\t}'),
+        collapse=""
+      )
+    )
+  }
+  
+  #Create row annotation####
+  rowseries <- NULL; feature_var <- colnames(feature)
+  n <- ifelse(length(feature_var) >= 100, 3, length(feature_var));
+  
+  for(v in 1:n){
+    #v=1;
+    rowseries <- c(
+      rowseries, 
+      paste0(
+        paste0('\t\t\t\t{', '\n'),
+        paste0('\t\t\t\t\tfield: ', '"', feature_var[v], '"', ', display: ["text"]', '\n'),
         paste0('\t\t\t\t}'),
         collapse=""
       )
@@ -296,9 +303,7 @@ CreateHTML <- function(outputpath, dataset, genesetname, proann, marker, cluster
     paste0(columnseries, collapse = ",\n"), '\n',
     '\t', '\t', '\t', '],', '\n',
     '\t', '\t', '\t', 'rows: [ ', '\n',
-    '\t', '\t', '\t', '\t', '{', '\n',
-    '\t', '\t', '\t', '\t', '\t', paste0('field: "', markername, '", display: ["text"]'), '\n',
-    '\t', '\t', '\t', '\t', '}', '\n',
+    paste0(rowseries, collapse = ",\n"), '\n',
     '\t', '\t', '\t', '],', '\n',
     '\t', '\t', '\t', 'columnFilter: {', '\n',
     '\t', '\t', '\t', '\t', 'filters : [{', '\n',
@@ -322,129 +327,3 @@ CreateHTML <- function(outputpath, dataset, genesetname, proann, marker, cluster
   sink()
   
 }
-
-# Loading data files ####
-HEPG2 <- readRDS(paste0("~/Documents/Internship Project/Exposome app/shinyApps/data/HEPG2/data.RDS"))
-MCF10A <- readRDS(paste0("~/Documents/Internship Project/Exposome app/shinyApps/data/MCF10A/data.RDS"))
-ADIPO <- readRDS(paste0("~/Documents/Internship Project/Exposome app/shinyApps/data/ADIPO/data.RDS"))
-
-# Run gene set variation analysis for hallmark
-dataset=c("HEPG2", "MCF10A", "ADIPO"); 
-
-for(d in 1:length(dataset)){
-  #d=1;
-  dat <- get(paste0(dataset[d]))
-  proann <- dat[["Profile Annotation"]]
-  chemann <- dat[["Chemical Annotation"]]  
-  eset <- dat[["Gene Expression"]]
-  gsen <- dat[["Gene Set Enrichment"]]
-  conn <- dat[["Connectivity"]]
- 
-  #########################################################
-  # 
-  # EXPORT THE LANDMARK GENES JSON AND HTML
-  # 
-  #########################################################
-  
-  genesetname <- paste0("gene_expression")
-  eset <- eset
-  ge <- exprs(eset)
-  feature <- fData(eset)
-  cnames <- colnames(ge)
-  
-  nr <- nrow(ge); nc <- ncol(ge);
-  marker <- "Genes"; cluster <- FALSE;
-  
-  jsonoutputpath=paste0("~/Documents/Internship Project/Exposome app/shinyApps/www/JSON/", dataset[d], "/", genesetname, ".json")
-  htmloutputpath=paste0("~/Documents/Internship Project/Exposome app/shinyApps/www/JSON/", dataset[d], "/", genesetname, ".html")
-  
-  if(all(cnames %in% rownames(proann))){
-    CreateJSON(outputpath=jsonoutputpath, dataset=dataset[d], genesetname=genesetname, ge=ge, proann=proann, feature=feature, nr=nr, nc=nc, marker=marker)
-    CreateHTML(outputpath=htmloutputpath, dataset=dataset[d], genesetname=genesetname, proann=proann, marker=marker, cluster=cluster)
-  }else if(all(cnames %in% rownames(chemann))){
-    CreateJSON(outputpath=jsonoutputpath, dataset=dataset[d], genesetname=genesetname, ge=ge, proann=chemann, feature=feature, nr=nr, nc=nc, marker=marker)
-    CreateHTML(outputpath=htmloutputpath, dataset=dataset[d], genesetname=genesetname, proann=chemann, marker=marker, cluster=cluster)
-  }else{
-    print("Something goes wrong.")
-  }
-  
-  closeAllConnections() 
-  
-  #########################################################
-  # 
-  # EXPORT THE CMAP CONNECTIVITY JSON AND HTML
-  # 
-  #########################################################
-  
-  # Create classes for CMap connectivity #####
-  connmap <- c("pcl", "pert")
-  
-  for(p in 1:length(connmap)){
-    #p=1;
-    genesetname <- paste0(connmap[p], "_connectivity")
-    eset <- conn[[connmap[p]]]
-    ge <- exprs(eset)
-    feature <- fData(eset)
-    cnames <- colnames(ge)
-    
-    nr <- nrow(ge); nc <- ncol(ge); 
-    marker <- "Connectivity"; cluster <- FALSE;
-    
-    jsonoutputpath=paste0("~/Documents/Internship Project/Exposome app/shinyApps/www/JSON/", dataset[d], "/", genesetname, ".json")
-    htmloutputpath=paste0("~/Documents/Internship Project/Exposome app/shinyApps/www/JSON/", dataset[d], "/", genesetname, ".html")
-    
-    if(all(cnames %in% rownames(proann))){
-      CreateJSON(outputpath=jsonoutputpath, dataset=dataset[d], genesetname=genesetname, ge=ge, proann=proann, feature=feature, nr=nr, nc=nc, marker=marker)
-      CreateHTML(outputpath=htmloutputpath, dataset=dataset[d], genesetname=genesetname, proann=proann, marker=marker, cluster=cluster)
-    }else if(all(cnames %in% rownames(chemann))){
-      CreateJSON(outputpath=jsonoutputpath, dataset=dataset[d], genesetname=genesetname, ge=ge, proann=chemann, feature=feature, nr=nr, nc=nc, marker=marker)
-      CreateHTML(outputpath=htmloutputpath, dataset=dataset[d], genesetname=genesetname, proann=chemann, marker=marker, cluster=cluster)
-    }else{
-      print("Something goes wrong.")
-    }
-    
-  }
-  
-  closeAllConnections() 
-
-  #########################################################
-  # 
-  # EXPORT THE GENE SET JSON AND HTML
-  # 
-  #########################################################
-  
-  # get the gene set 
-  genesetname <- names(gsen)
-  
-  for(u in 1:length(genesetname)){
-    #u=1;
-    ##Create output data
-    eset <- gsen[[u]]
-    ge <- exprs(eset)
-    feature <- fData(eset)
-    cnames <- colnames(ge)
-    
-    nr <- nrow(ge); nc <- ncol(ge); 
-    marker <- "Gene Sets"; cluster <- FALSE;
-    
-    jsonoutputpath=paste0("~/Documents/Internship Project/Exposome app/shinyApps/www/JSON/", dataset[d], "/", genesetname[u], ".json")
-    htmloutputpath=paste0("~/Documents/Internship Project/Exposome app/shinyApps/www/JSON/", dataset[d], "/", genesetname[u], ".html")
-    
-    if(all(cnames %in% rownames(proann))){
-      CreateJSON(outputpath=jsonoutputpath, dataset=dataset[d], genesetname=genesetname[u], ge=ge, proann=proann, feature=feature, nr=nr, nc=nc, marker=marker)
-      CreateHTML(outputpath=htmloutputpath, dataset=dataset[d], genesetname=genesetname[u], proann=proann, marker=marker, cluster=cluster)
-    }else if(all(cnames %in% rownames(chemann))){
-      CreateJSON(outputpath=jsonoutputpath, dataset=dataset[d], genesetname=genesetname[u], ge=ge, proann=chemann, feature=feature, nr=nr, nc=nc, marker=marker)
-      CreateHTML(outputpath=htmloutputpath, dataset=dataset[d], genesetname=genesetname[u], proann=chemann, marker=marker, cluster=cluster)
-    }else{
-      print("Something goes wrong.")
-    }
-    
-  }
-  
-  closeAllConnections() 
-  
-}
-
-js <- read_json(paste0("~/Documents/Internship Project/Exposome app/shinyApps/www/JSON/", dataset[1], "/gene_expression.json"), simplifyVector = TRUE)
-

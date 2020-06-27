@@ -1,0 +1,629 @@
+
+## Observe when add data is clicked ####
+observeEvent(input$Add_Project_Add_Button, {
+  
+  ##obtain the current project list
+  proj_dat <- data.frame(projectdata())
+  
+  ##obtain the input values
+  Project=trimws(input$Add_Project_Name);
+  Cell_Line=trimws(input$Add_Cell_Line_Name);
+  Portal=trimws(input$Add_Portal_Name);
+  Description=trimws(input$Add_Description);  
+  Landmark_Gene=trimws(input$Add_Landmark);  
+  
+  ## check all the input variables###
+  check <- c();
+  
+  if(Project=="" | Cell_Line=="" | Portal=="" | Description==""){
+    addprojectwarningmsg("Please fill in the required (*) fields.")
+    check <- c(check, "No")
+  }else{
+    addprojectwarningmsg("")
+  }
+  
+  Enrichment_Version=ifelse(input$add_cur_enrichment_option=="Yes", trimws(input$Add_Enrichment_Version), trimws(input$Add_New_Enrichment_Version));
+  
+  if(is.na(Enrichment_Version) | is.character(as.numeric(Enrichment_Version)) | as.numeric(Enrichment_Version) <= 0){
+    addenrichmentversionwarningmsg("Please enter a number greater than 0.")
+    check <- c(check, "No")
+  }else{
+    addenrichmentversionwarningmsg("")
+  }
+  
+  if(!is.null(pro_file())){
+    
+    Compound=input$add_variable_compound; 
+
+    if(Compound==""){
+      addcompoundvarwarningmsg("Please pick a selection.")
+      check <- c(check, "No")
+    }else{
+      addcompoundvarwarningmsg("")
+    }
+    
+    Exposure=input$add_variable_exposure;
+  
+    if(length(Exposure)==0){
+      addexposurevarwarningmsg("Please pick a selection.")
+      check <- c(check, "No")
+    }else{
+      addexposurevarwarningmsg("")
+    }
+    
+  }
+  
+  if(!is.null(chem_file())){
+    
+    Exposure_Phenotype=input$add_variable_exposure_phenotype;
+    
+    if(length(Exposure_Phenotype)==0){
+      addexposurephenotypevarwarningmsg("Please pick a selection.")
+      check <- c(check, "No")
+    }else{
+      addexposurephenotypevarwarningmsg("")
+    }
+    
+  }
+  
+  if(input$add_conn_option %in% "Yes" & (is.null(conn_pcl_file()) | is.null(conn_pert_file()))){
+    check <- c(check, "No")
+  }
+  
+  if(is.null(intro_file()) | is.null(pro_file()) | is.null(chem_file()) | is.null(ge_file())){
+    check <- c(check, "No")
+  } 
+  
+  if(any(check %in% "No")) { addinputwarningmsg("Please fill in the required (*) fields."); return(NULL) }
+  
+  #Validate to see the project exists
+  validate_proj <- proj_dat %>% 
+    filter(
+      Project %in% !!Project
+    )
+  
+  #Validate to see the project exists
+  validate_portal <- proj_dat %>% 
+    filter(
+      Portal %in% !!Portal
+    )
+  
+  if(nrow(validate_proj) > 0 | nrow(validate_portal) > 0){
+    
+    if(nrow(validate_proj) > 0){
+      addprojectwarningmsg("This project is already existed. Please enter another project name.")
+    }
+    
+    if(nrow(validate_portal) > 0){
+      addprojectwarningmsg("This portal name is already existed. Please enter another portal name.")
+    }
+    
+    if(nrow(validate_proj) > 0 & nrow(validate_portal) > 0){
+      addprojectwarningmsg("Both project and portal name are already existed. Please enter another name for project and portal.")
+    }
+    
+  }else{
+    
+    addprojectwarningmsg(""); addinputwarningmsg(""); #remove all warning messages
+    
+    ##Getting introduction data####
+    intro_file <- intro_file();
+    
+    ##Getting gene expression####
+    add_ge_file_type <- input$add_ge_file_type; Add_Landmark <- input$Add_Landmark;
+    
+    if(add_ge_file_type %in% ".csv"){
+      gene_expression <- ge_file()
+    }else{
+      ge_dat <- ge_file()
+      gene_expression <- exprs(ge_file())
+    }
+    
+    ##Getting chemical and profile annotation####
+    chem_ann <- chem_file(); pro_ann <- pro_file();
+    
+    ##Getting the variables annotation
+    if(is.null(input$Add_TAS)){ Add_TAS <- FALSE }else{ Add_TAS <- input$Add_TAS }
+    if(is.null(input$Add_Modzscores)){ Add_Modzscores <- FALSE }else{ Add_Modzscores <- input$Add_Modzscores}
+    
+    ##Getting connectivity map####
+    add_conn_option <- input$add_conn_option;
+    add_conn_pcl_file_type <- input$add_conn_pcl_file_type;
+    add_conn_pert_file_type <- input$add_conn_pert_file_type;
+    
+    if(add_conn_option %in% "Yes"){
+      if(add_conn_pcl_file_type %in% ".csv"){
+        conn_pcl <- conn_pcl_file()
+      }else{
+        conn_pcl_dat <- conn_pcl_file()
+        conn_pcl <- exprs(conn_pcl_file())       
+      }
+      
+      if(add_conn_pert_file_type %in% ".csv"){
+        conn_pert <- conn_pert_file()
+      }else{
+        conn_pert_dat <- conn_pert_file()
+        conn_pert <- exprs(conn_pert_file())       
+      }
+    }
+    
+    ##Gene set enrichment###
+    add_cur_enrichment_option <- input$add_cur_enrichment_option;
+    
+    # Read in the gene set collection
+    if(add_cur_enrichment_option=="Yes"){
+      gsscores_hallmark <- getGmt(paste0("data/Enrichment Gene Set/v", Enrichment_Version, "/h.all.v", Enrichment_Version, ".0.gmt"))
+      gsscores_c2_reactome <- getGmt(paste0("data/Enrichment Gene Set/v", Enrichment_Version, "/c2.cp.reactome.v", Enrichment_Version, ".0.gmt"))
+      gsscores_nursa <- getGmt(paste0("data/Enrichment Gene Set/v", Enrichment_Version, "/nursa_consensome_Cbyfdrvalue_0.01.gmt"))
+    }else{
+      gsscores_hallmark <- hall_mark_file()
+      gsscores_c2_reactome <- c2_file()
+      gsscores_nursa <- nursa_file()
+    }
+    
+    ##Taxonomer parameters####
+    cohorts <- cohorts(); featMetric <- input$add_feature_metric; ssGSEAalg <- input$add_ssGSEA_method;
+    methods <- unlist(lapply(seq_along(Exposure_Phenotype), function(v){ input[[paste0("metavar_", Exposure_Phenotype[v])]] }))
+    
+    ##Create new progress bar
+    progress <- AsyncProgress$new(message = "Creating new portal:", value=0)
+    
+    fut <- future({
+      
+      ##Shiny Packages####
+      require(K2Taxonomer)
+      require(visNetwork) #
+      require(Biobase) #
+      require(BiocGenerics)
+      
+      ##Create new portal directory to store data and results####
+      dir.create(paste0("data/", Portal), showWarnings=FALSE, recursive=TRUE)
+      dir.create(paste0("www/JSON/", Portal), showWarnings=FALSE, recursive=TRUE)
+      dir.create(paste0("www/RMD"), showWarnings=FALSE, recursive=TRUE)
+      
+      ##########################################################################################
+      #
+      # INTRODUCTION PAGE####
+      #
+      ##########################################################################################
+      
+      progress$inc(1/10, detail = "Saving introduction page")
+      
+      ##create introduction page
+      file.copy(from=intro_file, to=paste0("www/RMD/introduction_", Portal, ".Rmd"), overwrite=TRUE)
+      
+      print("Saving introduction page")
+      
+      ##########################################################################################
+      #
+      # CHEMICAL AND PROFILE ANNOTATION####
+      #
+      ##########################################################################################
+      
+      progress$inc(2/10, detail = "Saving chemical and profile annotation")
+      
+      #Get the gene expression, profile and chemical annotation;
+      # gene_expression <- read.csv(paste0("~/Documents/Internship Project/Exposome app/K2Example/TGGates_Example/Expression_Set.csv"), header=TRUE, row.names=1, check.names=FALSE, stringsAsFactors = TRUE)
+      # chem_ann <- read.csv(paste0("~/Documents/Internship Project/Exposome app/K2Example/TGGates_Example/Chemical_Annotation.csv"), header=TRUE, row.names=1, check.names=FALSE, stringsAsFactors = TRUE)
+      # pro_ann <- read.csv(paste0("~/Documents/Internship Project/Exposome app/K2Example/TGGates_Example/Profile_Annotation.csv"), header=TRUE, row.names=1, check.names=FALSE, stringsAsFactors = TRUE)
+
+      ##########################################################################################
+      #
+      # GET THE UNIQUE ID BY CHEM FOR PRO ANN####
+      #
+      ##########################################################################################
+      pro_ann$unique_ID_by_chem <- lapply(1:nrow(pro_ann), function(r){ paste0(unlist(pro_ann[r,Exposure]), collapse="_") }) %>% unlist()
+      
+      ##########################################################################################
+      #
+      # CALCULATE MOD Z-SCORES AND REPLICATE CORRELATION (CC) FOR TAS####
+      #
+      ##########################################################################################
+ 
+      if(Add_TAS==TRUE | Add_Modzscores==TRUE){
+        
+        calc_results <- TAS_Modzscores_Calculation(pro_ann=pro_ann, chem_ann=chem_ann, gene_expression=gene_expression)
+        
+        if(Add_TAS){
+          # get TAS
+          TAS <- calc_results[["TAS"]]
+          
+          # chemical annotation information
+          chem_ann <- chem_ann %>% left_join(TAS)
+          
+          # profile annotation information
+          pro_ann <- pro_ann %>% left_join(chem_ann)
+        }
+        
+        # get modzscores
+        if(Add_Modzscores){
+          Modzscores <- calc_results[["Modzscores"]]
+          gene_expression <- Modzscores
+        }
+        
+      }else{
+        
+        pro_ann <- pro_ann %>% left_join(chem_ann)
+        
+      }
+      
+      ##save data to portal folder####
+      saveRDS(pro_ann, paste0("data/", Portal, "/Profile_Annotation.RDS"))
+      saveRDS(chem_ann, paste0("data/", Portal, "/Chemical_Annotation.RDS"))
+      
+      print("Saving chemical and profile annotation")
+      
+      ##########################################################################################
+      #
+      # GENE EXPESSION ####
+      #
+      ##########################################################################################
+      
+      progress$inc(3/10, detail = "Saving expression set")
+      
+      #Create a expression set####
+      gene_expression <- as.matrix(gene_expression, nrow=nrow(gene_expression), ncol=ncol(gene_expression), byrow=TRUE, dimnames=list(rownames(gene_expression), colnames(gene_expression)))
+      var <- ifelse(all(colnames(gene_expression) %in% pro_ann$Sig_Id), "Sig_Id", "Chemical_Id")
+      
+      #create phenotypic data
+      pData <- data.frame(pro_ann[match(colnames(gene_expression), pro_ann[,var]),], stringsAsFactors=TRUE)
+      pData <- pData[!duplicated(pData[,var]),]
+      rownames(pData) <- pData[,var]
+      phenoData <- new("AnnotatedDataFrame", data=pData)
+      
+      #create feature data
+      if(add_ge_file_type == ".RDS"){
+        
+        fData <- fData(ge_dat)
+        
+        if(nrow(fData)==0){
+          fData <- data.frame(Gene=rownames(gene_expression), stringsAsFactors = TRUE)
+          rownames(fData) <- fData$Gene
+        }else{
+          if(!"Gene" %in% colnames(fData)){
+            fData <- data.frame(Gene=rownames(gene_expression), fData, stringsAsFactors = TRUE)
+            rownames(fData) <- fData$Gene
+          }
+        }
+        
+      }else{
+        
+        fData <- data.frame(Gene=rownames(gene_expression), stringsAsFactors = TRUE)
+        rownames(fData) <- fData$Gene
+        
+      }
+      
+      if(Add_Landmark){
+        landmark <- readRDS("data/Landmark/landmark_gene.RDS")
+        fData <- (fData %>% left_join(landmark, by="Gene")) %>% replace_na(list(Landmark_Gene="Unknown"))
+        rownames(fData) <- fData$Gene
+      }
+      
+      featureData <- new("AnnotatedDataFrame", data=fData)
+      
+      #create expression set
+      expressionSet <- ExpressionSet(assayData=gene_expression, phenoData=phenoData, featureData=featureData)
+      
+      ##Add data to portal object####
+      saveRDS(expressionSet, paste0("data/", Portal, "/Expression_Set.RDS"))
+      print("Saving gene expression file")
+      
+      ##Create morpheus heatmap####
+      eset <- expressionSet
+      landmark <- colnames(fData(eset)) %in% "Landmark_Gene"
+      
+      if(any(landmark %in% TRUE)){
+        genesetname <- paste0("landmark_gene")
+        inds <- fData(eset)[,"Landmark_Gene"] %in% "Yes"
+        eset <- eset[inds,]
+        marker <- "Landmark"
+        cluster <- FALSE
+      }else{
+        genesetname <- paste0("gene_expression")
+        eset <- eset
+        marker <- "Genes"
+        cluster <- FALSE
+      }
+      
+      ge <- exprs(eset)
+      feature <- fData(eset)
+      cnames <- colnames(ge)
+      nr <- nrow(ge); nc <- ncol(ge);
+      
+      jsonoutputpath=paste0("www/JSON/", Portal, "/", genesetname, ".json")
+      htmloutputpath=paste0("www/JSON/", Portal, "/", genesetname, ".html")
+      
+      if(var %in% "Sig_Id"){
+        CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=pro_ann, feature=feature, nr=nr, nc=nc, marker=marker)
+        CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=pro_ann, feature=feature, marker=marker, cluster=cluster)
+      }else{
+        CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=chem_ann, feature=feature, nr=nr, nc=nc, marker=marker)
+        CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=chem_ann, feature=feature, marker=marker, cluster=cluster)
+      }
+      
+      print("Saving gene expression Morpheous heatmap")
+      
+      ##########################################################################################
+      #
+      # CONNECTIVITY MAP#####
+      #
+      ##########################################################################################
+      
+      progress$inc(4/10, detail = "Saving connectivity map")
+      
+      if(add_conn_option %in% "Yes"){
+        
+        # Create a null list for connectivity map####
+        connectivity_map <- list(pcl=NULL, pert=NULL);
+        
+        # Create classes for CMap connectivity #####
+        connmap <- c("pcl", "pert")
+        
+        for(p in 1:length(connmap)){
+          #p=1;
+          add_conn_file_type <- get(paste0("add_conn_", connmap[p], "_file_type"))
+          conn_dat <- get(paste0("conn_", connmap[p], "_dat"))
+          
+          if(connmap[p] %in% "pcl"){
+            conn_ge <- as.matrix(conn_pcl, nrow=nrow(conn_pcl), ncol=ncol(conn_pcl), byrow=TRUE, dimnames=list(rownames(conn_pcl), colnames(conn_pcl)))
+          }else{
+            conn_ge <- as.matrix(conn_pert, nrow=nrow(conn_pert), ncol=ncol(conn_pert), byrow=TRUE, dimnames=list(rownames(conn_pert), colnames(conn_pert)))
+          }
+          
+          var <- ifelse(all(colnames(conn_ge) %in% pro_ann$Sig_Id), "Sig_Id", "Chemical_Id")
+          
+          #create phenotypic data
+          pData <- data.frame(pro_ann[match(colnames(conn_ge), pro_ann[,var]),], stringsAsFactors = TRUE)
+          pData <- pData[!duplicated(pData[,var]),]
+          rownames(pData) <- pData[,var]
+          phenoData <- new("AnnotatedDataFrame", data=pData)
+          
+          #create feature data
+          if(add_conn_file_type == ".RDS"){
+            
+            fData <- fData(conn_dat)
+            
+            if(nrow(fData)==0){
+              fData <- data.frame(Connectivity_Id=rownames(conn_ge), stringsAsFactors = TRUE)
+              rownames(fData) <- fData$Connectivity_Id
+            }else{
+              if(!"Gene" %in% colnames(fData)){
+                fData <- data.frame(Gene=rownames(conn_ge), fData, stringsAsFactors = TRUE)
+                rownames(fData) <- fData$Gene
+              }
+            }
+            
+          }else{
+            
+            fData <- data.frame(Connectivity_Id=rownames(conn_ge), stringsAsFactors = TRUE)
+            rownames(fData) <- fData$Connectivity_Id
+            
+          }
+          
+          #create feature data
+          featureData <- new("AnnotatedDataFrame", data=fData)
+          
+          #create expression set
+          expressionSet <- conn_ge
+          eSet <- ExpressionSet(assayData=expressionSet, phenoData=phenoData, featureData=featureData)
+          connectivity_map[[paste0(connmap[p])]] <- eSet
+          
+          #create morpheus heatmap for connectivity map
+          genesetname <- paste0(connmap[p], "_connectivity")
+          eset <- eSet
+          ge <- exprs(eset)
+          feature <- fData(eset)
+          cnames <- colnames(ge)
+          
+          nr <- nrow(ge); nc <- ncol(ge);
+          marker <- "Connectivity"; cluster <- FALSE;
+          
+          jsonoutputpath=paste0("www/JSON/", Portal, "/", genesetname, ".json")
+          htmloutputpath=paste0("www/JSON/", Portal, "/", genesetname, ".html")
+          
+          if(var %in% "Sig_Id"){
+            CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=pro_ann, feature=feature, nr=nr, nc=nc, marker=marker)
+            CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=pro_ann, feature=feature, marker=marker, cluster=cluster)
+          }else{
+            CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=chem_ann, feature=feature, nr=nr, nc=nc, marker=marker)
+            CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=chem_ann, feature=feature, marker=marker, cluster=cluster)
+          }
+        }
+        
+        ##save data to portal folder####
+        saveRDS(connectivity_map, paste0("data/", Portal, "/Connectivity.RDS"))
+        
+      }
+      
+      print("Saving connectivity map file")
+      print("Saving connectivity Morpheous heatmap")
+      
+      ##########################################################################################
+      #
+      # GENE SET ENRICHMENT ANALYSIS####
+      #
+      ##########################################################################################
+      
+      progress$inc(5/10, detail = "Saving gene set enrichment results")
+      
+      #create gene set enrichment####
+      gsscores <- list();
+      
+      # Run gene set enrichment analysis for hallmark, C2, and NURSA
+      genesetcollection=c(paste0("h.all.v", Enrichment_Version, ".0"), paste0("c2.cp.reactome.v", Enrichment_Version, ".0"), paste0("nursa_consensome_Cbyfdrvalue_0.01"));
+      geneset=c("gsscores_hallmark", "gsscores_c2_reactome", "gsscores_nursa");
+      method=c("gsva", "ssgsea", "zscore");
+      
+      # Getting differential expression
+      for(u in 1:length(genesetcollection)){
+        #u=1;
+        for(m in 1:length(method)){
+          #m=1;
+          #run the analysis
+          gsva_es <- gsva(expr=gene_expression, gset.idx.list=get(paste0(geneset[u])), method=method[m], mx.diff=TRUE)
+          
+          #get the phenotypic variable
+          var <- ifelse(all(colnames(gsva_es) %in% pro_ann$Sig_Id), "Sig_Id", "Chemical_Id")
+          
+          #create phenotypic data
+          pData <- data.frame(pro_ann[match(colnames(gsva_es), pro_ann[,var]),], stringsAsFactors = TRUE)
+          pData <- pData[!duplicated(pData[,var]),]
+          rownames(pData) <- pData[,var]
+          phenoData <- new("AnnotatedDataFrame", data=pData)
+          
+          #create feature data
+          fData <- data.frame(Geneset=rownames(gsva_es), stringsAsFactors = TRUE)
+          rownames(fData) <- fData$Geneset
+          featureData <- new("AnnotatedDataFrame", data=fData)
+          
+          #Create expression set
+          eSet <- ExpressionSet(assayData=gsva_es, phenoData=phenoData, featureData=featureData)
+          
+          #store the expression in a list
+          genesetname <- paste0("gsscores_", genesetcollection[u], "_", method[m])
+          gsscores[[genesetname]] <- eSet
+          
+          ##Create morpheus heatmap
+          eset <- eSet
+          ge <- exprs(eset)
+          feature <- fData(eset)
+          cnames <- colnames(ge)
+          
+          nr <- nrow(ge); nc <- ncol(ge);
+          marker <- "Gene Sets"; cluster <- FALSE;
+          
+          jsonoutputpath=paste0("www/JSON/", Portal, "/", genesetname, ".json")
+          htmloutputpath=paste0("www/JSON/", Portal, "/", genesetname, ".html")
+          
+          if(var %in% "Sig_Id"){
+            CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=pro_ann, feature=feature, nr=nr, nc=nc, marker=marker)
+            CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=pro_ann, feature=feature, marker=marker, cluster=cluster)
+          }else{
+            CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=chem_ann, feature=feature, nr=nr, nc=nc, marker=marker)
+            CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=chem_ann, feature=feature, marker=marker, cluster=cluster)
+          }
+          
+        }
+      }
+      
+      ##Add data to portal object####
+      saveRDS(gsscores, paste0("data/", Portal, "/GS_Enrichment.RDS"))
+      print("Saving gene set enrichment file")
+      print("Saving gene set enrichment Morpheous heatmap")
+      
+      ##########################################################################################
+      #
+      # TAXONOMER ANALYSIS####
+      #
+      ##########################################################################################
+      
+      progress$inc(6/10, detail = "Saving taxonomer results")
+      
+      ##Create the info class vector to run the metavariable test
+      infoClassVector <- NULL;
+
+      #Create a expression set####
+      eSet <- expressionSet
+      #print(eSet)
+      
+      for(v in seq_along(Exposure_Phenotype)){
+        #v=1;
+        #print(input[[paste0("metavar_", Exposure_Phenotype[v])]])
+        test <- meta_variable_test$method[which(meta_variable_test$statistical_test %in% methods[v])]
+        
+        if(test %in% "factor1"){
+          pData(eSet)[,Exposure_Phenotype[v]] <- factor(pData(eSet)[,Exposure_Phenotype[v]], levels = c("No", "Yes"))
+        }
+        
+        infoClassVector <- c(infoClassVector, test)
+      }
+      
+      names(infoClassVector) <- Exposure_Phenotype; #print(infoClassVector);
+      
+      ##Hyperenrichment analysis####
+      hallmark_genelist <- lapply(seq_along(gsscores_hallmark), function(g){ gsscores_hallmark[[g]]@geneIds })
+      names(hallmark_genelist) <- names(gsscores_hallmark)
+      
+      c2_reactome_genelist <- lapply(seq_along(gsscores_c2_reactome), function(g){ gsscores_c2_reactome[[g]]@geneIds })
+      names(c2_reactome_genelist) <- names(gsscores_c2_reactome)
+      
+      nursa_genelist <- lapply(seq_along(gsscores_nursa), function(g){ gsscores_nursa[[g]]@geneIds })
+      names(nursa_genelist) <- names(gsscores_nursa)
+      
+      # Combine gene set enrichment for hallmark, C2, and NURSA
+      geneSetList <- do.call(c, list(hallmark_genelist, c2_reactome_genelist, nursa_genelist))
+
+      # Run K2Taxonomer!
+      # Always important to set a seed
+      set.seed(12345678)
+      
+      K2res <- runK2Taxonomer(
+        eSet = eSet,
+        cohorts = cohorts,
+        featMetric = featMetric,
+        infoClass = infoClassVector,
+        genesets = geneSetList,
+        ssGSEAalg = ssGSEAalg,
+        ssGSEAcores = 4
+      )
+      
+      ##save K2Taxonomer results
+      saveRDS(K2res, paste0("data/", Portal, "/K2results.RDS"))
+      print("Saving K2Taxonomer results")
+      
+    })
+    
+    ## Show notification on error or user interrupt
+    fut <- catch(
+      fut,
+      function(e){
+        print(e$message)
+        showNotification(e$message)
+      })
+    
+    ## When done with analysis, remove progress bar
+    fut <- finally(fut, function(){
+      
+      progress$close()
+      
+      ##########################################################################################
+      #
+      # ADD CHEMICAL INTERACTIONS AND EXPOSURES TO PROJECT LIST####
+      # 
+      ##########################################################################################
+      new_proj <- data.frame(
+        Project=Project,
+        Cell_Line=Cell_Line,
+        Portal=Portal,
+        Enrichment_Version=Enrichment_Version,
+        Landmark_Gene=Landmark_Gene,
+        Description=Description,
+        stringsAsFactors = TRUE
+      )
+      
+      exposure_phenotype_categorical <- unlist(lapply(seq_along(Exposure_Phenotype), function(v){
+        if(all(is.na(as.numeric(chem_ann[,Exposure_Phenotype[v]])))){
+          return(Exposure_Phenotype[v])
+        }
+      }))
+      
+      new_proj <- cbind(new_proj, Exposure=paste0(Exposure, collapse=", "), Exposure_Phenotype=paste0(exposure_phenotype_categorical, collapse=", "))
+      new_proj <- new_proj[,colnames(proj_dat)]
+      newproject <- proj_dat %>% rbind(new_proj)
+      projectdata(newproject)
+      project_table_message(paste0(Project, ' portal has been added. Click "Save" to keep this results.'))
+      removeModal()
+      
+    })
+    
+    print("Generating new portal....")
+    
+  }
+  
+}, ignoreInit = TRUE)
+
+
+
+    
+    
+    

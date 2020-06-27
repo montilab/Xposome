@@ -18,10 +18,8 @@ fluidRow(
     DT::dataTableOutput("chemical_table") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="100px")
   ),
   
-  br(),
-  
   column(  
-    width=12,
+    width=12, style="padding-top: 20px;",
     
     tabsetPanel(
       id="chemical_tab", type="pills", selected = "Gene Expression",
@@ -39,7 +37,13 @@ fluidRow(
             fluidRow(
               column(
                 width=2,
-                checkboxInput(inputId = "landmark_de", label = "Landmark only", value=defaults[["landmark_de"]])
+                if(landmark == FALSE){
+                  shinyjs::disabled(
+                    checkboxInput(inputId = "landmark_de", label = "Landmark only", value=FALSE)
+                  )
+                }else{
+                  checkboxInput(inputId = "landmark_de", label = "Landmark only", value=TRUE)
+                }
               ),
               
               column(
@@ -49,7 +53,16 @@ fluidRow(
               
               column(
                 width=2,
-                checkboxGroupInput(inputId = "filterbyinput_de", label = "Filter by", choices=c("score" = "score", "number" = "number"), selected = defaults[["filterbyinput_de"]])
+                if(landmark == FALSE){
+                  div(
+                    checkboxGroupInput(inputId = "filterbyinput_de", label = "Filter by", choices=c("score" = "score"), selected = "score"),
+                    shinyjs::disabled(
+                      checkboxInput(inputId = "filterbyinput_de_number", label = "number", value=FALSE)
+                    )
+                  )
+                }else{
+                  checkboxGroupInput(inputId = "filterbyinput_de", label = "Filter by", choices=c("score" = "score", "number" = "number"), selected = defaults[["filterbyinput_de"]])
+                }
               ),
               
               column(
@@ -59,12 +72,24 @@ fluidRow(
               
               column(
                 width=2,
-                sliderInput(inputId = "numberthresleft_de", label = "Num +", min = 0, max = 1000, value = defaults[["numberthresleft_de"]], ticks = FALSE, step = 10)
+                if(landmark == FALSE){
+                  shinyjs::disabled(
+                    sliderInput(inputId = "numberthresleft_de", label = "Num +", min = 0, max = 1000, value = defaults[["numberthresleft_de"]], ticks = FALSE, step = 10)
+                  )
+                }else{
+                  sliderInput(inputId = "numberthresleft_de", label = "Num +", min = 0, max = 1000, value = defaults[["numberthresleft_de"]], ticks = FALSE, step = 10)
+                }
               ),
               
               column(
                 width=2,
-                sliderInput(inputId = "numberthresright_de", label = "Num -", min = 0, max = 1000, value = defaults[["numberthresright_de"]], ticks = FALSE, step = 10)
+                if(landmark == FALSE){
+                  shinyjs::disabled(
+                    sliderInput(inputId = "numberthresright_de", label = "Num -", min = 0, max = 1000, value = defaults[["numberthresright_de"]], ticks = FALSE, step = 10)
+                  )
+                }else{
+                  sliderInput(inputId = "numberthresright_de", label = "Num -", min = 0, max = 1000, value = defaults[["numberthresright_de"]], ticks = FALSE, step = 10)
+                }
               )
             )
           )
@@ -84,7 +109,7 @@ fluidRow(
         fluidRow(
           column(
             width=12,
-            DT::dataTableOutput("gene_expression_table") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+            DT::dataTableOutput("gene_expression_table") %>% withSpinner(type=4, color="#0dc5c1")
           )
         )
       ),
@@ -106,8 +131,8 @@ fluidRow(
                   inputId = "gsname",
                   label = "Gene set name",
                   bId= "Bgsname",
-                  helptext = helptext_geneset(),
-                  choices = names(dsmap())
+                  helptext = helptext_geneset,
+                  choices = names(dsmap)
                 )
               ),
               
@@ -149,7 +174,7 @@ fluidRow(
         fluidRow(
           column(
             width=12,
-            DT::dataTableOutput("gene_set_enrichment_table") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+            DT::dataTableOutput("gene_set_enrichment_table") %>% withSpinner(type=4, color="#0dc5c1")
           )
         )
       ),
@@ -201,11 +226,10 @@ fluidRow(
         fluidRow(
           column(
             width=12,
-            DT::dataTableOutput("connectivity_table") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="200px")
+            DT::dataTableOutput("connectivity_table") %>% withSpinner(type=4, color="#0dc5c1") 
           )
         )
       )
     )
   )
 ) 
-  
