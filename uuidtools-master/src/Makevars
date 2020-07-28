@@ -1,2 +1,0 @@
-PKG_CPPFLAGS=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include
-PKG_LIBS=
