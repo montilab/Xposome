@@ -1,0 +1,28 @@
+Package: uuidtools
+Title: Tools for working with Universally Unique Identifiers (UUIDs)
+Version: 0.9
+Author: Adam Gower <agower@bu.edu> and Simon Urbanek <Simon.Urbanek@r-project.org> (R package), Theodore Ts'o <tytso@thunk.org> (libuuid)
+Maintainer: Adam Gower <agower@bu.edu>
+Authors@R: c(
+    person("Adam", "Gower", email = "agower@bu.edu", role = c("aut", "cre")),
+    person("Simon", "Urbanek", email = "Simon.Urbanek@r-project.org", role = "aut"),
+    person("Theodore", "Ts'o", email = "tytso@thunk.org", role = "aut"),
+    person("Murat", "Tasan", role = "aut"))
+Description: Provides R functions to interface with libuuid routines for storing, generating, and working with UUIDs.
+Depends:
+    S4Vectors (>= 0.10.3), R (>= 3.3.0)
+Imports:
+    methods
+Collate:
+    hooks.R
+    classes.R
+    methods.R
+    UUIDgenerate.R
+    UUIDparse.R
+    UUIDtime.R
+    UUIDversion.R
+    UUIDvariant.R
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyLoad: yes
+RoxygenNote: 7.1.0
