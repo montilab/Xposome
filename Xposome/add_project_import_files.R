@@ -488,24 +488,24 @@ observeEvent(input$Add_Project_Add_Button, {
   
   req(input$add_cur_enrichment_option %in% "No")
   
-  inputfile <- input$add_hallmark_file;
+  inputfile <- input$add_gs_collection_file;
 
   if(is.null(inputfile)){
-    hallmark_file_msg("Please choose a file to import.")
-    hallmark_file(NULL)
+    gs_collection_file_msg("Please choose a file to import.")
+    gs_collection_file(NULL)
     return(NULL)
   }
   
 })
 
-observeEvent(input$add_hallmark_file, {
+observeEvent(input$add_gs_collection_file, {
   
   req(input$add_cur_enrichment_option %in% "No")
   
-  inputfile <- input$add_hallmark_file;
+  inputfile <- input$add_gs_collection_file;
 
   if(is.null(inputfile)){
-    hallmark_file(NULL)
+    gs_collection_file(NULL)
     return(NULL)
   }
   
@@ -514,13 +514,13 @@ observeEvent(input$add_hallmark_file, {
     extension <- grep(toupper(".gmt"), toupper(substr(inputfile$datapath, nchar(inputfile$datapath)-4, nchar(inputfile$datapath))), fixed = TRUE)
     
     if(length(extension) == 0){
-      hallmark_file_msg("Incorrect file format. Please check your file again.")
-      hallmark_file(NULL)
+      gs_collection_file_msg("Incorrect file format. Please check your file again.")
+      gs_collection_file(NULL)
       return(NULL)
     }else{
-      hallmark_file_msg("")
+      gs_collection_file_msg("")
       data <- getGmt(inputfile$datapath)
-      hallmark_file(
+      gs_collection_file(
         list(
           path=inputfile$datapath,
           data=data
@@ -529,154 +529,23 @@ observeEvent(input$add_hallmark_file, {
     }
     
   }, error=function(err){
-    hallmark_file_msg("Import failed. Please check your file again.")
-    hallmark_file(NULL)
+    gs_collection_file_msg("Import failed. Please check your file again.")
+    gs_collection_file(NULL)
     return(NULL)
   }, warning=function(war){
-    hallmark_file_msg("Import failed. Please check your file again.")
-    hallmark_file(NULL)
+    gs_collection_file_msg("Import failed. Please check your file again.")
+    gs_collection_file(NULL)
     return(NULL)
   })
   
 })
 
 ##Output hallmark warning message###
-output$add_hallmark_file_msg <- renderUI({
+output$add_gs_collection_file_msg <- renderUI({
   
-  req(hallmark_file_msg())
+  req(gs_collection_file_msg())
   
-  p(class="fileInputMsg",  HTML(hallmark_file_msg()))
-  
-})
-
-#import c2 file#####
-observeEvent(input$Add_Project_Add_Button, {
-  
-  req(input$add_cur_enrichment_option %in% "No")
-  
-  inputfile <- input$add_c2_file;
-
-  if(is.null(inputfile)){
-    c2_file_msg("Please choose a file to import.")
-    c2_file(NULL)
-    return(NULL)
-  }
+  p(class="fileInputMsg",  HTML(gs_collection_file_msg()))
   
 })
 
-observeEvent(input$add_c2_file, {
-  
-  req(input$add_cur_enrichment_option %in% "No")
-  
-  inputfile <- input$add_c2_file;
-
-  if(is.null(inputfile)){
-    c2_file(NULL)
-    return(NULL)
-  }
-  
-  tryCatch({
-    
-    extension <- grep(toupper(".gmt"), toupper(substr(inputfile$datapath, nchar(inputfile$datapath)-4, nchar(inputfile$datapath))), fixed = TRUE)
-    
-    if(length(extension) == 0){
-      c2_file_msg("Incorrect file format. Please check your file again.")
-      c2_file(NULL)
-      return(NULL)
-    }else{
-      c2_file_msg("")
-      data <- getGmt(inputfile$datapath)
-      c2_file(
-        list(
-          path=inputfile$datapath,
-          data=data
-        )
-      )
-    }
-    
-  }, error=function(err){
-    c2_file_msg("Import failed. Please check your file again.")
-    c2_file(NULL)
-    return(NULL)
-  }, warning=function(war){
-    c2_file_msg("Import failed. Please check your file again.")
-    c2_file(NULL)
-    return(NULL)
-  })
-  
-})
-
-##Output c2 warning message###
-output$add_c2_file_msg <- renderUI({
-  
-  req(c2_file_msg())
-  
-  p(class="fileInputMsg",  HTML(c2_file_msg()))
-  
-})
-
-#import nursa file#####
-observeEvent(input$Add_Project_Add_Button, {
-  
-  req(input$add_cur_enrichment_option %in% "No")
-  
-  inputfile <- input$add_nursa_file;
-  
-  if(is.null(inputfile)){
-    nursa_file_msg("Please choose a file to import.")
-    nursa_file(NULL)
-    return(NULL)
-  }
-  
-})
-
-observeEvent(input$add_nursa_file, {
-  
-  req(input$add_cur_enrichment_option %in% "No")
-  
-  inputfile <- input$add_nursa_file;
-
-  if(is.null(inputfile)){
-    nursa_file(NULL)
-    return(NULL)
-  }
-  
-  tryCatch({
-    
-    extension <- grep(toupper(".gmt"), toupper(substr(inputfile$datapath, nchar(inputfile$datapath)-4, nchar(inputfile$datapath))), fixed = TRUE)
-    
-    if(length(extension) == 0){
-      nursa_file_msg("Incorrect file format. Please check your file again.")
-      nursa_file(NULL)
-      return(NULL)
-    }else{
-      nursa_file_msg("")
-      data <- getGmt(inputfile$datapath)
-      nursa_file(
-        list(
-          path=inputfile$datapath,
-          data=data
-        )
-      )
-    }
-    
-  }, error=function(err){
-    nursa_file_msg("Import failed. Please check your file again.")
-    nursa_file(NULL)
-    return(NULL)
-  }, warning=function(war){
-    nursa_file_msg("Import failed. Please check your file again.")
-    nursa_file(NULL)
-    return(NULL)
-  })
-  
-})
-
-##Output nursa warning message###
-output$add_nursa_file_msg <- renderUI({
-  
-  req(nursa_file_msg())
-  
-  p(class="fileInputMsg", HTML(nursa_file_msg()))
-  
-})

@@ -208,6 +208,49 @@ server <- function(input, output, session) {
     return(data)
     
   }) 
+
+  ##Get all files in the data folder###
+  data_files <- list.files("data/")
+
+  ##Create a list of wanted folders and files####
+  wanted_files <- c(projectlist$Portal, "Connectivity Map", "Enrichment Gene Set", "Landmark", "Project_List.csv", "Template", "User_Login_List.csv", "Zebra Fish") 
+  
+  ##Remove unwanted folders/files####
+  if(any(!data_files %in% wanted_files)){
+    for(f in seq_along(data_files)){ 
+      #f=1
+      if(!data_files[f] %in% wanted_files){
+        unlink(paste0("data/", data_files[f]), recursive=TRUE, force=TRUE)
+      }
+    }
+  }
+  
+  ##Get all files in the json folder###
+  json_files <- list.files("www/JSON")
+  
+  if(any(!json_files%in% projectlist$Portal)){
+    for(f in seq_along(json_files)){ 
+      #f=1
+      if(!json_files[f] %in% projectlist$Portal){
+        unlink(paste0("www/JSON/", json_files[f]), recursive=TRUE, force=TRUE)
+      }
+    }
+  }
+  
+  ##Get all files in the rmd folder###
+  rmd_files <- list.files("www/RMD")
+
+  ##Create a list of wanted folders and files####
+  wanted_rmds <- c(paste0("introduction_", projectlist$Portal, ".Rmd"), "about_page.Rmd", "contact_page.Rmd") 
+  
+  if(any(!rmd_files %in% wanted_rmds)){
+    for(f in seq_along(rmd_files)){ 
+      #f=1
+      if(!rmd_files[f] %in% wanted_rmds){
+        unlink(paste0("www/RMD/", rmd_files[f]), recursive=TRUE, force=TRUE)
+      }
+    }
+  }
   
   #load server code for page specified in URL
   fname = isolate({ session$clientData$url_search })
@@ -531,26 +574,45 @@ server <- function(input, output, session) {
     })
     
     #get input options####
-    gs_enrichment_version <- projectlist$Enrichment_Version[which(projectlist$Portal == fname)]
+    gs_collection <- projectlist$GS_Collection[which(projectlist$Portal == fname)]
+    gs_collection_link <- projectlist$GS_Collection_Link[which(projectlist$Portal == fname)]
     landmark <- projectlist$Landmark_Gene[which(projectlist$Portal == fname)]
     exposure_phenotype_test <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype_Test[which(projectlist$Portal == fname)]), ",", fixed=TRUE)) %>% trimws()
     exposure_phenotype <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype[which(projectlist$Portal == fname)]), ",", fixed=TRUE)) %>% trimws()
     exposure_phenotype <- exposure_phenotype[which(exposure_phenotype_test %in% c("1-sided Fisher test", "2-sided Fisher test"))]
     
     ##Getting the helpext for different gene set enrichment
-    helptext_geneset <- paste(
-      "Hallmark: MSigDB Hallmark Pathways (v", gs_enrichment_version, ")", "<br>",
-      "C2: MSigDB C2 reactome Pathways (v",  gs_enrichment_version, ")", "<br>",
-      "NURSA: Nuclear Receptor Signaling Atlas, consensome data for human",
-      sep = ""
-    )
-    
-    ##Getting the gene set scores for diffrent gsva methods
-    dsmap <- list(
-      Hallmark=paste0("gsscores_h.all.v", gs_enrichment_version, ".0"),
-      C2=paste0("gsscores_c2.cp.reactome.v", gs_enrichment_version, ".0"),
-      NURSA=paste0("gsscores_nursa_consensome_Cbyfdrvalue_0.01")
-    )
+    if(gs_collection %in% "Default"){
+      
+      ##the default gs enrichment version####
+      gs_enrichment_version <- 7
+      
+      ##Getting the gene set scores for diffrent gsva methods
+      dsmap <- list(
+        Hallmark=paste0("gsscores_h.all.v", gs_enrichment_version, ".0"),
+        C2=paste0("gsscores_c2.cp.reactome.v", gs_enrichment_version, ".0"),
+        NURSA=paste0("gsscores_nursa_consensome_Cbyfdrvalue_0.01")
+      )
+      
+      ##Getting the helptext####
+      helptext_geneset <- paste0(
+        "<a href=\"https://www.gsea-msigdb.org/gsea/msigdb\">MSigDB Hallmark Pathways (v", gs_enrichment_version, ")</a><br>",
+        "<a href=\"https://www.gsea-msigdb.org/gsea/msigdb\">MSigDB C2 reactome Pathways (v", gs_enrichment_version, ")</a><br>",
+        "<a href=\"https://signalingpathways.org\">NURSA: Nuclear Receptor Signaling Atlas, consensome data for human</a><br>"
+      )
+      
+      print(helptext_geneset)
+      
+    }else{
+      
+      ##Getting the gene set scores for diffrent gsva methods
+      dsmap <- paste0("gsscores_", gs_collection)
+      names(dsmap) <- paste0("gsscores_", gs_collection)
+      
+      ##Getting the helptext####
+      helptext_geneset <- paste0("<a href=\"", gs_collection_link, "\">", gs_collection, "</a><br>")
+      
+    }
     
     # # Run the main app###
     source("main_app.R", local=TRUE)  

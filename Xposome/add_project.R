@@ -1,5 +1,27 @@
 
 ## Observe when add data is clicked ####
+observeEvent({
+  input$Add_Project_Name
+  input$Add_Cell_Line_Name
+  input$Add_Portal_Name
+  input$Add_Description
+}, {
+  
+  ##obtain the input values
+  Project=trimws(input$Add_Project_Name);
+  Cell_Line=trimws(input$Add_Cell_Line_Name);
+  Portal=trimws(input$Add_Portal_Name);
+  Description=trimws(input$Add_Description); 
+  
+  if(Project=="" | Cell_Line=="" | Portal=="" | Description==""){
+    addprojectwarningmsg("Please fill in the required (*) fields.")
+  }else{
+    addprojectwarningmsg("")
+  }
+  
+})
+
+## Observe when add data is clicked ####
 observeEvent(input$Add_Project_Add_Button, {
   
   ##obtain the current project list
@@ -11,6 +33,7 @@ observeEvent(input$Add_Project_Add_Button, {
   Portal=trimws(input$Add_Portal_Name);
   Description=trimws(input$Add_Description);  
   Landmark_Gene=trimws(input$Add_Landmark);  
+  Enrichment_Version=7;
   
   ## check all the input variables###
   check <- c();
@@ -22,13 +45,22 @@ observeEvent(input$Add_Project_Add_Button, {
     addprojectwarningmsg("")
   }
   
-  Enrichment_Version=ifelse(input$add_cur_enrichment_option=="Yes", trimws(input$Add_Enrichment_Version), trimws(input$Add_New_Enrichment_Version));
-  
-  if(is.na(Enrichment_Version) | is.character(as.numeric(Enrichment_Version)) | as.numeric(Enrichment_Version) <= 0){
-    addenrichmentversionwarningmsg("Please enter a number greater than 0.")
+  GS_Collection=ifelse(input$add_cur_enrichment_option=="Yes", "Default", trimws(input$Add_New_Enrichment_GS));
+
+  if(GS_Collection==""){
+    addenrichmentgswarningmsg("Please enter a valid name.")
     check <- c(check, "No")
   }else{
-    addenrichmentversionwarningmsg("")
+    addenrichmentgswarningmsg("")
+  }
+  
+  GS_Collection_Link=ifelse(input$add_cur_enrichment_option=="Yes", "https://www.gsea-msigdb.org/gsea/msigdb; https://signalingpathways.org/", trimws(input$Add_New_Enrichment_Link));
+  
+  if(GS_Collection_Link==""){
+    addenrichmentlinkwarningmsg("Please enter a valid link.")
+    check <- c(check, "No")
+  }else{
+    addenrichmentlinkwarningmsg("")
   }
   
   if(!is.null(pro_file())){
@@ -75,7 +107,7 @@ observeEvent(input$Add_Project_Add_Button, {
     check <- c(check, "No")
   }
 
-  if(input$add_cur_enrichment_option %in% "No" & (is.null(hallmark_file()) | is.null(c2_file()) | is.null(nursa_file()))){
+  if(input$add_cur_enrichment_option %in% "No" & is.null(gs_collection_file())){
     check <- c(check, "No")
   }
   
@@ -196,16 +228,14 @@ observeEvent(input$Add_Project_Add_Button, {
     
     # Read in the gene set collection for gene set enrichment analysis###
     if(add_cur_enrichment_option=="Yes"){
-      gsscores_hallmark <- getGmt(paste0("data/Enrichment Gene Set/v", Enrichment_Version, "/h.all.v", Enrichment_Version, ".0.gmt"))
-      gsscores_c2_reactome <- getGmt(paste0("data/Enrichment Gene Set/v", Enrichment_Version, "/c2.cp.reactome.v", Enrichment_Version, ".0.gmt"))
-      gsscores_nursa <- getGmt(paste0("data/Enrichment Gene Set/v", Enrichment_Version, "/nursa_consensome_Cbyfdrvalue_0.01.gmt"))
+      gsscores_hallmark <- getGmt(paste0("data/Enrichment Gene Set/h.all.v", Enrichment_Version, ".0.gmt"))
+      gsscores_c2_reactome <- getGmt(paste0("data/Enrichment Gene Set/c2.cp.reactome.v", Enrichment_Version, ".0.gmt"))
+      gsscores_nursa <- getGmt(paste0("data/Enrichment Gene Set/nursa_consensome_Cbyfdrvalue_0.01.gmt"))
     }else{
-      hallmark_path <- hall_mark_file() %>% extract2("path")
-      c2_path <- c2_file() %>% extract2("path")
-      nursa_path <- nursa_file() %>% extract2("path")
-      gsscores_hallmark <- hall_mark_file() %>% extract2("data")
-      gsscores_c2_reactome <- c2_file() %>% extract2("data")
-      gsscores_nursa <- nursa_file() %>% extract2("data")
+      gs_collection_path <- gs_collection_file() %>% extract2("path")
+      gs_collection <- gs_collection_file() %>% extract2("data")
+      ##Save the new gene set file####
+      file.copy(from=gs_collection_path, to=file.path("data/Enrichment Gene Set", paste0(GS_Collection, ".gmt")), overwrite=TRUE)
     }
     
     ##Taxonomer parameters####
@@ -291,10 +321,10 @@ observeEvent(input$Add_Project_Add_Button, {
           TAS <- calc_results[["TAS"]]
           
           # chemical annotation information
-          chem_ann <- chem_ann %>% left_join(TAS)
+          chem_ann <- chem_ann %>% left_join(TAS) %>% select(-Number_of_Replicates) 
           
           # profile annotation information
-          pro_ann <- pro_ann %>% left_join(chem_ann)
+          pro_ann <- pro_ann %>% left_join(TAS)
         }
         
         # get modzscores
@@ -485,21 +515,17 @@ observeEvent(input$Add_Project_Add_Button, {
       
       progress$inc(5/10, detail = "Saving gene set enrichment results")
       
-      if(add_cur_enrichment_option == "No"){
-        new_gs_version_path <- paste0("data/Enrichment Gene Set/v", Enrichment_Version)
-        dir.create(new_gs_version_path, showWarnings=FALSE, recursive=TRUE)
-        file.copy(from=hallmark_path, to=file.path(new_gs_version_path, paste0("h.all.v", Enrichment_Version, ".0.gmt")), overwrite=TRUE)
-        file.copy(from=c2_path, to=file.path(new_gs_version_path, paste0("c2.cp.reactome.v", Enrichment_Version, ".0.gmt")), overwrite=TRUE)
-        file.copy(from=nursa_path, to=file.path(new_gs_version_path, paste0("nursa_consensome_Cbyfdrvalue_0.01.gmt")), overwrite=TRUE)
-      }
-      
       #create gene set enrichment####
-      gsscores <- list();
+      gsscores <- list(); gsvamethod=ssGSEAalg;
       
-      # Run gene set enrichment analysis for hallmark, C2, and NURSA
-      genesetcollection=c(paste0("h.all.v", Enrichment_Version, ".0"), paste0("c2.cp.reactome.v", Enrichment_Version, ".0"), paste0("nursa_consensome_Cbyfdrvalue_0.01"));
-      geneset=c("gsscores_hallmark", "gsscores_c2_reactome", "gsscores_nursa");
-      gsvamethod=ssGSEAalg;
+      if(add_cur_enrichment_option == "No"){
+        genesetcollection=GS_Collection;
+        geneset="gs_collection";
+      }else{
+        # Run gene set enrichment analysis for hallmark, C2, and NURSA
+        genesetcollection=c(paste0("h.all.v", Enrichment_Version, ".0"), paste0("c2.cp.reactome.v", Enrichment_Version, ".0"), paste0("nursa_consensome_Cbyfdrvalue_0.01"));
+        geneset=c("gsscores_hallmark", "gsscores_c2_reactome", "gsscores_nursa");
+      }
 
       # Getting differential expression
       for(u in 1:length(genesetcollection)){
@@ -568,7 +594,7 @@ observeEvent(input$Add_Project_Add_Button, {
       
       if(!is.null(cohorts)){
         
-        ##Create the info class vector to run the metavariable test
+        #Create the info class vector to run the metavariable test
         infoClassVector <- NULL;
         
         #Create a expression set####
@@ -605,17 +631,28 @@ observeEvent(input$Add_Project_Add_Button, {
         }
         
         ##Hyperenrichment analysis####
-        hallmark_genelist <- lapply(seq_along(gsscores_hallmark), function(g){ gsscores_hallmark[[g]]@geneIds })
-        names(hallmark_genelist) <- names(gsscores_hallmark)
-        
-        c2_reactome_genelist <- lapply(seq_along(gsscores_c2_reactome), function(g){ gsscores_c2_reactome[[g]]@geneIds })
-        names(c2_reactome_genelist) <- names(gsscores_c2_reactome)
-        
-        nursa_genelist <- lapply(seq_along(gsscores_nursa), function(g){ gsscores_nursa[[g]]@geneIds })
-        names(nursa_genelist) <- names(gsscores_nursa)
-        
-        # Combine gene set enrichment for hallmark, C2, and NURSA
-        geneSetList <- do.call(c, list(hallmark_genelist, c2_reactome_genelist, nursa_genelist))
+        if(add_cur_enrichment_option == "Yes"){
+          
+          hallmark_genelist <- lapply(seq_along(gsscores_hallmark), function(g){ gsscores_hallmark[[g]]@geneIds })
+          names(hallmark_genelist) <- names(gsscores_hallmark)
+          
+          c2_reactome_genelist <- lapply(seq_along(gsscores_c2_reactome), function(g){ gsscores_c2_reactome[[g]]@geneIds })
+          names(c2_reactome_genelist) <- names(gsscores_c2_reactome)
+          
+          nursa_genelist <- lapply(seq_along(gsscores_nursa), function(g){ gsscores_nursa[[g]]@geneIds })
+          names(nursa_genelist) <- names(gsscores_nursa)
+          
+          # Combine gene set enrichment for hallmark, C2, and NURSA
+          geneSetList <- do.call(c, list(hallmark_genelist, c2_reactome_genelist, nursa_genelist))
+          
+        }else{
+          
+          collection_genelist <- lapply(seq_along(gs_collection), function(g){ gs_collection[[g]]@geneIds })
+          names(collection_genelist) <- names(gs_collection)
+          
+          geneSetList <- collection_genelist
+          
+        }  
         
         # Run K2Taxonomer!
         # Always important to set a seed
@@ -635,9 +672,10 @@ observeEvent(input$Add_Project_Add_Button, {
         
         ##save K2Taxonomer results
         saveRDS(K2res, paste0("data/", Portal, "/K2results.RDS"))
-        print("Saving K2Taxonomer results")
-        
       }
+      
+      print("Saving K2Taxonomer results")
+      
     })
     
     ## Show notification on error or user interrupt
@@ -662,7 +700,8 @@ observeEvent(input$Add_Project_Add_Button, {
         Project=Project,
         Cell_Line=Cell_Line,
         Portal=Portal,
-        Enrichment_Version=Enrichment_Version,
+        GS_Collection=GS_Collection,
+        GS_Collection_Link=GS_Collection_Link,
         Landmark_Gene=Landmark_Gene,
         Description=Description,
         stringsAsFactors = TRUE
@@ -673,9 +712,9 @@ observeEvent(input$Add_Project_Add_Button, {
       }))
       
       exposure_phenotype_categorical <- unlist(lapply(seq_along(Exposure_Phenotype), function(v){
-          return(Exposure_Phenotype[v])
+        return(Exposure_Phenotype[v])
       }))
-
+      
       new_proj <- cbind(
         new_proj, 
         TAS_Modzscores=paste0(c(Add_TAS, Add_Modzscores), collapse=", "), 
@@ -729,18 +768,18 @@ observeEvent(input$Add_Project_Cancel_Button, {
   addcompoundvarwarningmsg(NULL)
   addexposurevarwarningmsg(NULL)
   addexposurephenotypevarwarningmsg(NULL)
-  addenrichmentversionwarningmsg(NULL)
+  addenrichmentgswarningmsg(NULL)
+  addenrichmentlinkwarningmsg(NULL)
   
   ##Remove data messages####
+  portal(NULL)
   cohorts(NULL)
   intro_file_msg(NULL)
   pro_file_msg(NULL)
   ge_file_msg(NULL)
   conn_pcl_file_msg(NULL)
   conn_pert_file_msg(NULL)
-  hallmark_file_msg(NULL)
-  c2_file_msg(NULL)
-  nursa_file_msg(NULL)
+  gs_collection_file_msg(NULL)
   project_table_message(NULL)
   
   ##Remove data####
@@ -750,10 +789,8 @@ observeEvent(input$Add_Project_Cancel_Button, {
   ge_file(NULL)
   conn_pcl_file(NULL)
   conn_pert_file(NULL)
-  hallmark_file(NULL)
-  c2_file(NULL)
-  nursa_file(NULL)
-  
+  gs_collection_file(NULL)
+
   ##Close modal log###
   removeModal()
   
