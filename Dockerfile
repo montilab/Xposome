@@ -1,82 +1,83 @@
-# get shiny serves plus tidyverse packages image
-FROM rocker/r-ver:3.6.1
+# Get shiny+tidyverse packages from rocker image
+FROM rocker/shiny-verse:latest
 
-# system libraries of general use
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    sudo \
-    gdebi-core \
-    pandoc \
-    pandoc-citeproc \
-    libcurl4-gnutls-dev \
-    libcairo2-dev \
-    libxt-dev \
-    libssl-dev \
-    libssh2-1-dev \
-    xtail \
-    wget
+# Set up the maintainer information
+MAINTAINER Reina Chau (lilychau999@gmail.com)
+    
+# Set up GeneHive credentials
+COPY .netrc /root/.netrc
+COPY .bashrc /root/.bashrc
+    
+# Set up a volume directory
+VOLUME /srv/shiny-server/   
 
-# Download and install ShinyServer (latest version)
-RUN wget --no-verbose https://s3.amazonaws.com/rstudio-shiny-server-os-build/ubuntu-12.04/x86_64/VERSION -O "version.txt" && \
-    VERSION=$(cat version.txt)  && \
-    wget --no-verbose "https://s3.amazonaws.com/rstudio-shiny-server-os-build/ubuntu-12.04/x86_64/shiny-server-$VERSION-amd64.deb" -O ss-latest.deb && \
-    gdebi -n ss-latest.deb && \
-    rm -f version.txt ss-latest.deb
-        
-# set working directory to the app
+# Set up working directory to the app
 WORKDIR /srv/shiny-server/
 
-# create a directory to store private pkgs
-RUN mkdir ./private_pkgs
+# Define a system argument
+ARG DEBIAN_FRONTEND=noninteractive
 
-# copy the packages to the image directory
-COPY K2Taxonomer-master ./private_pkgs
-COPY GeneHive-master ./private_pkgs
-COPY uuidtools-master ./private_pkgs
-
-# install R packages required 
-RUN R -e "install.packages('BiocManager', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+# Install system libraries of general use
+RUN apt-get update && apt-get install -y \
+    libudunits2-dev \
+    libv8-dev \
+    libsodium-dev 
+  
+# Install the required R packages to run the app
 RUN R -e "install.packages('data.table', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('ggdendro', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('httr', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('jsonlite', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('password', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('sodium', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('digest', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('sendmailR', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('magrittr', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('tidyverse', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('ipc', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-
-RUN R -e "install.packages('private_pkgs/K2Taxonomer-master', dependencies=TRUE, repos=NULL, type='source')"
-RUN R -e "install.packages('private_pkgs/GeneHive-master', dependencies=TRUE, repos=NULL, type='source')"
-RUN R -e "install.packages('private_pkgs/uuidtools-master', dependencies=TRUE, repos=NULL, type='source')"
-RUN R -e "install.packages('visNetwork', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('Biobase', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('GSVA', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('GSEABase', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('limma', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "BiocManager::install('Biobase')"
+RUN R -e "BiocManager::install('GSVA')"
+RUN R -e "BiocManager::install('GSEABase')"
 RUN R -e "install.packages('dendextend', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-
-RUN R -e "install.packages('shiny', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('shinyjs', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('shinyBS', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('shinycssloaders', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('DT', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('gglot2', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('plotly', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('heatmaply', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('RcolorBrewer', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('promises', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('future', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
-# copy configuration files into the Docker image
-COPY shiny-server.conf  /etc/shiny-server/shiny-server.conf
+# Copy the local packages to the image
+COPY K2Taxonomer-master /srv/shiny-server/K2Taxonomer-master
+COPY GeneHive-master /srv/shiny-server/GeneHive-master
+COPY uuidtools-master /srv/shiny-server/uuidtools-master 
 
-# copy the app to the image
-COPY Xposome /srv/shiny-server/
+# Install K2taxonomer and its dependencies
+RUN R -e "install.packages('plotly', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "BiocManager::install('limma')"
+RUN R -e "install.packages('flexdashboard', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('heatmaply', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('visNetwork', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('robustbase', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('conclust', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('/srv/shiny-server/K2Taxonomer-master', dependencies=TRUE, repos=NULL, type='source')"
+
+# Install uuidtools and GeneHive and its dependencies
+RUN R -e "BiocManager::install('S4Vectors')"
+RUN R -e "install.packages('filenamer', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('io', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('rjson', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('/srv/shiny-server/uuidtools-master', dependencies=TRUE, repos=NULL, type='source')"
+RUN R -e "install.packages('/srv/shiny-server/GeneHive-master', dependencies=TRUE, repos=NULL, type='source')"
 
 # Make the ShinyApp available at port 3838
-EXPOSE 80
+EXPOSE 3838
 
-# copy further configuration files into the Docker image
+# Copy configuration files to Docker image
 COPY shiny-server.sh /usr/bin/shiny-server.sh
 
-# allow permission
+# Allow permission
+RUN ["chmod", "+rwx", "/srv/shiny-server/"]
 RUN ["chmod", "+x", "/usr/bin/shiny-server.sh"]
 
 CMD ["/usr/bin/shiny-server.sh"]
