@@ -766,7 +766,8 @@ observeEvent(input$Edit_Project_Add_Button, {
             infoClass = infoClassVector,
             genesets = geneSetList,
             ssGSEAalg = edit_ssGSEA_method,
-            ssGSEAcores = 1
+            ssGSEAcores = 1,
+            stabThresh = 0.5
           )
           
           ##save K2Taxonomer results
