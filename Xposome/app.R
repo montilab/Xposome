@@ -5,11 +5,17 @@ library(BiocManager)
 library(data.table) #
 library(ggdendro) #
 library(jsonlite)
+library(password) #generate random password
+library(sodium) #password encryption
+library(digest) #password encryption
+library(sendmailR) #send email message
 library(tidyverse)
 library(magrittr)
 library(ipc)
 
 ##Shiny Packages####
+library(uuidtools)
+library(GeneHive)
 library(K2Taxonomer)
 library(visNetwork) #
 library(Biobase) #
@@ -34,7 +40,7 @@ plan(multisession)
 
 ##Shiny options####
 options(repos = BiocManager::repositories())
-options(shiny.maxRequestSize=100*1024^2)
+options(shiny.maxRequestSize=1000*1024^2)
 
 ##Define ui logic####
 ui <- bootstrapPage(
@@ -133,6 +139,9 @@ server <- function(input, output, session) {
   ##Create a queue object---- 
   queue <- shinyQueue();
   
+  ## keep track of who log in and output error message####
+  UserLog <- reactiveValues(Logged=FALSE);
+  
   ##Execute signals every 100 milliseconds----
   queue$consumer$start(100); 
   
@@ -146,7 +155,9 @@ server <- function(input, output, session) {
   })
 
   # UI object files ####
-  source("ui_input.R")
+  source("ui_input.R", local=TRUE)
+  source("login.R", local=TRUE)
+  source("logout.R", local=TRUE)
   
   # Preproccessing data #####
   source("carcinogenome_startup.R", local=TRUE)
@@ -198,7 +209,7 @@ server <- function(input, output, session) {
       Firstname="Xposome",
       Lastname="Xposome",
       Username="Xposome",
-      Password="Xposome",
+      Password=digest("Xposome"),
       Status="Moderator",
       stringsAsFactors=TRUE
     )
@@ -600,8 +611,6 @@ server <- function(input, output, session) {
         "<a href=\"https://www.gsea-msigdb.org/gsea/msigdb\">MSigDB C2 reactome Pathways (v", gs_enrichment_version, ")</a><br>",
         "<a href=\"https://signalingpathways.org\">NURSA: Nuclear Receptor Signaling Atlas, consensome data for human</a><br>"
       )
-      
-      print(helptext_geneset)
       
     }else{
       

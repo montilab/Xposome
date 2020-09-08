@@ -19,7 +19,7 @@ observeEvent({
     editprojectwarningmsg("")
   }
   
-})
+}, ignoreInit=TRUE)
 
 ## Observe when edit data is clicked ####
 observeEvent(input$Edit_Project_Add_Button, {
@@ -27,8 +27,11 @@ observeEvent(input$Edit_Project_Add_Button, {
   ##get the row of selected project###
   row <- input$projecttable_rows_selected
   
+  ##obtain the project list
+  proj_dat <- data.frame(projectdata()); 
+  
   ##obtain the current project list
-  proj_dat <- data.frame(projectdata()); portal <- portal();
+  portal <- portal();
   
   ##obtain the input values
   Project=trimws(input$Edit_Project_Name);
@@ -200,28 +203,73 @@ observeEvent(input$Edit_Project_Add_Button, {
     shinyjs::disable(id="Edit_Project_Add_Button")
     shinyjs::disable(id="Edit_Project_Cancel_Button")
     
-    editprojectwarningmsg(""); editinputwarningmsg(""); #remove all warning messages
+    ##remove all warning messages
+    editprojectwarningmsg(""); editinputwarningmsg(""); 
     
+    ##notify user when the analysis is completed
     project_table_message(paste0(Portal, ' portal has been edited. Click "Save" to keep this changes.'))
     
-    withProgress(message = "Updating new portal....", value = 0, {
+    ##Getting the file option####
+    edit_files <- input$edit_files; 
+    edit_conn_option <- input$edit_conn_option;
+    edit_pro_ge_option <- input$edit_pro_ge_option; 
+    edit_conn_pro_option <- input$edit_conn_pro_option;
+    edit_cur_enrichment_option <- input$edit_cur_enrichment_option;
+    edit_gs_collection_file_option <- input$edit_gs_collection_file_option;
+
+    ##Getting the import file option####
+    edit_ge_file_type <- input$edit_ge_file_type;         
+    edit_conn_pcl_file_type <- input$edit_conn_pcl_file_type;
+    edit_conn_pert_file_type <- input$edit_conn_pert_file_type;   
+    
+    ##Getting the TAS and Modzscore####
+    Edit_TAS <- input$Edit_TAS; Edit_Modzscores <- input$Edit_Modzscores; 
+    
+    ##K2Taxonomer parameters####
+    cohorts <- cohorts(); edit_ssGSEA_method <- input$edit_ssGSEA_method; edit_feature_metric <- input$edit_feature_metric;
+    
+    ##Getting chemical and profile annotation and gene expression####
+    intro_file <- intro_file(); pro_file <- pro_file(); chem_file <- chem_file(); ge_file <- ge_file();
+    #print(head(pro_file)); print(dim(pro_file)); print(head(chem_file)); print(dim(chem_file));
+    
+    ##Getting connectivity map and the gs enrichment file####
+    conn_pcl_file <- conn_pcl_file(); conn_pert_file <- conn_pert_file(); gs_collection_file <- gs_collection_file();
+
+    ##Create new progress bar
+    progress <- AsyncProgress$new(message = "Creating new portal:", value=0)
+    
+    fut <- future({
+      
+      ##Shiny Packages####
+      require(K2Taxonomer)
+      require(visNetwork) 
+      require(Biobase) 
+      require(BiocGenerics)
       
       ##Rename portal directory if portal name changed####
       if(Portal != portal$Portal){
+        ##Create directory to store data
         data_path <- paste0('data/', portal$Portal); 
         data_files <- list.files(data_path)
         new_data_path <- paste0('data/', Portal); 
         dir.create(new_data_path, showWarnings=FALSE)
         walk(seq_along(data_files), function(f){ file.copy(from=file.path(data_path, data_files[f]), to=new_data_path, overwrite=TRUE) })        
         
+        ##Create directory to store json files
         json_path <- paste0('www/JSON/', portal$Portal);
         json_files <- list.files(json_path)
         new_json_path <- paste0('www/JSON/', Portal);
         dir.create(new_json_path, showWarnings=FALSE)
         walk(seq_along(json_files), function(f){ file.copy(from=file.path(json_path, json_files[f]), to=new_json_path, overwrite=TRUE) })    
         
+        ##Create directory to store rmd files
         rmd_path <- paste0('www/RMD');
         file.copy(from=paste0(rmd_path, "/introduction_", portal$Portal, ".Rmd"), to=paste0(rmd_path, "/introduction_", Portal, ".Rmd")) 
+      }else{
+        ##Create portal directory to store data and results####
+        dir.create(paste0("data/", Portal), showWarnings=FALSE, recursive=TRUE)
+        dir.create(paste0("www/JSON/", Portal), showWarnings=FALSE, recursive=TRUE)
+        dir.create(paste0("www/RMD"), showWarnings=FALSE, recursive=TRUE)
       }
       
       ##########################################################################################
@@ -229,10 +277,10 @@ observeEvent(input$Edit_Project_Add_Button, {
       # INTRODUCTION PAGE####
       #
       ##########################################################################################
-      incProgress(1/10, detail = "Saving introduction page")
+      progress$inc(1/10, detail = "Saving introduction page")
       
-      if(input$edit_files %in% c('Introduction Page', 'All')){
-        file.copy(from=intro_file(), to=paste0("www/RMD/introduction_", Portal, ".Rmd"), overwrite=TRUE)
+      if(edit_files %in% c('Introduction Page', 'All')){
+        file.copy(from=intro_file, to=paste0("www/RMD/introduction_", Portal, ".Rmd"), overwrite=TRUE)
       }
       
       print("Saving introduction page")
@@ -242,33 +290,27 @@ observeEvent(input$Edit_Project_Add_Button, {
       # PROFILE AND CHEMICAL ANNOTATION #####
       #
       ##########################################################################################
-      incProgress(2/10, detail = "Saving chemical and profile annotation")
+      progress$inc(2/10, detail = "Saving chemical and profile annotation")
       
-      ##Getting chemical and profile annotation####
-      pro_ann <- pro_file(); chem_ann <- chem_file(); 
-      
-      #print(head(pro_ann)); print(dim(pro_ann)); print(head(chem_ann)); print(dim(chem_ann));
       ##########################################################################################
       #
       # GET THE UNIQUE ID BY CHEM FOR PRO ANN####
       #
       ##########################################################################################
-      pro_ann$unique_ID_by_chem <- lapply(1:nrow(pro_ann), function(r){ paste0(unlist(pro_ann[r,Exposure]), collapse="_") }) %>% unlist()
+      pro_file$unique_ID_by_chem <- lapply(1:nrow(pro_file), function(r){ paste0(unlist(pro_file[r,Exposure]), collapse="_") }) %>% unlist()
       
       ##Getting gene expression####
-      if((input$edit_files == 'Profile Annotation' & input$edit_pro_ge_option %in% "Yes") | input$edit_files == 'All' | input$edit_files == 'Gene Expression' | (input$edit_files %in% "Connectivity Map" & input$edit_conn_pro_option %in% 'Yes')){
-        
-        edit_ge_file_type <- input$edit_ge_file_type; 
+      if((edit_files == 'Profile Annotation' & edit_pro_ge_option %in% "Yes") | edit_files == 'All' | edit_files == 'Gene Expression' | (edit_files %in% "Connectivity Map" & edit_conn_pro_option %in% 'Yes')){
         
         if(edit_ge_file_type %in% ".csv"){
-          gene_expression <- ge_file()
+          gene_expression <- ge_file
         }else {
-          gene_expression <- exprs(ge_file())
+          gene_expression <- exprs(ge_file)
         }
         
         if(edit_ge_file_type == ".RDS"){
           
-          fData <- fData(ge_file())
+          fData <- fData(ge_file)
           
           if(nrow(fData)==0){
             fData <- data.frame(Gene=rownames(gene_expression), stringsAsFactors = TRUE)
@@ -289,9 +331,9 @@ observeEvent(input$Edit_Project_Add_Button, {
         
       }else{
         
-        gene_expression <- exprs(ge_file())
+        gene_expression <- exprs(ge_file)
         
-        fData <- fData(ge_file())
+        fData <- fData(ge_file)
         
         if(nrow(fData)==0){
           fData <- data.frame(Gene=rownames(gene_expression), stringsAsFactors = TRUE)
@@ -306,10 +348,10 @@ observeEvent(input$Edit_Project_Add_Button, {
       }
       
       gene_expression <- as.matrix(gene_expression, nrow=nrow(gene_expression), ncol=ncol(gene_expression), byrow=TRUE, dimnames=list(rownames(gene_expression), colnames(gene_expression)))
-      var <- ifelse(all(colnames(gene_expression) %in% pro_ann$Sig_Id), "Sig_Id", "Chemical_Id")
+      var <- ifelse(all(colnames(gene_expression) %in% pro_file$Sig_Id), "Sig_Id", "Chemical_Id")
       
       #create phenotypic data
-      pData <- data.frame(pro_ann[match(colnames(gene_expression), pro_ann[,var]),], stringsAsFactors=TRUE)
+      pData <- data.frame(pro_file[match(colnames(gene_expression), pro_file[,var]),], stringsAsFactors=TRUE)
       pData <- pData[!duplicated(pData[,var]),]
       rownames(pData) <- pData[,var]
       phenoData <- new("AnnotatedDataFrame", data=pData)
@@ -320,34 +362,32 @@ observeEvent(input$Edit_Project_Add_Button, {
       #create expression set
       orig_expressionSet <- ExpressionSet(assayData=gene_expression, phenoData=phenoData, featureData=featureData)
       
-      #print(head(gene_expression)); print(dim(gene_expression));
-      
       ##########################################################################################
       #
       # CALCULATE MOD Z-SCORES AND REPLICATE CORRELATION (CC) FOR TAS####
       #
       ##########################################################################################
       ##Getting the variables annotation
-      if(is.null(input$Edit_TAS)){ Edit_TAS <- FALSE }else{ Edit_TAS <- input$Edit_TAS }
-      if(is.null(input$Edit_Modzscores)){ Edit_Modzscores <- FALSE }else{ Edit_Modzscores <- input$Edit_Modzscores }
+      if(is.null(Edit_TAS)){ Edit_TAS <- FALSE }else{ Edit_TAS <- Edit_TAS }
+      if(is.null(Edit_Modzscores)){ Edit_Modzscores <- FALSE }else{ Edit_Modzscores <- Edit_Modzscores }
       
       #print(Edit_TAS); print(Edit_Modzscores);
       
-      if((input$edit_files == 'Profile Annotation' & input$edit_pro_ge_option=='Yes') | input$edit_files == 'All' | input$edit_files == 'Gene Expression' | (input$edit_files == "Connectivity Map" & input$edit_conn_pro_option %in% 'Yes')){
+      if((edit_files == 'Profile Annotation' & edit_pro_ge_option=='Yes') | edit_files == 'All' | edit_files == 'Gene Expression' | (edit_files == "Connectivity Map" & edit_conn_pro_option %in% 'Yes')){
         
         if(Edit_TAS==TRUE | Edit_Modzscores==TRUE){
           
-          calc_results <- TAS_Modzscores_Calculation(pro_ann=pro_ann, chem_ann=chem_ann, gene_expression=gene_expression)
+          calc_results <- TAS_Modzscores_Calculation(pro_file, chem_file, gene_expression)
           
           if(Edit_TAS){
             # get TAS
             TAS <- calc_results[["TAS"]]
             
             # chemical annotation information
-            chem_ann <- chem_ann %>% left_join(TAS) %>% select(-Number_of_Replicates)
+            chem_file <- chem_file %>% left_join(TAS) %>% select(-Number_of_Replicates)
             
             # profile annotation information
-            pro_ann <- pro_ann %>% left_join(TAS)
+            pro_file <- pro_file %>% left_join(TAS)
           }
           
           # get modzscores
@@ -361,8 +401,8 @@ observeEvent(input$Edit_Project_Add_Button, {
       }
       
       ##save data to portal folder####
-      saveRDS(pro_ann, paste0("data/", Portal, "/Profile_Annotation.RDS"))
-      saveRDS(chem_ann, paste0("data/", Portal, "/Chemical_Annotation.RDS"))
+      saveRDS(pro_file, paste0("data/", Portal, "/Profile_Annotation.RDS"))
+      saveRDS(chem_file, paste0("data/", Portal, "/Chemical_Annotation.RDS"))
       
       print("Saving chemical and profile annotation")
       
@@ -371,14 +411,14 @@ observeEvent(input$Edit_Project_Add_Button, {
       # GENE EXPESSION ####
       #
       ##########################################################################################
-      incProgress(3/10, detail = "Saving expression set")
+      progress$inc(3/10, detail = "Saving expression set")
       
       #Create a expression set####
       gene_expression <- as.matrix(gene_expression, nrow=nrow(gene_expression), ncol=ncol(gene_expression), byrow=TRUE, dimnames=list(rownames(gene_expression), colnames(gene_expression)))
-      var <- ifelse(all(colnames(gene_expression) %in% pro_ann$Sig_Id), "Sig_Id", "Chemical_Id")
+      var <- ifelse(all(colnames(gene_expression) %in% pro_file$Sig_Id), "Sig_Id", "Chemical_Id")
       
       #create phenotypic data
-      pData <- data.frame(pro_ann[match(colnames(gene_expression), pro_ann[,var]),], stringsAsFactors=TRUE)
+      pData <- data.frame(pro_file[match(colnames(gene_expression), pro_file[,var]),], stringsAsFactors=TRUE)
       pData <- pData[!duplicated(pData[,var]),]
       rownames(pData) <- pData[,var]
       phenoData <- new("AnnotatedDataFrame", data=pData)
@@ -434,11 +474,11 @@ observeEvent(input$Edit_Project_Add_Button, {
       htmloutputpath=paste0("www/JSON/", Portal, "/", genesetname, ".html")
       
       if(var %in% "Sig_Id"){
-        CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=pro_ann, feature=feature, nr=nr, nc=nc, marker=marker)
-        CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=pro_ann, feature=feature, marker=marker, cluster=cluster)
+        CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=pro_file, feature=feature, nr=nr, nc=nc, marker=marker)
+        CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=pro_file, feature=feature, marker=marker, cluster=cluster)
       }else{
-        CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=chem_ann, feature=feature, nr=nr, nc=nc, marker=marker)
-        CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=chem_ann, feature=feature, marker=marker, cluster=cluster)
+        CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=chem_file, feature=feature, nr=nr, nc=nc, marker=marker)
+        CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=chem_file, feature=feature, marker=marker, cluster=cluster)
       }
       
       print("Saving gene expression Morpheous heatmap")
@@ -448,26 +488,22 @@ observeEvent(input$Edit_Project_Add_Button, {
       # CONNECTIVITY MAP#####
       #
       ##########################################################################################
-      incProgress(4/10, detail = "Saving connectivity map")
+      progress$inc(4/10, detail = "Saving connectivity map")
       
-      if(input$edit_files %in% "Connectivity Map" | (input$edit_files %in% c("All", "Profile Annotation", "Gene Expression") & input$edit_conn_option=="Yes")){
-        
-        ##Getting connectivity map####
-        edit_conn_pcl_file_type <- input$edit_conn_pcl_file_type;
-        edit_conn_pert_file_type <- input$edit_conn_pert_file_type;
+      if(edit_files %in% "Connectivity Map" | (edit_files %in% c("All", "Profile Annotation", "Gene Expression") & edit_conn_option=="Yes")){
         
         if(edit_conn_pcl_file_type %in% ".csv"){
-          conn_pcl <- conn_pcl_file()
+          conn_pcl <- conn_pcl_file
         }else{
-          conn_pcl_dat <- conn_pcl_file()
-          conn_pcl <- exprs(conn_pcl_file())       
+          conn_pcl_dat <- conn_pcl_file
+          conn_pcl <- exprs(conn_pcl_file)       
         }
         
         if(edit_conn_pert_file_type %in% ".csv"){
-          conn_pert <- conn_pert_file()
+          conn_pert <- conn_pert_file
         }else{
-          conn_pert_dat <- conn_pert_file()
-          conn_pert <- exprs(conn_pert_file())       
+          conn_pert_dat <- conn_pert_file
+          conn_pert <- exprs(conn_pert_file)       
         }
         
         # Create a null list for connectivity map####
@@ -487,10 +523,10 @@ observeEvent(input$Edit_Project_Add_Button, {
             conn_ge <- as.matrix(conn_pert, nrow=nrow(conn_pert), ncol=ncol(conn_pert), byrow=TRUE, dimnames=list(rownames(conn_pert), colnames(conn_pert)))
           }
           
-          var <- ifelse(all(colnames(conn_ge) %in% pro_ann$Sig_Id), "Sig_Id", "Chemical_Id")
+          var <- ifelse(all(colnames(conn_ge) %in% pro_file$Sig_Id), "Sig_Id", "Chemical_Id")
           
           #create phenotypic data
-          pData <- data.frame(pro_ann[match(colnames(conn_ge), pro_ann[,var]),], stringsAsFactors = TRUE)
+          pData <- data.frame(pro_file[match(colnames(conn_ge), pro_file[,var]),], stringsAsFactors = TRUE)
           pData <- pData[!duplicated(pData[,var]),]
           rownames(pData) <- pData[,var]
           phenoData <- new("AnnotatedDataFrame", data=pData)
@@ -539,11 +575,11 @@ observeEvent(input$Edit_Project_Add_Button, {
           htmloutputpath=paste0("www/JSON/", Portal, "/", genesetname, ".html")
           
           if(var %in% "Sig_Id"){
-            CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=pro_ann, feature=feature, nr=nr, nc=nc, marker=marker)
-            CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=pro_ann, feature=feature, marker=marker, cluster=cluster)
+            CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=pro_file, feature=feature, nr=nr, nc=nc, marker=marker)
+            CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=pro_file, feature=feature, marker=marker, cluster=cluster)
           }else{
-            CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=chem_ann, feature=feature, nr=nr, nc=nc, marker=marker)
-            CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=chem_ann, feature=feature, marker=marker, cluster=cluster)
+            CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=chem_file, feature=feature, nr=nr, nc=nc, marker=marker)
+            CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=chem_file, feature=feature, marker=marker, cluster=cluster)
           }
         }
         
@@ -561,17 +597,14 @@ observeEvent(input$Edit_Project_Add_Button, {
       #
       ##########################################################################################
       
-      if(input$edit_files %in% c("All", "Profile Annotation", "Gene Expression", "GS Enrichment", "K2Taxonomer") | (input$edit_files %in% c("Connectivity Map") & input$edit_conn_pro_option %in% 'Yes')){
+      if(edit_files %in% c("All", "Profile Annotation", "Gene Expression", "GS Enrichment", "K2Taxonomer") | (edit_files %in% c("Connectivity Map") & edit_conn_pro_option %in% 'Yes')){
         
         ##########################################################################################
         #
         # GENE SET ENRICHMENT ANALYSIS####
         #
         ##########################################################################################
-        incProgress(5/10, detail = "Saving gene set enrichment results")
-        
-        ##Gene set enrichment###
-        edit_cur_enrichment_option <- input$edit_cur_enrichment_option;
+        progress$inc(5/10, detail = "Saving gene set enrichment results")
         
         # Read in the gene set collection for gene set enrichment analysis###
         if(edit_cur_enrichment_option == "Yes"){
@@ -579,9 +612,9 @@ observeEvent(input$Edit_Project_Add_Button, {
           gsscores_c2_reactome <- getGmt(paste0("data/Enrichment Gene Set/c2.cp.reactome.v", Enrichment_Version, ".0.gmt"))
           gsscores_nursa <- getGmt(paste0("data/Enrichment Gene Set/nursa_consensome_Cbyfdrvalue_0.01.gmt"))
         }else{
-          if(input$edit_gs_collection_file_option %in% "Yes"){
-            gs_collection_path <- gs_collection_file() %>% extract2("path")
-            gs_collection <- gs_collection_file() %>% extract2("data")
+          if(edit_gs_collection_file_option %in% "Yes"){
+            gs_collection_path <- gs_collection_file %>% extract2("path")
+            gs_collection <- gs_collection_file %>% extract2("data")
             file.copy(from=gs_collection_path, to=file.path("data/Enrichment Gene Set", paste0(GS_Collection, ".gmt")), overwrite=TRUE)
           }else{
             gs_collection <- getGmt(paste0("data/Enrichment Gene Set/", portal$GS_Collection, ".gmt"))
@@ -589,9 +622,9 @@ observeEvent(input$Edit_Project_Add_Button, {
         }
         
         #create gene set enrichment####
-        gsscores <- list(); gsvamethod=input$edit_ssGSEA_method;
+        gsscores <- list(); 
         
-        if(input$edit_cur_enrichment_option == "No"){
+        if(edit_cur_enrichment_option == "No"){
           # Run gene set enrichment analysis for new gs
           genesetcollection=GS_Collection;
           geneset="gs_collection";
@@ -604,16 +637,16 @@ observeEvent(input$Edit_Project_Add_Button, {
         # Getting differential expression
         for(u in 1:length(genesetcollection)){
           #u=1;
-          for(m in 1:length(gsvamethod)){
+          for(m in 1:length(edit_ssGSEA_method)){
             #m=1;
             #run the analysis
-            gsva_es <- gsva(expr=gene_expression, gset.idx.list=get(paste0(geneset[u])), method=gsvamethod[m], mx.diff=TRUE)
+            gsva_es <- gsva(expr=gene_expression, gset.idx.list=get(paste0(geneset[u])), method=edit_ssGSEA_method[m], mx.diff=TRUE)
             
             #get the phenotypic variable
-            var <- ifelse(all(colnames(gsva_es) %in% pro_ann$Sig_Id), "Sig_Id", "Chemical_Id")
+            var <- ifelse(all(colnames(gsva_es) %in% pro_file$Sig_Id), "Sig_Id", "Chemical_Id")
             
             #create phenotypic data
-            pData <- data.frame(pro_ann[match(colnames(gsva_es), pro_ann[,var]),], stringsAsFactors = TRUE)
+            pData <- data.frame(pro_file[match(colnames(gsva_es), pro_file[,var]),], stringsAsFactors = TRUE)
             pData <- pData[!duplicated(pData[,var]),]
             rownames(pData) <- pData[,var]
             phenoData <- new("AnnotatedDataFrame", data=pData)
@@ -627,7 +660,7 @@ observeEvent(input$Edit_Project_Add_Button, {
             eSet <- ExpressionSet(assayData=gsva_es, phenoData=phenoData, featureData=featureData)
             
             #store the expression in a list
-            genesetname <- paste0("gsscores_", genesetcollection[u], "_", gsvamethod[m])
+            genesetname <- paste0("gsscores_", genesetcollection[u], "_", edit_ssGSEA_method[m])
             gsscores[[genesetname]] <- eSet
             
             ##Create morpheus heatmap
@@ -643,11 +676,11 @@ observeEvent(input$Edit_Project_Add_Button, {
             htmloutputpath=paste0("www/JSON/", Portal, "/", genesetname, ".html")
             
             if(var %in% "Sig_Id"){
-              CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=pro_ann, feature=feature, nr=nr, nc=nc, marker=marker)
-              CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=pro_ann, feature=feature, marker=marker, cluster=cluster)
+              CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=pro_file, feature=feature, nr=nr, nc=nc, marker=marker)
+              CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=pro_file, feature=feature, marker=marker, cluster=cluster)
             }else{
-              CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=chem_ann, feature=feature, nr=nr, nc=nc, marker=marker)
-              CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=chem_ann, feature=feature, marker=marker, cluster=cluster)
+              CreateJSON(outputpath=jsonoutputpath, dataset=Portal, genesetname=genesetname, ge=ge, proann=chem_file, feature=feature, nr=nr, nc=nc, marker=marker)
+              CreateHTML(outputpath=htmloutputpath, dataset=Portal, genesetname=genesetname, proann=chem_file, feature=feature, marker=marker, cluster=cluster)
             }
             
           }
@@ -664,162 +697,161 @@ observeEvent(input$Edit_Project_Add_Button, {
         # TAXONOMER ANALYSIS####
         #
         ##########################################################################################
-        incProgress(6/10, detail = "Saving taxonomer results")
+        progress$inc(6/10, detail = "Saving taxonomer results")
         
-        if(!input$edit_files %in% "GS Enrichment"){
+        if(!is.null(cohorts)){
           
-          ##Taxonomer parameters####
-          cohorts <- cohorts(); #print(cohorts);
+          ##Create the info class vector to run the metavariable test
+          infoClassVector <- NULL;
           
-          if(!is.null(cohorts)){
+          #Get a expression set####
+          eSet <- orig_expressionSet
+          
+          for(v in seq_along(Exposure_Phenotype)){
+            #v=1;
+            #print(input[[paste0("metavar_", Exposure_Phenotype[v])]])
+            test <- meta_variable_test$method[which(meta_variable_test$statistical_test %in% methods[v])]
             
-            featMetric <- input$edit_feature_metric; 
-            ssGSEAalg <- input$edit_ssGSEA_method; 
-            
-            ##Create the info class vector to run the metavariable test
-            infoClassVector <- NULL;
-            
-            #Get a expression set####
-            eSet <- orig_expressionSet
-            
-            for(v in seq_along(Exposure_Phenotype)){
-              #v=1;
-              #print(input[[paste0("metavar_", Exposure_Phenotype[v])]])
-              test <- meta_variable_test$method[which(meta_variable_test$statistical_test %in% methods[v])]
-              
-              if(test %in% "factor1" & all(toupper(c("Yes", "No")) %in% toupper(pData(eSet)[,Exposure_Phenotype[v]]))){
-                pData(eSet)[,Exposure_Phenotype[v]] <- factor(pData(eSet)[,Exposure_Phenotype[v]], levels = c("No", "Yes"))
-              }
-              
-              infoClassVector <- c(infoClassVector, test)
+            if(test %in% "factor1" & all(toupper(c("Yes", "No")) %in% toupper(pData(eSet)[,Exposure_Phenotype[v]]))){
+              pData(eSet)[,Exposure_Phenotype[v]] <- factor(pData(eSet)[,Exposure_Phenotype[v]], levels = c("No", "Yes"))
             }
             
-            names(infoClassVector) <- Exposure_Phenotype; 
-            
-            ##Add connectivity test##### 
-            if(connectivity_var){
-              pData <- pData(eset)
-              conn_pcl_transpose <- t(conn_pcl) %>% as.data.frame()
-              conn_pert_transpose <- t(conn_pert) %>% as.data.frame() 
-              pData <- (pData %>% cbind(conn_pcl_transpose[match(rownames(pData), rownames(conn_pcl_transpose)),])) %>% cbind(conn_pert_transpose[match(rownames(pData), rownames(conn_pert_transpose)),])
-              infoClassVector <- c(infoClassVector, rep(connectivity_test, ncol(conn_pcl_transpose)), rep(connectivity_test, ncol(conn_pert_transpose)))
-              names(infoClassVector) <- c(Exposure_Phenotype, colnames(conn_pcl_transpose), colnames(conn_pert_transpose))
-            }
-            
-            ##Hyperenrichment analysis####
-            if(input$edit_cur_enrichment_option == "Yes"){
-              
-              hallmark_genelist <- lapply(seq_along(gsscores_hallmark), function(g){ gsscores_hallmark[[g]]@geneIds })
-              names(hallmark_genelist) <- names(gsscores_hallmark)
-              
-              c2_reactome_genelist <- lapply(seq_along(gsscores_c2_reactome), function(g){ gsscores_c2_reactome[[g]]@geneIds })
-              names(c2_reactome_genelist) <- names(gsscores_c2_reactome)
-              
-              nursa_genelist <- lapply(seq_along(gsscores_nursa), function(g){ gsscores_nursa[[g]]@geneIds })
-              names(nursa_genelist) <- names(gsscores_nursa)
-              
-              # Combine gene set enrichment for hallmark, C2, and NURSA
-              geneSetList <- do.call(c, list(hallmark_genelist, c2_reactome_genelist, nursa_genelist))
-              
-            }else{
-              
-              collection_genelist <- lapply(seq_along(gs_collection), function(g){ gs_collection[[g]]@geneIds })
-              names(collection_genelist) <- names(gs_collection)
-              
-              geneSetList <- collection_genelist
-              
-            }
-            
-            # Run K2Taxonomer!
-            # Always important to set a seed
-            set.seed(12345678)
-            
-            tryCatch({
-              
-              K2res <- runK2Taxonomer(
-                eSet = eSet,
-                cohorts = cohorts,
-                featMetric = featMetric,
-                infoClass = infoClassVector,
-                genesets = geneSetList,
-                ssGSEAalg = ssGSEAalg,
-                ssGSEAcores = 4
-              )
-              
-              ##save K2Taxonomer results
-              saveRDS(K2res, paste0("data/", Portal, "/K2results.RDS"))
-              
-            }, error=function(err){
-              print(err)
-            }, warning=function(war){
-              print(war)
-            })
-
+            infoClassVector <- c(infoClassVector, test)
           }
           
-          print("Saving K2Taxonomer results")
+          names(infoClassVector) <- Exposure_Phenotype; 
+          
+          ##Add connectivity test##### 
+          if(connectivity_var){
+            pData <- pData(eset)
+            conn_pcl_transpose <- t(conn_pcl) %>% as.data.frame()
+            conn_pert_transpose <- t(conn_pert) %>% as.data.frame() 
+            pData <- (pData %>% cbind(conn_pcl_transpose[match(rownames(pData), rownames(conn_pcl_transpose)),])) %>% cbind(conn_pert_transpose[match(rownames(pData), rownames(conn_pert_transpose)),])
+            infoClassVector <- c(infoClassVector, rep(connectivity_test, ncol(conn_pcl_transpose)), rep(connectivity_test, ncol(conn_pert_transpose)))
+            names(infoClassVector) <- c(Exposure_Phenotype, colnames(conn_pcl_transpose), colnames(conn_pert_transpose))
+          }
+          
+          ##Hyperenrichment analysis####
+          if(edit_cur_enrichment_option == "Yes"){
+            
+            hallmark_genelist <- lapply(seq_along(gsscores_hallmark), function(g){ gsscores_hallmark[[g]]@geneIds })
+            names(hallmark_genelist) <- names(gsscores_hallmark)
+            
+            c2_reactome_genelist <- lapply(seq_along(gsscores_c2_reactome), function(g){ gsscores_c2_reactome[[g]]@geneIds })
+            names(c2_reactome_genelist) <- names(gsscores_c2_reactome)
+            
+            nursa_genelist <- lapply(seq_along(gsscores_nursa), function(g){ gsscores_nursa[[g]]@geneIds })
+            names(nursa_genelist) <- names(gsscores_nursa)
+            
+            # Combine gene set enrichment for hallmark, C2, and NURSA
+            geneSetList <- do.call(c, list(hallmark_genelist, c2_reactome_genelist, nursa_genelist))
+            
+          }else{
+            
+            collection_genelist <- lapply(seq_along(gs_collection), function(g){ gs_collection[[g]]@geneIds })
+            names(collection_genelist) <- names(gs_collection)
+            
+            geneSetList <- collection_genelist
+            
+          }
+          
+          # Run K2Taxonomer!
+          # Always important to set a seed
+          set.seed(12345678)
+          
+          K2res <- runK2Taxonomer(
+            eSet = eSet,
+            cohorts = cohorts,
+            featMetric = edit_feature_metric,
+            infoClass = infoClassVector,
+            genesets = geneSetList,
+            ssGSEAalg = edit_ssGSEA_method,
+            ssGSEAcores = 1
+          )
+          
+          ##save K2Taxonomer results
+          saveRDS(K2res, paste0("data/", Portal, "/K2results.RDS"))
           
         }
+        
+        print("Saving K2Taxonomer results")
+        
       }
+      
     })
     
-    ##########################################################################################
-    #
-    # ADD CHEMICAL INTERACTIONS AND EXPOSURES TO PROJECT LIST####
-    # 
-    ##########################################################################################
-    new_proj <- data.frame(
-      Project=Project,
-      Cell_Line=Cell_Line,
-      Portal=Portal,
-      GS_Collection=GS_Collection,
-      GS_Collection_Link=GS_Collection_Link,
-      Landmark_Gene=Landmark_Gene,
-      Description=Description,
-      stringsAsFactors = TRUE
-    )
+    ## Show notification on error or user interrupt
+    fut <- catch(
+      fut,
+      function(e){
+        print(e$message)
+        #showNotification(e$message)
+      })
     
-    exposure_categorical <- unlist(lapply(seq_along(Exposure), function(v){
-      return(Exposure[v])
-    }))
+    ## When done with analysis, remove progress bar
+    fut <- finally(fut, function(){
+      
+      #close progress bar
+      progress$close()
     
-    exposure_phenotype_categorical <- unlist(lapply(seq_along(Exposure_Phenotype), function(v){
-      return(Exposure_Phenotype[v])
-    }))
-    
-    print(cohorts())
-    
-    if(input$edit_files %in% c("None", "Introduction Page") | (input$edit_files %in% "Connectivity Map" & input$edit_conn_pro_option %in% "No")){
-      TAS_Modzscores=portal$TAS_Modzscores 
-    }else{
-      if(is.null(cohorts())){
+      ##########################################################################################
+      #
+      # ADD CHEMICAL INTERACTIONS AND EXPOSURES TO PROJECT LIST####
+      # 
+      ##########################################################################################
+      new_proj <- data.frame(
+        Project=Project,
+        Cell_Line=Cell_Line,
+        Portal=Portal,
+        GS_Collection=GS_Collection,
+        GS_Collection_Link=GS_Collection_Link,
+        Landmark_Gene=Landmark_Gene,
+        Description=Description,
+        stringsAsFactors = TRUE
+      )
+      
+      exposure_categorical <- unlist(lapply(seq_along(Exposure), function(v){
+        return(Exposure[v])
+      }))
+      
+      exposure_phenotype_categorical <- unlist(lapply(seq_along(Exposure_Phenotype), function(v){
+        return(Exposure_Phenotype[v])
+      }))
+      
+      print(cohorts())
+      
+      if(edit_files %in% c("None", "Introduction Page") | (edit_files %in% "Connectivity Map" & edit_conn_pro_option %in% "No")){
         TAS_Modzscores=portal$TAS_Modzscores 
       }else{
-        TAS_Modzscores=paste0(c(Edit_TAS, Edit_Modzscores), collapse=", ")
+        if(is.null(cohorts())){
+          TAS_Modzscores=portal$TAS_Modzscores 
+        }else{
+          TAS_Modzscores=paste0(c(Edit_TAS, Edit_Modzscores), collapse=", ")
+        }
       }
-    }
-    
-    new_proj <- cbind(
-      new_proj, 
-      TAS_Modzscores=TAS_Modzscores,
-      Exposure_Levels=paste0(exposure_categorical, collapse=", "), 
-      Exposure_Phenotype=paste0(exposure_phenotype_categorical, collapse=", "), 
-      Exposure_Phenotype_Test=paste0(methods, collapse=", "), 
-      Connectivity_Test=paste0(c(connectivity_var, connectivity_test), collapse=", "),
-      Feature_Filtering=featMetric
-    )
-    
-    new_proj <- new_proj[,colnames(proj_dat)]
-    proj_dat <- proj_dat[-row,]
-    newproject <- proj_dat %>% rbind(new_proj)
-    projectdata(newproject)
-    removeModal()
-    
-    shinyjs::enable(id="Edit_Project_Add_Button")
-    shinyjs::enable(id="Edit_Project_Cancel_Button")
-    
+      
+      new_proj <- cbind(
+        new_proj, 
+        TAS_Modzscores=TAS_Modzscores,
+        Exposure_Levels=paste0(exposure_categorical, collapse=", "), 
+        Exposure_Phenotype=paste0(exposure_phenotype_categorical, collapse=", "), 
+        Exposure_Phenotype_Test=paste0(methods, collapse=", "), 
+        Connectivity_Test=paste0(c(connectivity_var, connectivity_test), collapse=", "),
+        Feature_Filtering=featMetric
+      )
+      
+      new_proj <- new_proj[,colnames(proj_dat)]
+      proj_dat <- proj_dat[-row,]
+      newproject <- proj_dat %>% rbind(new_proj)
+      projectdata(newproject)
+      removeModal()
+      
+      shinyjs::enable(id="Edit_Project_Add_Button")
+      shinyjs::enable(id="Edit_Project_Cancel_Button")
+      
+    })
+      
   }
-  
 })
 
 ## Observe when cancel button is clicked

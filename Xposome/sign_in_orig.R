@@ -1,7 +1,7 @@
 
 ## Create reactive values ####
-projectdata <- reactiveVal(projectlist)
-logindata <- reactiveVal(loginlist)
+projectdata <- reactiveVal(NULL)
+logindata <- reactiveVal(NULL)
 
 ## Warning message for main project and login table ####
 LogInMessage <- reactiveVal("")
@@ -9,8 +9,6 @@ project_table_message <- reactiveVal(NULL)
 login_table_message <- reactiveVal(NULL)
 about_file_msg <- reactiveVal(NULL)
 contact_file_msg <- reactiveVal(NULL)
-forgotpasswordwarningmsg <- reactiveVal(NULL)
-changepwdwarningmsg <- reactiveVal(NULL)
 
 ## Create reactive import data####
 reset <- reactiveVal(TRUE)
@@ -59,136 +57,108 @@ edituserwarningmsg <- reactiveVal(NULL)
 output$pageStub <- renderUI({
   
   #####<!-- START SIGN IN PAGE -->
-  shiny::div(
-    uiOutput(outputId = "uiLogin"),
+  if(UserLog$Logged == FALSE){
+
+    uiOutput(outputId = "uiLogin")
+    
+  }else if(UserLog$Logged == TRUE){
+    
     uiOutput(outputId = "uiMain")
-  )#####<!-- END SIGN IN PAGE -->
+    
+  }#####<!-- END SIGN IN PAGE -->
 
 })
-
-# call the logout module with reactive trigger to hide/show
-logout_init <- callModule(
-  logout, 
-  id = "logout", 
-  active = reactive(credentials()$user_auth)
-)
-
-# call login module supplying data frame, user and password cols
-# and reactive trigger
-credentials <- callModule(
-  login, 
-  id = "login", 
-  log_out = reactive(logout_init())
-)
 
 ##IF USER LOG IS FALSE, THEN SHOW THE LOGIN PANNEL####
 output$uiLogin <- renderUI({
   
-  req(credentials()$user_auth== FALSE)
+  req(UserLog$Logged == FALSE)
   
-  loginUI(id="login")
-  
-})
-
-## Functions to forgot password #####
-ForgotPassword <- function() {
-  div(
-    id = "Forgot_Password",
+  fluidRow(
+    class="signin-page",
     
-    modalDialog(
-      size = "s", title = "Forgot your password?", footer = NULL,
+    column(
+      width=4, offset=4, class="login-container",
       
-      fluidRow(
-        column(
-          width=12,
-          p(strong("To access your account, please enter your information.")),
-          textInput(inputId="FG_Firstname", label=strong(span(style="color:red;", "*"), "First name"), value=""),
-          textInput(inputId="FG_Lastname", label=strong(span(style="color:red;", "*"), "Last name"), value=""),
-          textInput(inputId="FG_Username", label=strong(span(style="color:red;", "*"), "Username"), value=""),
-          uiOutput("FG_Message"), 
-          br(),
-          actionButton(class="mybuttons", inputId="FG_Button", label=strong("Submit")),
-          actionButton(class="mybuttons", inputId="FG_Back", label=strong("Back"))
+      div(class="login-form", 
+          div(class="login-form-title", strong('Sign In'))
+      ),
+      
+      div(
+        class="login-validate-form",
+        
+        div(class="wrap-input",
+            HTML(paste0("<input class='logininput' id='userName' type='text' name='username' placeholder='Enter username' value='' onkeypress=\"loginfunction(event)\" style=\"width: 100%;\"/>")),
+            tags$script('document.getElementById("userName").focus();')
+        ),
+        
+        div(class="wrap-input",
+            HTML(paste0("<input class='logininput' id='passWord' type='password' name='password' placeholder='Enter password' value='' onkeypress=\"loginfunction(event)\" style=\"width: 100%;\"/>"))
+        ),
+        
+        div(class="login-error-message",
+            uiOutput(outputId="LogInErrorMessage")
+        ),
+        
+        p(style="text-align: center",
+          actionButton(class="login-btn", inputId="SignInButton", label=strong("Sign In"), onkeypress="loginfunction(event)", width="auto")
         )
       )
     )
   )
-}
 
-##OBSERVE THE FORGOT BUTTON#####
-observeEvent(input$ForgetPassword, {
-  
-  #Show the add modal
-  showModal(ForgotPassword())
-  
 })
 
-##OBSERVE THE SUBMIT BUTTON#####
-observeEvent(input$FG_Button, {
+##OBSERVE THE SIGN IN BUTTON#####
+##If user role is user, shows the user app,
+##else shows the moderator app
+observeEvent(input$SignInButton, {
   
-  Firstname=trimws(input$FG_Firstname);
-  Lastname=trimws(input$FG_Lastname);
-  Username=trimws(input$FG_Username);
+  ## Obtain the username and password ####
+  userName <- input$userName; passWord <- input$passWord;
   
-  login_dat <- read.csv(paste0("data/User_Login_List.csv"), header = TRUE, stringsAsFactors = FALSE)
-  #print(login_dat)
-
-  if(Firstname=="" | Lastname=="" | Username==""){
+  #print(userName); print(passWord);
+  
+  ## Read in the log in sheet ####
+  logInfo <- read.csv(paste0("data/User_Login_List.csv"), header = TRUE)
+  
+  ## Verify username and password ###
+  Log <- logInfo %>% filter(Username %in% userName, Password %in% passWord)
+  
+  ## Read in the project list ####
+  projectInfo <- read.csv(paste0("data/Project_List.csv"), header = TRUE)
+  
+  ## Check the login message ####
+  if(nrow(Log) > 0){
     
-    forgotpasswordwarningmsg("Please fill in the required (*) fields.")
+    projectdata(projectInfo)
+    logindata(logInfo)
+    LogInMessage("")
+    login_table_message("")
+    project_table_message("")
+    UserLog$Logged <- TRUE
     
   }else{
     
-    row <- which(login_dat$Username %in% Username)
-    #print(row); print(Username);
-    
-    if(length(row) > 0){
-      Password <- password(n = 8, numbers = TRUE, case = TRUE, special = c("?", "!", "&", "%", "$"))
-      login_dat$Password[row[1]] <- sodium::password_store(as.character(Password))
-      write.csv(login_dat, paste0("data/User_Login_List.csv"), row.names = FALSE)
-      forgotpasswordwarningmsg("Thanks for your submission! A temporary password has been sent to your email.")
-      
-      sendmai::sendmail(
-        from="lilychau999@gmail.com",
-        to="rchau88@bu.edu",
-        subject="Password Reset for Xposome Project",
-        msg=HTML(paste0("<p>Hi there!</p><p>We received a request to reset your password for the Xposome Project.</p><p>Here is your new temporary password: ", Password, "</p><p>If you did not request a password reset, please ignore this email - your password will not be changed.</p><p>Thanks for using the Xposome app!</p><p>- The Montilab Team</p>")),
-        smtp = list(host.name = "smtp.gmail.com", port = 587, user.name = "lilychau999@gmail.com", passwd = "WilsonTang!2020", ssl = TRUE),
-        authenticate=TRUE,
-        send=TRUE,
-        debug=TRUE
-      )
-      
-    }else{
-      
-      forgotpasswordwarningmsg("This username does not exist in our database. Please enter another username.")
-      
-    }
+    LogInMessage("Incorrect username or password.") 
+    UserLog$Logged <- FALSE
     
   }
+
+}, ignoreInit=TRUE, ignoreNULL = TRUE)
+
+##Show the error message if login info is not correct####
+output$LogInErrorMessage <- renderUI({
+  
+  p(id="LoginMessage", LogInMessage())
+  
 })
 
-##OBSERVE THE BACK BUTTON#####
-observeEvent(input$FG_Back, {
-  
-  forgotpasswordwarningmsg("")
-  removeModal()
-  
-})
-
-## forgot password warning message ####
-output$FG_Message <- renderUI({
-  
-  req(forgotpasswordwarningmsg())
-  
-  p(style="color:red;", HTML(forgotpasswordwarningmsg()))
-  
-})
 
 ###IF LOGGED IS TRUE THEN SHOW THE MAIN PAGE#####
 output$uiMain <- renderUI({
   
-  req(credentials()$user_auth == TRUE)
+  req(UserLog$Logged == TRUE)
   
   ###<!-- Header top area start -->
   div(
@@ -210,7 +180,7 @@ output$uiMain <- renderUI({
         width=6,
         
         div(class="text-md-right",
-            logoutUI(id="logout")
+            actionLink(inputId="LogOut", class="button-link", icon=tags$i(class="fa fa-user-circle"), label="Log out")
         )
       )
     ),
@@ -1135,6 +1105,7 @@ observeEvent(input$Remove_Project_No_Button, {
   
 })
 
+
 ## Function for save project ####
 SaveProject <- function(){
   div(
@@ -1227,6 +1198,15 @@ options = list(
   buttons=c('copy','csv','print')
 ))
 
+## Output edit user login message ####
+output$EditUserWarningMessage <- renderUI({
+  
+  req(edituserwarningmsg())
+  
+  p(style="color:red;", HTML(edituserwarningmsg()))
+  
+})
+
 # Functions to add new data for user login #####
 AddUser <- function() {
   div(
@@ -1237,34 +1217,34 @@ AddUser <- function() {
       fluidRow(
         column(
           width=3,
-          textInput(inputId="addfirstname", label=strong(span(style="color:red;", "*"), "First name:"), value=""),
+          textInput(inputId = "addfirstname", label=strong(span(style="color:red;", "*"), "First name:"), value=""),
         ),
         column(
           width=3,
-          textInput(inputId="addlastname", label=strong(span(style="color:red;", "*"), "Last name:"), value="")
+          textInput(inputId = "addlastname", label=strong(span(style="color:red;", "*"), "Last name:"), value="")
         ),
         column(
           width=3,
-          textInput(inputId="addusername", label=strong(span(style="color:red;", "*"), "Username:"), value="")
+          textInput(inputId = "addusername", label=strong(span(style="color:red;", "*"), "Username:"), value="")
         ),
         column(
           width=3,
-          passwordInput(inputId="addpassword", label=strong(span(style="color:red;", "*"), "Password:"), value="")
+          passwordInput(inputId = "addpassword", label=strong(span(style="color:red;", "*"), "Password:"), value="")
         )
       ),
       br(),
       fluidRow(
         column(
           width=12,
-          uiOutput(outputId="AddUserWarningMessage")        
+          uiOutput("AddUserWarningMessage")        
         )
       ),
       br(),
       fluidRow(
         column(
           width=4,
-          actionButton(inputId="Add_User_Add_Button", label=strong("Add"), class="mybuttons", width="70px"),
-          actionButton(inputId="Add_User_Cancel_Button", label=strong("Cancel"), class="mybuttons", width="70px")
+          actionButton("Add_User_Add_Button", label=strong("Add"), class="mybuttons", width="70px"),
+          actionButton("Add_User_Cancel_Button", label=strong("Cancel"), class="mybuttons", width="70px")
         )
       )
     )
@@ -1294,21 +1274,21 @@ observeEvent(input$Add_User_Add_Button, {
   Firstname=trimws(input$addfirstname);
   Lastname=trimws(input$addlastname);
   Username=trimws(input$addusername);
-  Password=trimws(input$addpassword);
+  Password=input$addpassword;
   Status="Moderator";
   
   #print(Password)
   
-  login_dat <- data.frame(logindata(), stringsAsFactors=FALSE)
+  login_dat <- data.frame(logindata())
   new_user <- data.frame(
     Firstname=Firstname, 
     Lastname=Lastname, 
     Username=Username, 
-    Password=sodium::password_store(Password), 
+    Password=Password, 
     Status=Status
   )
   
-  if(Firstname=="" | Lastname=="" | Username=="" | Password==""){
+  if(Firstname=="" | Lastname=="" | Username=="" | trimws(Password)==""){
     
     adduserwarningmsg("Please fill in the required (*) fields.")
     
@@ -1323,13 +1303,14 @@ observeEvent(input$Add_User_Add_Button, {
       adduserwarningmsg("This username is already existed. Please enter another username.")
     }else{
       adduserwarningmsg("")
-      login_table_message(paste0('User ', Username, ' has been added. Click "Save" to keep the changes.'))
       newlogin <- login_dat %>% rbind(new_user)
       logindata(newlogin)
+      login_table_message(paste0('User ', Username, ' has been added. Click "Save" to keep the changes.'))
       removeModal()
     }
     
   }
+  
 })
 
 ## Observe the cancel user button is clicked #####
@@ -1344,26 +1325,23 @@ EditUser <- function(table) {
   div(
     id = "editUserData",
     modalDialog(
-      size="l", title="Edit User", footer=NULL, 
-      
+      size = "l", title = "Edit User", footer = NULL, 
       fluidRow(
         column(
           width=3,
-          textInput(inputId="editfirstname", label=strong(span(style="color:red;", "*"), "First name:"), value=table$Firstname),
+          textInput(inputId = "editfirstname", label=strong(span(style="color:red;", "*"), "First name:"), value=table$Firstname),
         ),
         column(
           width=3,
-          textInput(inputId="editlastname", label=strong(span(style="color:red;", "*"), "Last name:"), value=table$Lastname)
+          textInput(inputId = "editlastname", label=strong(span(style="color:red;", "*"), "Last name:"), value=table$Lastname)
         ),
         column(
           width=3,
-          textInput(inputId="editusername", label=strong(span(style="color:red;", "*"), "Username:"), value=table$Username)
+          textInput(inputId = "editusername", label=strong(span(style="color:red;", "*"), "Username:"), value=table$Username)
         ),
         column(
           width=3,
-          shinyjs::disabled(
-            passwordInput(inputId="editpassword", label=strong(span(style="color:red;", "*"), "Password:"), value=table$Password)
-          )
+          textInput(inputId = "editpassword", label=strong(span(style="color:red;", "*"), "Password:"), value=table$Password)
         )
       ),
       br(),
@@ -1376,24 +1354,14 @@ EditUser <- function(table) {
       br(),
       fluidRow(
         column(
-          width=12,
-          actionButton(inputId="Edit_User_Add_Button", label=strong("Update"), class="mybuttons", width="70px"),
-          actionButton(inputId="Edit_User_Cancel_Button", label=strong("Cancel"), class="mybuttons", width="70px"),
-          actionButton(inputId="Edit_Change_Pwd", label=strong("Change Password?"), class="mybuttons")
+          width=4,
+          actionButton("Edit_User_Add_Button", label=strong("Update"), class="mybuttons", width="70px"),
+          actionButton("Edit_User_Cancel_Button", label=strong("Cancel"), class="mybuttons", width="70px")
         )
       )
     )
   )
 }
-
-## Output edit user login message ####
-output$EditUserWarningMessage <- renderUI({
-  
-  req(edituserwarningmsg())
-  
-  p(style="color:red;", HTML(edituserwarningmsg()))
-  
-})
 
 # Pop-up for edit ####
 observeEvent(input$EditUser, {
@@ -1418,23 +1386,23 @@ observeEvent(input$Edit_User_Add_Button, {
   Firstname=trimws(input$editfirstname);
   Lastname=trimws(input$editlastname);
   Username=trimws(input$editusername);
-  Password=trimws(input$editpassword);
+  Password=input$editpassword;
   Status="Moderator";
-
+  userpassword <- user()$Password;
+  
   row <- input$logintable_rows_selected
   login_dat <- data.frame(logindata(), stringsAsFactors=FALSE)
-  user <- user()
   
   #print(row); print(login_dat);
   
-  if(Firstname=="" | Lastname=="" | Username=="" | Password==""){
+  if(Firstname=="" | Lastname=="" | Username=="" | trimws(Password)==""){
     
     edituserwarningmsg("Please fill in the required (*) fields.")
     
   }else{
     
     #Validate to see user exists
-    validate_user <- which(Username %in% login_dat$Username[which(!login_dat$Username %in% user$Username)])
+    validate_user <- which(Username %in% login_dat$Username[which(!login_dat$Username %in% user()$Username)])
     
     if(length(validate_user)){
       
@@ -1442,12 +1410,16 @@ observeEvent(input$Edit_User_Add_Button, {
 
     }else{
       
+      if(userpassword == Password){
+        Password=Password
+      }else{
+        Password=digest(Password)
+      }
+      
       login_table_message(paste0("User ", Username, " has been modified. Click 'Save' to keep the changes."))
       edituserwarningmsg("")
       login_dat <- login_dat[-row,] 
-      edit_user <- data.frame(Firstname=Firstname, Lastname=Lastname, Username=Username, Password=Password, Status="Moderator")
-      user(edit_user)
-      login_dat <- login_dat %>% rbind(edit_user)
+      login_dat <- login_dat %>% rbind(data.frame(Firstname=Firstname, Lastname=Lastname, Username=Username, Password=Password, Status="Moderator"))
       logindata(login_dat)
       removeModal()
       
@@ -1457,91 +1429,10 @@ observeEvent(input$Edit_User_Add_Button, {
 
 ## Observe when remove user no button is clicked ####
 observeEvent(input$Edit_User_Cancel_Button, {
-  
-  edituserwarningmsg("")
-  row <- input$logintable_rows_selected
-  login_dat <- read_csv(paste0("data/User_Login_List.csv"))
-  user(login_dat[row,])
-  logindata(login_dat)
+  edituserwarningmsg(NULL)
   removeModal()
-  
 })
 
-# Functions to add new data for user login #####
-ChangePwd <- function() {
-  div(
-    id="changePwd",
-    
-    modalDialog(
-      size="s", title="Enter New Password", footer=NULL,
-      
-      fluidRow(
-        column(
-          width=12,
-          textInput(inputId="newpassword", label=strong(span(style="color:red;", "*"), "New Password:"), value=""),
-        ),
-        column(
-          width=12,
-          uiOutput("ChangePwdWarningMessage")
-        ),       
-        column(
-          width=12,
-          actionButton(inputId="Submit_Pwd", label=strong("Submit"), class="mybuttons"),
-          actionButton(inputId="Cancel_Pwd", label=strong("Cancel"), class="mybuttons")
-        )
-      )
-    )
-  )
-}
-
-## Output add user login message ####
-output$ChangePwdWarningMessage <- renderUI({
-  
-  req(changepwdwarningmsg())
-  
-  p(style="color:red;", HTML(changepwdwarningmsg()))
-  
-})
-
-# Pop-up for change password ####
-observeEvent(input$Edit_Change_Pwd, {
-  
-  showModal(ChangePwd())
-  
-}, ignoreInit = TRUE)
-
-# Pop-up for submit password ####
-observeEvent(input$Submit_Pwd, {
-  
-  Password=trimws(input$newpassword);
-  
-  if(Password==""){
-    
-    changepwdwarningmsg("Please fill in the required (*) fields.")
-    
-  }else{
-    
-    changepwdwarningmsg("")
-    row <- input$logintable_rows_selected
-    login_dat <- logindata()
-    login_dat$Password[row] <- sodium::password_store(Password)
-    user(login_dat[row,])
-    showModal(EditUser(table=login_dat[row,]))
-    
-  }
-
-}, ignoreInit = TRUE)
-
-# Pop-up for cancel password ####
-observeEvent(input$Cancel_Pwd, {
-  
-  changepwdwarningmsg("")
-  row <- input$logintable_rows_selected
-  table <- logindata()
-  user(table[row,])
-  showModal(EditUser(table=table[row,]))
-  
-}, ignoreInit = TRUE)
 
 ## Remove user modal dialog ####
 RemoveUser <- function(){
@@ -1658,6 +1549,103 @@ output$LoginTableMessage <- renderUI({
   
 })
 
+
+## CLICKING THE LOG-OUT BUTTON ####
+observeEvent(input$LogOut, {
+  
+  ##remove warning message####
+  project_table_message("")
+  login_table_message("")
+  
+  if(nrow(projectdata())==0){
+    
+    data <- data.frame(
+      Project=NA,
+      Cell_Line=NA,
+      Portal=NA,
+      Enrichment_Version=NA,
+      Landmark_Gene=NA,
+      TAS_Modzscores=NA,
+      Exposure_Levels=NA, 
+      Exposure_Phenotype=NA, 
+      Exposure_Phenotype_Test=NA, 
+      Connectivity_Test=NA,
+      Feature_Filtering=NA,
+      Description=NA,
+      stringsAsFactors=TRUE
+    )
+    
+    write.csv(data, "data/Project_List.csv", row.names=FALSE, na="")
+    
+  }else{
+    
+    ##Read in the project list###
+    data <- read_csv(paste0("data/Project_List.csv"))
+    
+    ##Get all files in the data folder###
+    data_files <- list.files("data/")
+    
+    ##Create a list of wanted folders and files####
+    wanted_files <- c(projectlist$Portal, "Connectivity Map", "Enrichment Gene Set", "Landmark", "Project_List.csv", "Template", "User_Login_List.csv", "Zebra Fish") 
+    
+    ##Remove unwanted folders/files####
+    if(any(!data_files %in% wanted_files)){
+      for(f in seq_along(data_files)){ 
+        #f=1
+        if(!data_files[f] %in% wanted_files){
+          unlink(paste0("data/", data_files[f]), recursive=TRUE, force=TRUE)
+        }
+      }
+    }
+    
+    ##Get all files in the json folder###
+    json_files <- list.files("www/JSON")
+    
+    if(any(!json_files%in% projectlist$Portal)){
+      for(f in seq_along(json_files)){ 
+        #f=1
+        if(!json_files[f] %in% projectlist$Portal){
+          unlink(paste0("www/JSON/", json_files[f]), recursive=TRUE, force=TRUE)
+        }
+      }
+    }
+    
+    ##Get all files in the rmd folder###
+    rmd_files <- list.files("www/RMD")
+    
+    ##Create a list of wanted folders and files####
+    wanted_rmds <- c(paste0("introduction_", projectlist$Portal, ".Rmd"), "about_page.Rmd", "contact_page.Rmd") 
+    
+    if(any(!rmd_files %in% wanted_rmds)){
+      for(f in seq_along(rmd_files)){ 
+        #f=1
+        if(!rmd_files[f] %in% wanted_rmds){
+          unlink(paste0("www/RMD/", rmd_files[f]), recursive=TRUE, force=TRUE)
+        }
+      }
+    }
+  }
+  
+  if(nrow(logindata())==0){
+    
+    data <- data.frame(
+      Firstname="Xposome",
+      Lastname="Xposome",
+      Username="Xposome",
+      Password=digest("Xposome"),
+      Status="Moderator",
+      stringsAsFactors=TRUE
+    )
+    
+    write.csv(data, "data/User_Login_List.csv", row.names=FALSE)
+    
+  }
+  
+  ##Change the log status to FALSE
+  ##AND go back to the login screen
+  UserLog$Logged <- FALSE
+  
+})
 
 #######################################################
 #

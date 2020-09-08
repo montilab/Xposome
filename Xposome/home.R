@@ -27,14 +27,14 @@ output$main_table <- DT::renderDataTable({
   if(all(!is.na(projectlist$Project))){
     
     for(i in 1:nrow(projectlist)){
-      Project <- c(Project, paste0('<a onclick="curlinkFun(&#39;', projectlist$Portal[i], '&#39;)" href="?', projectlist$Portal[i], '" class="portal-link" id="', projectlist$Portal[i], '">', projectlist$Project[i], '</a>'))
+      Project <- c(Project, paste0('<a onclick="curlinkFun(&#39;', projectlist$Portal[i], '&#39;)" href="?', projectlist$Portal[i], '" class="portal-link" id="', projectlist$Portal[i], '" value="', projectlist$Portal[i], '">', projectlist$Project[i], '</a>'))
     }
     
     table <- data.frame(
       Project=Project,
       Cell_line=projectlist$Cell_Line,
       Description=projectlist$Description
-    ) %>% arrange(Project)
+    )
     
   }else{
     
