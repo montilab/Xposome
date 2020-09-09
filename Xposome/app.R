@@ -295,12 +295,32 @@ server <- function(input, output, session) {
     source("edit_project.R", local=TRUE)
     
   }else{
-    
+    # Temporary hard-coded list of WorkFile IDs
+    WorkFileIDs <- list(
+      ADIPO=c(
+        "Chemical_Annotation.RDS"=171, "Connectivity.RDS"=154,
+        "Expression_Set.RDS"=155, "GS_Enrichment.RDS"=156, "K2results.rds"=172,
+        "Profile_Annotation.RDS"=173
+      ),
+      HEPG2=c(
+        "Chemical_Annotation.RDS"=174, "Connectivity.RDS"=160,
+        "Expression_Set.RDS"=161, "GS_Enrichment.RDS"=162, "K2results.rds"=175,
+        "Profile_Annotation.RDS"=176
+      ),
+      MCF10A=c(
+        "Chemical_Annotation.RDS"=177, "Connectivity.RDS"=166,
+        "Expression_Set.RDS"=167, "GS_Enrichment.RDS"=168, "K2results.rds"=178,
+        "Profile_Annotation.RDS"=179
+      )
+    )
     # Read in the profile data ####
     profile_dat <- reactive({
       
       future({
-        readRDS(paste0("data/", fname, "/Profile_Annotation.RDS"))
+#        readRDS(paste0("data/", fname, "/Profile_Annotation.RDS"))
+        getWorkFileAsObject(
+          hiveWorkFileID(WorkFileIDs[[fname]]["Profile_Annotation.RDS"])
+        )
       }) %...!% { return(NULL) }
       
     })
@@ -309,7 +329,10 @@ server <- function(input, output, session) {
     chemical_dat <- reactive({
       
       future({
-        readRDS(paste0("data/", fname, "/Chemical_Annotation.RDS"))
+#        readRDS(paste0("data/", fname, "/Chemical_Annotation.RDS"))
+        getWorkFileAsObject(
+          hiveWorkFileID(WorkFileIDs[[fname]]["Chemical_Annotation.RDS"])
+        )
       }) %...!% { return(NULL) }
       
     })
@@ -318,7 +341,10 @@ server <- function(input, output, session) {
     expression_dat <- reactive({
       
       future({
-        readRDS(paste0("data/", fname, "/Expression_Set.RDS"))
+#        readRDS(paste0("data/", fname, "/Expression_Set.RDS"))
+        getWorkFileAsObject(
+          hiveWorkFileID(WorkFileIDs[[fname]]["Expression_Set.RDS"])
+        )
       }) %...!% { return(NULL) }
       
     })
@@ -327,7 +353,10 @@ server <- function(input, output, session) {
     connectivity_dat <- reactive({
       
       future({
-        readRDS(paste0("data/", fname, "/Connectivity.RDS"))
+#        readRDS(paste0("data/", fname, "/Connectivity.RDS"))
+        getWorkFileAsObject(
+          hiveWorkFileID(WorkFileIDs[[fname]]["Connectivity.RDS"])
+        )
       }) %...!% { return(NULL) }
       
     })
@@ -336,12 +365,15 @@ server <- function(input, output, session) {
     gs_enrichment_dat <- reactive({
       
       future({
-        readRDS(paste0("data/", fname, "/GS_Enrichment.RDS"))
+#        readRDS(paste0("data/", fname, "/GS_Enrichment.RDS"))
+        getWorkFileAsObject(
+          hiveWorkFileID(WorkFileIDs[[fname]]["GS_Enrichment.RDS"])
+        )
       }) %...!% { return(NULL) }
       
     })
     
-    # Read in K2 Taxonomver data ####
+    # Read in K2 Taxonomer data ####
     taxonomer_results <- reactive({
       
       future({
@@ -352,8 +384,12 @@ server <- function(input, output, session) {
         require(Biobase) #
         require(BiocGenerics)
         
-        # Read in K2 Taxonomver data ####
-        K2summary <- readRDS(paste0("data/", fname, "/K2results.RDS"))
+        # Read in K2 Taxonomer data ####
+#        K2summary <- readRDS(paste0("data/", fname, "/K2results.RDS"))
+        K2summary <- getWorkFileAsObject(
+          hiveWorkFileID(WorkFileIDs[[fname]]["K2results.RDS"])
+        )
+
         #print("hello1")
         
         # Parse results
