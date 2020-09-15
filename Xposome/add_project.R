@@ -668,7 +668,7 @@ observeEvent(input$Add_Project_Add_Button, {
           genesets = geneSetList,
           ssGSEAalg = ssGSEAalg,
           ssGSEAcores = 4,
-          stabThresh = 0.5
+          stabThresh = 0.67
         )
         
         #print(head(K2res))
