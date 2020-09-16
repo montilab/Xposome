@@ -5,6 +5,7 @@ FROM rocker/shiny-verse:latest
 MAINTAINER Reina Chau (lilychau999@gmail.com)
     
 # Set up GeneHive credentials
+COPY .Renviron /root/.Renviron
 COPY .netrc /root/.netrc
 COPY .bashrc /root/.bashrc
     
@@ -47,11 +48,6 @@ RUN R -e "install.packages('RcolorBrewer', dependencies=TRUE, repos='http://cran
 RUN R -e "install.packages('promises', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('future', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
-# Copy the local packages to the image
-COPY K2Taxonomer-master /srv/shiny-server/K2Taxonomer-master
-COPY GeneHive-master /srv/shiny-server/GeneHive-master
-COPY uuidtools-master /srv/shiny-server/uuidtools-master 
-
 # Install K2taxonomer and its dependencies
 RUN R -e "install.packages('plotly', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "BiocManager::install('limma')"
@@ -60,15 +56,15 @@ RUN R -e "install.packages('heatmaply', dependencies=TRUE, repos='http://cran.rs
 RUN R -e "install.packages('visNetwork', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('robustbase', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('conclust', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('/srv/shiny-server/K2Taxonomer-master', dependencies=TRUE, repos=NULL, type='source')"
+RUN R -e "devtools::install_github('montilab/K2Taxonomer')"
 
 # Install uuidtools and GeneHive and its dependencies
 RUN R -e "BiocManager::install('S4Vectors')"
 RUN R -e "install.packages('filenamer', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('io', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('rjson', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('/srv/shiny-server/uuidtools-master', dependencies=TRUE, repos=NULL, type='source')"
-RUN R -e "install.packages('/srv/shiny-server/GeneHive-master', dependencies=TRUE, repos=NULL, type='source')"
+RUN R -e "devtools::install_github('agower/uuidtools')"
+RUN R -e "devtools::install_github('agower/GeneHive')"
 
 # Make the ShinyApp available at port 3838
 EXPOSE 3838

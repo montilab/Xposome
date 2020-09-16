@@ -1,4 +1,5 @@
-
+##output message to take for app version
+print("This is a GeneHive Version of the app")
 
 ##Shiny Packages####
 library(BiocManager)
@@ -299,20 +300,23 @@ server <- function(input, output, session) {
     WorkFileIDs <- list(
       ADIPO=c(
         "Chemical_Annotation.RDS"=171, "Connectivity.RDS"=154,
-        "Expression_Set.RDS"=155, "GS_Enrichment.RDS"=156, "K2results.rds"=172,
+        "Expression_Set.RDS"=155, "GS_Enrichment.RDS"=156, "K2results.RDS"=172,
         "Profile_Annotation.RDS"=173
       ),
       HEPG2=c(
         "Chemical_Annotation.RDS"=174, "Connectivity.RDS"=160,
-        "Expression_Set.RDS"=161, "GS_Enrichment.RDS"=162, "K2results.rds"=175,
+        "Expression_Set.RDS"=161, "GS_Enrichment.RDS"=162, "K2results.RDS"=175,
         "Profile_Annotation.RDS"=176
       ),
       MCF10A=c(
         "Chemical_Annotation.RDS"=177, "Connectivity.RDS"=166,
-        "Expression_Set.RDS"=167, "GS_Enrichment.RDS"=168, "K2results.rds"=178,
+        "Expression_Set.RDS"=167, "GS_Enrichment.RDS"=168, "K2results.RDS"=178,
         "Profile_Annotation.RDS"=179
       )
     )
+
+    print(WorkFileIDs)
+
     # Read in the profile data ####
     profile_dat <- reactive({
       
