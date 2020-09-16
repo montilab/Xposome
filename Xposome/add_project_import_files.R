@@ -165,10 +165,10 @@ observeEvent(input$add_variable_exposure, {
   # Getting the number of replicates for each chemical
   if(var=="Sig_Id"){
     pro_ann$unique_ID_by_chem <- lapply(1:nrow(pro_ann), function(r){ paste0(unlist(pro_ann[r,exposure]), collapse="_") }) %>% unlist()
-    chem_replicate <- pro_ann %>% group_by(Chemical_Id, unique_ID_by_chem) %>% summarise(Frequency=n())
+    chem_replicate <- pro_ann %>% group_by(Chemical_Id, unique_ID_by_chem) %>% summarise(Frequency=n()) %>% ungroup()
   }else{
     chem_ann$unique_ID_by_chem <- lapply(1:nrow(chem_ann), function(r){ paste0(unlist(chem_ann[r,exposure]), collapse="_") }) %>% unlist()
-    chem_replicate <- chem_ann %>% group_by(Chemical_Id, unique_ID_by_chem) %>% summarise(Frequency=n())
+    chem_replicate <- chem_ann %>% group_by(Chemical_Id, unique_ID_by_chem) %>% summarise(Frequency=n()) %>% ungroup()
   }  
   
   if(any(chem_replicate$Frequency > 1)){

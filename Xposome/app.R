@@ -5,11 +5,17 @@ library(BiocManager)
 library(data.table) #
 library(ggdendro) #
 library(jsonlite)
+library(password) #generate random password
+library(sodium) #password encryption
+library(digest) #password encryption
+library(sendmailR) #send email message
 library(tidyverse)
 library(magrittr)
 library(ipc)
 
 ##Shiny Packages####
+library(uuidtools)
+library(GeneHive)
 library(K2Taxonomer)
 library(visNetwork) #
 library(Biobase) #
@@ -34,7 +40,7 @@ plan(multisession)
 
 ##Shiny options####
 options(repos = BiocManager::repositories())
-options(shiny.maxRequestSize=100*1024^2)
+options(shiny.maxRequestSize=1000*1024^2)
 
 ##Define ui logic####
 ui <- bootstrapPage(
@@ -133,6 +139,9 @@ server <- function(input, output, session) {
   ##Create a queue object---- 
   queue <- shinyQueue();
   
+  ## keep track of who log in and output error message####
+  UserLog <- reactiveValues(Logged=FALSE);
+  
   ##Execute signals every 100 milliseconds----
   queue$consumer$start(100); 
   
@@ -146,7 +155,9 @@ server <- function(input, output, session) {
   })
 
   # UI object files ####
-  source("ui_input.R")
+  source("ui_input.R", local=TRUE)
+  source("login.R", local=TRUE)
+  source("logout.R", local=TRUE)
   
   # Preproccessing data #####
   source("carcinogenome_startup.R", local=TRUE)
@@ -198,7 +209,7 @@ server <- function(input, output, session) {
       Firstname="Xposome",
       Lastname="Xposome",
       Username="Xposome",
-      Password="Xposome",
+      Password=digest("Xposome"),
       Status="Moderator",
       stringsAsFactors=TRUE
     )
@@ -284,12 +295,32 @@ server <- function(input, output, session) {
     source("edit_project.R", local=TRUE)
     
   }else{
-    
+    # Temporary hard-coded list of WorkFile IDs
+    WorkFileIDs <- list(
+      ADIPO=c(
+        "Chemical_Annotation.RDS"=171, "Connectivity.RDS"=154,
+        "Expression_Set.RDS"=155, "GS_Enrichment.RDS"=156, "K2results.rds"=172,
+        "Profile_Annotation.RDS"=173
+      ),
+      HEPG2=c(
+        "Chemical_Annotation.RDS"=174, "Connectivity.RDS"=160,
+        "Expression_Set.RDS"=161, "GS_Enrichment.RDS"=162, "K2results.rds"=175,
+        "Profile_Annotation.RDS"=176
+      ),
+      MCF10A=c(
+        "Chemical_Annotation.RDS"=177, "Connectivity.RDS"=166,
+        "Expression_Set.RDS"=167, "GS_Enrichment.RDS"=168, "K2results.rds"=178,
+        "Profile_Annotation.RDS"=179
+      )
+    )
     # Read in the profile data ####
     profile_dat <- reactive({
       
       future({
-        readRDS(paste0("data/", fname, "/Profile_Annotation.RDS"))
+#        readRDS(paste0("data/", fname, "/Profile_Annotation.RDS"))
+        getWorkFileAsObject(
+          hiveWorkFileID(WorkFileIDs[[fname]]["Profile_Annotation.RDS"])
+        )
       }) %...!% { return(NULL) }
       
     })
@@ -298,7 +329,10 @@ server <- function(input, output, session) {
     chemical_dat <- reactive({
       
       future({
-        readRDS(paste0("data/", fname, "/Chemical_Annotation.RDS"))
+#        readRDS(paste0("data/", fname, "/Chemical_Annotation.RDS"))
+        getWorkFileAsObject(
+          hiveWorkFileID(WorkFileIDs[[fname]]["Chemical_Annotation.RDS"])
+        )
       }) %...!% { return(NULL) }
       
     })
@@ -307,7 +341,10 @@ server <- function(input, output, session) {
     expression_dat <- reactive({
       
       future({
-        readRDS(paste0("data/", fname, "/Expression_Set.RDS"))
+#        readRDS(paste0("data/", fname, "/Expression_Set.RDS"))
+        getWorkFileAsObject(
+          hiveWorkFileID(WorkFileIDs[[fname]]["Expression_Set.RDS"])
+        )
       }) %...!% { return(NULL) }
       
     })
@@ -316,7 +353,10 @@ server <- function(input, output, session) {
     connectivity_dat <- reactive({
       
       future({
-        readRDS(paste0("data/", fname, "/Connectivity.RDS"))
+#        readRDS(paste0("data/", fname, "/Connectivity.RDS"))
+        getWorkFileAsObject(
+          hiveWorkFileID(WorkFileIDs[[fname]]["Connectivity.RDS"])
+        )
       }) %...!% { return(NULL) }
       
     })
@@ -325,12 +365,15 @@ server <- function(input, output, session) {
     gs_enrichment_dat <- reactive({
       
       future({
-        readRDS(paste0("data/", fname, "/GS_Enrichment.RDS"))
+#        readRDS(paste0("data/", fname, "/GS_Enrichment.RDS"))
+        getWorkFileAsObject(
+          hiveWorkFileID(WorkFileIDs[[fname]]["GS_Enrichment.RDS"])
+        )
       }) %...!% { return(NULL) }
       
     })
     
-    # Read in K2 Taxonomver data ####
+    # Read in K2 Taxonomer data ####
     taxonomer_results <- reactive({
       
       future({
@@ -341,8 +384,12 @@ server <- function(input, output, session) {
         require(Biobase) #
         require(BiocGenerics)
         
-        # Read in K2 Taxonomver data ####
-        K2summary <- readRDS(paste0("data/", fname, "/K2results.RDS"))
+        # Read in K2 Taxonomer data ####
+#        K2summary <- readRDS(paste0("data/", fname, "/K2results.RDS"))
+        K2summary <- getWorkFileAsObject(
+          hiveWorkFileID(WorkFileIDs[[fname]]["K2results.RDS"])
+        )
+
         #print("hello1")
         
         # Parse results
@@ -600,8 +647,6 @@ server <- function(input, output, session) {
         "<a href=\"https://www.gsea-msigdb.org/gsea/msigdb\">MSigDB C2 reactome Pathways (v", gs_enrichment_version, ")</a><br>",
         "<a href=\"https://signalingpathways.org\">NURSA: Nuclear Receptor Signaling Atlas, consensome data for human</a><br>"
       )
-      
-      print(helptext_geneset)
       
     }else{
       

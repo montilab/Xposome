@@ -83,7 +83,7 @@ observeEvent({
   tryCatch({ 
     pro_dat <- readRDS(paste0("data/", portal$Portal, "/Profile_Annotation.RDS"))
     exposure_variable <- unique(colnames(pro_dat)[which(!colnames(pro_dat) %in% c("Sig_Id", "Chemical_Id", "Chemical_Name", "BUID", "CAS", "TAS"))])
-    if((input$edit_files == 'Gene Expression' & input$edit_ge_pro_option == 'No') | input$edit_files %in% "K2Taxonomer"){
+    if((input$edit_files == 'Gene Expression' & input$edit_ge_pro_option == 'No') | input$edit_files %in% "K2Taxonomer" | input$edit_files %in% "GS Enrichment"){
       updateSelectInput(session, inputId="edit_variable_compound", choices="Chemical_Id")
       updateSelectInput(session, inputId="edit_variable_exposure", choices=exposure_variable, selected=exposure)
       updateSelectInput(session, inputId="edit_variable_exposure_phenotype", choices=exposure_variable, selected=exposure_phenotype)
@@ -254,7 +254,7 @@ output$Edit_Tas_Modz <- renderUI({
   
   req(cohorts(), portal(), input$edit_files, input$edit_pro_ge_option)
 
-  if((input$edit_files == 'Profile Annotation' & input$edit_pro_ge_option == "No") | input$edit_files == 'K2Taxonomer'){
+  if((input$edit_files == 'Profile Annotation' & input$edit_pro_ge_option == "No") | input$edit_files %in% "GS Enrichment" | input$edit_files %in% "K2Taxonomer"){
     TAS=unlist(strsplit(as.character(portal()$TAS_Modzscores), ",", fixed=TRUE))[1] %>% trimws()
     Modzscores=unlist(strsplit(as.character(portal()$TAS_Modzscores), ",", fixed=TRUE))[2] %>% trimws()
   }else{
@@ -443,7 +443,7 @@ observeEvent({
   input$edit_pro_file_type
 }, {
   
-  req((input$edit_files %in% c("All", "Profile Annotation", "Gene Expression") & input$edit_conn_option %in% "No") | input$edit_files %in% "K2Taxonomer")
+  req((input$edit_files %in% c("All", "Profile Annotation", "Gene Expression") & input$edit_conn_option %in% "No") | input$edit_files %in% "GS Enrichment" | input$edit_files %in% "K2Taxonomer")
   
   pro_ann <- pro_file(); portal <- portal();     
   connectivity_var <- unlist(strsplit(as.character(portal$Connectivity_Test), ",", fixed=TRUE))[1] %>% trimws() 

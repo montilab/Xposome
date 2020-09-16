@@ -19,7 +19,7 @@ observeEvent({
     addprojectwarningmsg("")
   }
   
-})
+}, ignoreInit=TRUE)
 
 ## Observe when add data is clicked ####
 observeEvent(input$Add_Project_Add_Button, {
@@ -364,6 +364,11 @@ observeEvent(input$Add_Project_Add_Button, {
       
       if(Add_Landmark){
         landmark <- readRDS("data/Landmark/landmark_gene.RDS")
+        
+        if("Landmark_Gene" %in% colnames(fData)){
+          fData <- fData %>% select(-Landmark_Gene)
+        }
+        
         fData <- (fData %>% left_join(landmark, by="Gene")) %>% replace_na(list(Landmark_Gene="Unknown"))
         rownames(fData) <- fData$Gene
       }
@@ -592,6 +597,8 @@ observeEvent(input$Add_Project_Add_Button, {
       
       progress$inc(6/10, detail = "Saving taxonomer results")
       
+      print(cohorts)
+      
       if(!is.null(cohorts)){
         
         #Create the info class vector to run the metavariable test
@@ -667,7 +674,7 @@ observeEvent(input$Add_Project_Add_Button, {
           infoClass = infoClassVector,
           genesets = geneSetList,
           ssGSEAalg = ssGSEAalg,
-          ssGSEAcores = 4,
+          ssGSEAcores = 1,
           stabThresh = 0.67
         )
         
