@@ -661,8 +661,10 @@ observeEvent(input$Add_Project_Add_Button, {
           
         }  
         
-        # Run K2Taxonomer!
-        # Always important to set a seed
+        # Run K2Taxonomer
+        
+        # Set seed
+        RNGkind("L'Ecuyer-CMRG")
         set.seed(12345678)
         
         K2res <- runK2Taxonomer(
@@ -673,7 +675,7 @@ observeEvent(input$Add_Project_Add_Button, {
           genesets = geneSetList,
           ssGSEAalg = ssGSEAalg,
           ssGSEAcores = 1,
-          stabThresh = 0.5
+          stabThresh = 0.67
         )
         
         #print(head(K2res))
