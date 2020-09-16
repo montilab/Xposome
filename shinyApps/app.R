@@ -1,5 +1,5 @@
-##output message to take for app version
-print("This is a GeneHive Version of the app")
+##Xposome app with GeneHive###
+print("Xposome app with GeneHive")
 
 ##Shiny Packages####
 library(BiocManager)
