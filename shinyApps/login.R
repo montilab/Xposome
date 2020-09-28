@@ -117,3 +117,42 @@ login <- function(input, output, session, sodium_hashed=TRUE, log_out=NULL) {
   
 }
 
+sendpassword <- function(from_sender="rchau88@bu.edu", to_recipient="lilychau999@gmail.com", recipient_first="Reina", recipient_last="Chau", recipient_account="Reina", tmp_pwd){
+  
+  recipient=paste(recipient_first, recipient_last)
+  
+  msg <- mime_part(
+    paste0(
+      '<!DOCTYPE>',
+      '<html>',
+      '<head>',
+      '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>',
+      '<meta name="viewport" content="width=device-width, initial-scale=1.0"/>',
+      '<title>HTML MESSAGE</title>',
+      '<style type="text/css">',
+      '</style>',
+      '</head>',
+      '<body>',
+      '<p>Hi <strong>', recipient_first, ',</strong></p>',
+      '<p>The password for your Xposome account has changed.</p>',
+      '<p></p>',
+      '<p>Username: <strong>', recipient_account, '</strong></p>',
+      '<p>Temporary password: <strong>', tmp_pwd, '</strong></p>',
+      '<br>',
+      '<p>Best,</p>',
+      '<p>Montilab Team</p>',
+      '</body>',
+      '</html>' 
+    )
+  )
+  
+  ## Override content type.
+  msg[["headers"]][["Content-Type"]] <- "text/html"
+  
+  from <- paste0("\"Montilab Team\"<", from_sender, ">")
+  to <- paste0("\"", recipient, "\"<", to_recipient, ">", collapse="")
+  subject <- "Temporary password for Xposome"
+  body <- list(msg)
+  sendmail(from, to, subject, body, control=list(smtpServer="smtp.bu.edu", smtpPort="25"))
+  
+}

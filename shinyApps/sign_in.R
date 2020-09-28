@@ -4,7 +4,7 @@ projectdata <- reactiveVal(projectlist)
 logindata <- reactiveVal(loginlist)
 
 ## Warning message for main project and login table ####
-LogInMessage <- reactiveVal("")
+LogInMessage <- reactiveVal(NULL)
 project_table_message <- reactiveVal(NULL)
 login_table_message <- reactiveVal(NULL)
 about_file_msg <- reactiveVal(NULL)
@@ -139,25 +139,22 @@ observeEvent(input$FG_Button, {
     
   }else{
     
-    row <- which(login_dat$Username %in% Username)
+    row <- which(login_dat$Username == Username)
     #print(row); print(Username);
     
     if(length(row) > 0){
-      Password <- password(n = 8, numbers = TRUE, case = TRUE, special = c("?", "!", "&", "%", "$"))
-      login_dat$Password[row[1]] <- sodium::password_store(as.character(Password))
-      write.csv(login_dat, paste0("data/User_Login_List.csv"), row.names = FALSE)
-      forgotpasswordwarningmsg("Thanks for your submission! A temporary password has been sent to your email.")
-      
-      sendmai::sendmail(
-        from="lilychau999@gmail.com",
-        to="rchau88@bu.edu",
-        subject="Password Reset for Xposome Project",
-        msg=HTML(paste0("<p>Hi there!</p><p>We received a request to reset your password for the Xposome Project.</p><p>Here is your new temporary password: ", Password, "</p><p>If you did not request a password reset, please ignore this email - your password will not be changed.</p><p>Thanks for using the Xposome app!</p><p>- The Montilab Team</p>")),
-        smtp = list(host.name = "smtp.gmail.com", port = 587, user.name = "lilychau999@gmail.com", passwd = "WilsonTang!2020", ssl = TRUE),
-        authenticate=TRUE,
-        send=TRUE,
-        debug=TRUE
+      tmp_pwd <- password(n = 10, numbers = TRUE, case = TRUE, special = c("?", "!", "&", "%", "$"))
+      login_dat$Password[row[1]] <- sodium::password_store(as.character(tmp_pwd))
+      sendpassword(
+	 from_sender="rchau88@bu.edu",
+	 to_recipient="lilychau999@gmail.com", 
+  	 recipient_first=Firstname, 
+  	 recipient_last=Lastname, 
+  	 recipient_account=Username, 
+ 	 tmp_pwd=tmp_pwd
       )
+      write.csv(login_dat, paste0("data/User_Login_List.csv"), row.names = FALSE)
+      forgotpasswordwarningmsg("Thank you for your submission! A temporary password has been sent to your email.")
       
     }else{
       
