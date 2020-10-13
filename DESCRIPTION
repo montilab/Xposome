@@ -8,7 +8,7 @@ Authors@R: c(person(given="Reina", family="Chau", email="rchau88@bu.edu",
 Description: Graph-theoretic approaches for the analysis and visualization of multi-omics regulatory networks.
 Depends: R (>= 3.6.0)
 License: GPL-3 + file LICENSE
-URL: https://github.com/montilab/xposome
+URL: https://github.com/montilab/Xposome
 Imports: 
     config,
     shiny,
