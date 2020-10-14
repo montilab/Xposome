@@ -1,0 +1,46 @@
+Package: Xposome
+Title: Xposome
+Version: 0.0.0.1
+Authors@R: c(person(given="Reina", family="Chau", email="rchau88@bu.edu", 
+             role=c("aut", "cre")),
+             person(given="Stefano", family="Monti", email="smonti@bu.edu", 
+             role=c("aut")))
+Description: Graph-theoretic approaches for the analysis and visualization of multi-omics regulatory networks.
+Depends: R (>= 3.6.0)
+License: GPL-3 + file LICENSE
+URL: https://github.com/montilab/Xposome
+Imports: 
+    config,
+    shiny,
+    htmltools,
+    rjson,
+    httr,
+    R6,
+    scales,
+    ggplot2,
+    ggrepel,
+    ggpubr,
+    reshape2,
+    viridis,
+    dplyr,
+    plyr,
+    tidyr,
+    tibble,
+    stringr,
+    magrittr,
+    igraph,
+    centiserve,
+    sna,
+    visNetwork,
+    FactoMineR,
+    factoextra
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
+Suggests: 
+    shinyjs,
+    shinythemes,
+    testthat,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

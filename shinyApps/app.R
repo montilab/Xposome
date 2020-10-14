@@ -15,7 +15,6 @@ library(magrittr)
 library(ipc)
 
 ##Shiny Packages####
-library(uuidtools)
 library(GeneHive)
 library(K2Taxonomer)
 library(visNetwork) #
@@ -210,8 +209,9 @@ server <- function(input, output, session) {
       Firstname="Xposome",
       Lastname="Xposome",
       Username="Xposome",
-      Password=digest("Xposome"),
+      Password=sodium::password_store(as.character("Xposome")),
       Status="Moderator",
+      Email="montilab@bu.edu",
       stringsAsFactors=TRUE
     )
     
@@ -225,7 +225,7 @@ server <- function(input, output, session) {
   data_files <- list.files("data/")
 
   ##Create a list of wanted folders and files####
-  wanted_files <- c(projectlist$Portal, "Connectivity Map", "Enrichment Gene Set", "Landmark", "Project_List.csv", "Template", "User_Login_List.csv", "Zebra Fish") 
+  wanted_files <- c(projectlist$Portal, "Connectivity Map", "Enrichment Gene Set", "Landmark", "Project_List.csv", "Template", "User_Login_List.csv") 
   
   ##Remove unwanted folders/files####
   if(any(!data_files %in% wanted_files)){
@@ -296,85 +296,45 @@ server <- function(input, output, session) {
     source("edit_project.R", local=TRUE)
     
   }else{
-    # Temporary hard-coded list of WorkFile IDs
-    WorkFileIDs <- list(
-      ADIPO=c(
-        "Chemical_Annotation.RDS"=171, "Connectivity.RDS"=154,
-        "Expression_Set.RDS"=155, "GS_Enrichment.RDS"=156, "K2results.RDS"=172,
-        "Profile_Annotation.RDS"=173
-      ),
-      HEPG2=c(
-        "Chemical_Annotation.RDS"=174, "Connectivity.RDS"=160,
-        "Expression_Set.RDS"=161, "GS_Enrichment.RDS"=162, "K2results.RDS"=175,
-        "Profile_Annotation.RDS"=176
-      ),
-      MCF10A=c(
-        "Chemical_Annotation.RDS"=177, "Connectivity.RDS"=166,
-        "Expression_Set.RDS"=167, "GS_Enrichment.RDS"=168, "K2results.RDS"=178,
-        "Profile_Annotation.RDS"=179
-      )
-    )
-
-    print(WorkFileIDs)
+    # Retrieve list of all PortalDataset entities in hive
+    datasets <- listEntities("PortalDataset", portal=fname)
+    # Sort by timestamp and extract most recent dataset to convenience object
+    datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
+    dataset <- datasets[[length(datasets)]]
 
     # Read in the profile data ####
     profile_dat <- reactive({
-      
       future({
-#        readRDS(paste0("data/", fname, "/Profile_Annotation.RDS"))
-        getWorkFileAsObject(
-          hiveWorkFileID(WorkFileIDs[[fname]]["Profile_Annotation.RDS"])
-        )
+        getWorkFileAsObject(hiveWorkFileID(dataset@ProfileAnnotationRDS))
       }) %...!% { return(NULL) }
-      
     })
     
     # Read in the chemical data ####
     chemical_dat <- reactive({
-      
       future({
-#        readRDS(paste0("data/", fname, "/Chemical_Annotation.RDS"))
-        getWorkFileAsObject(
-          hiveWorkFileID(WorkFileIDs[[fname]]["Chemical_Annotation.RDS"])
-        )
+        getWorkFileAsObject(hiveWorkFileID(dataset@ChemicalAnnotationRDS))
       }) %...!% { return(NULL) }
-      
     })
     
     # Read in the expression data ####
     expression_dat <- reactive({
-      
       future({
-#        readRDS(paste0("data/", fname, "/Expression_Set.RDS"))
-        getWorkFileAsObject(
-          hiveWorkFileID(WorkFileIDs[[fname]]["Expression_Set.RDS"])
-        )
+        getWorkFileAsObject(hiveWorkFileID(dataset@GeneExpressionRDS))
       }) %...!% { return(NULL) }
-      
     })
     
     # Read in the connectivity data ####
     connectivity_dat <- reactive({
-      
       future({
-#        readRDS(paste0("data/", fname, "/Connectivity.RDS"))
-        getWorkFileAsObject(
-          hiveWorkFileID(WorkFileIDs[[fname]]["Connectivity.RDS"])
-        )
+        getWorkFileAsObject(hiveWorkFileID(dataset@ConnectivityRDS))
       }) %...!% { return(NULL) }
-      
     })
     
     # Read in the gs enrichment data ####
     gs_enrichment_dat <- reactive({
-      
       future({
-#        readRDS(paste0("data/", fname, "/GS_Enrichment.RDS"))
-        getWorkFileAsObject(
-          hiveWorkFileID(WorkFileIDs[[fname]]["GS_Enrichment.RDS"])
-        )
+        getWorkFileAsObject(hiveWorkFileID(dataset@GeneSetEnrichmentRDS))
       }) %...!% { return(NULL) }
-      
     })
     
     # Read in K2 Taxonomer data ####
@@ -384,14 +344,13 @@ server <- function(input, output, session) {
         
         ##Shiny Packages####
         require(K2Taxonomer)
-        require(visNetwork) #
-        require(Biobase) #
+        require(visNetwork)
+        require(Biobase)
         require(BiocGenerics)
         
         # Read in K2 Taxonomer data ####
-#        K2summary <- readRDS(paste0("data/", fname, "/K2results.RDS"))
         K2summary <- getWorkFileAsObject(
-          hiveWorkFileID(WorkFileIDs[[fname]]["K2results.RDS"])
+          hiveWorkFileID(dataset@K2TaxonomerResultsRDS)
         )
 
         #print("hello1")

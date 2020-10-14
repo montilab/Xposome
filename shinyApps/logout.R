@@ -45,7 +45,7 @@ logout <- function(input, output, session, active) {
       data_files <- list.files("data/")
       
       ##Create a list of wanted folders and files####
-      wanted_files <- c(projectlist$Portal, "Connectivity Map", "Enrichment Gene Set", "Landmark", "Project_List.csv", "Template", "User_Login_List.csv", "Zebra Fish") 
+      wanted_files <- c(projectlist$Portal, "Connectivity Map", "Enrichment Gene Set", "Landmark", "Project_List.csv", "Template", "User_Login_List.csv") 
       
       ##Remove unwanted folders/files####
       if(any(!data_files %in% wanted_files)){
@@ -91,8 +91,9 @@ logout <- function(input, output, session, active) {
         Firstname="Xposome",
         Lastname="Xposome",
         Username="Xposome",
-        Password=sodium::password_store("Xposome"),
+        Password=sodium::password_store(as.character("Xposome")),
         Status="Moderator",
+	Email="montilab@bu.edu",
         stringsAsFactors=TRUE
       )
       

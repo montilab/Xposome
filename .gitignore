@@ -1,12 +1,6 @@
-uuidtools-master
-GeneHive-master
-K2Taxonomer-master
-<<<<<<< HEAD
+
 .bashrc
 .netrc
 .Renviron
 .DS_Store
-=======
-
-.Rproj.user
->>>>>>> 960afc2d2accc810e4cebde762a2d978edaaaf60
+docs
