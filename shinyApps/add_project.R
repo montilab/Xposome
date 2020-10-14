@@ -25,7 +25,7 @@ observeEvent({
 observeEvent(input$Add_Project_Add_Button, {
   
   ##obtain the current project list
-  proj_dat <- data.frame(projectdata())
+  proj_dat <- read_csv(paste0("data/Project_List.csv"))
   
   ##obtain the input values
   Project=trimws(input$Add_Project_Name);
@@ -325,8 +325,9 @@ observeEvent(input$Add_Project_Add_Button, {
           
           # profile annotation information
           pro_ann <- pro_ann %>% left_join(TAS)
+
         }
-        
+
         # get modzscores
         if(Add_Modzscores){
           Modzscores <- calc_results[["Modzscores"]]
@@ -380,6 +381,7 @@ observeEvent(input$Add_Project_Add_Button, {
       
       ##Add data to portal object####
       saveRDS(expressionSet, paste0("data/", Portal, "/Expression_Set.RDS"))
+      saveRDS(orig_expressionSet, paste0("data/", Portal, "/Orig_Expression_Set.RDS"))
       print("Saving gene expression file")
       
       ##Create morpheus heatmap####
@@ -768,9 +770,7 @@ observeEvent(input$Add_Project_Cancel_Button, {
   session$sendCustomMessage("ResetFileInput", "add_ge_file")
   session$sendCustomMessage("ResetFileInput", "add_conn_pcl_file")
   session$sendCustomMessage("ResetFileInput", "add_conn_pert_file")
-  session$sendCustomMessage("ResetFileInput", "add_hallmark_file")
-  session$sendCustomMessage("ResetFileInput", "add_c2_file")
-  session$sendCustomMessage("ResetFileInput", "add_nursa_file")
+  session$sendCustomMessage("ResetFileInput", "add_gs_collection_file")
   
   ##Remove error messages####
   addprojectwarningmsg(NULL)

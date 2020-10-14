@@ -24,15 +24,15 @@ observeEvent({
 ## Observe when edit data is clicked ####
 observeEvent(input$Edit_Project_Add_Button, {
   
-  ##get the row of selected project###
-  row <- input$projecttable_rows_selected
-  
   ##obtain the project list
-  proj_dat <- data.frame(projectdata()); 
+  proj_dat <- read_csv(paste0("data/Project_List.csv")) 
   
   ##obtain the current project list
-  portal <- portal();
-  
+  portal <- portal()
+
+  ##get the row of selected project###
+  row <- which(proj_dat$Portal %in% portal$Portal)
+
   ##obtain the input values
   Project=trimws(input$Edit_Project_Name);
   Cell_Line=trimws(input$Edit_Cell_Line_Name);

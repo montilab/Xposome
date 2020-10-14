@@ -117,7 +117,7 @@ login <- function(input, output, session, sodium_hashed=TRUE, log_out=NULL) {
   
 }
 
-sendpassword <- function(from_sender="rchau88@bu.edu", to_recipient="lilychau999@gmail.com", recipient_first="Reina", recipient_last="Chau", recipient_account="Reina", tmp_pwd){
+sendpassword <- function(from_sender="montilab@bu.edu", to_recipient="montilab@bu.edu", recipient_first="Montilab", recipient_last="Montilab", recipient_account="Montilab", tmp_pwd){
   
   recipient=paste(recipient_first, recipient_last)
   
@@ -138,6 +138,8 @@ sendpassword <- function(from_sender="rchau88@bu.edu", to_recipient="lilychau999
       '<p></p>',
       '<p>Username: <strong>', recipient_account, '</strong></p>',
       '<p>Temporary password: <strong>', tmp_pwd, '</strong></p>',
+      '<br>',
+      '<p>Log back in? Follow this link, <strong>http://155.41.202.164/Xposome/?sign_in</strong></p>',
       '<br>',
       '<p>Best,</p>',
       '<p>Montilab Team</p>',

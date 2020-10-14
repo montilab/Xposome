@@ -130,7 +130,7 @@ observeEvent(input$FG_Button, {
   Lastname=trimws(input$FG_Lastname);
   Username=trimws(input$FG_Username);
   
-  login_dat <- read.csv(paste0("data/User_Login_List.csv"), header = TRUE, stringsAsFactors = FALSE)
+  login_dat <- read_csv(paste0("data/User_Login_List.csv"))
   #print(login_dat)
 
   if(Firstname=="" | Lastname=="" | Username==""){
@@ -147,7 +147,7 @@ observeEvent(input$FG_Button, {
       login_dat$Password[row[1]] <- sodium::password_store(as.character(tmp_pwd))
       sendpassword(
 	 from_sender="rchau88@bu.edu",
-	 to_recipient="lilychau999@gmail.com", 
+	 to_recipient=login_dat$Email[row[1]], 
   	 recipient_first=Firstname, 
   	 recipient_last=Lastname, 
   	 recipient_account=Username, 
@@ -1099,9 +1099,12 @@ RemoveProject <- function(){
 ## Observe when remove data is clicked ####
 observeEvent(input$RemoveProject, {
   
+  row <- input$projecttable_rows_selected
+
   if(length(input$projecttable_rows_selected) > 0){
     if(all(!is.na(projectdata()))){
-      project_table_message("")
+      table <- projectdata()
+      portal(table[row,])
       showModal(RemoveProject())
     }else{
       project_table_message("There is no project to remove.")
@@ -1115,7 +1118,6 @@ observeEvent(input$RemoveProject, {
 ## Observe when yes button is clicked ####
 observeEvent(input$Remove_Project_Yes_Button, {
   
-  portal(NULL)
   row <- input$projecttable_rows_selected
   proj_dat <- data.frame(projectdata())
   project_table_message(paste0("Project ", proj_dat$Project[row], " has been removed. Click 'Save' to implement this changes."))
@@ -1127,6 +1129,7 @@ observeEvent(input$Remove_Project_Yes_Button, {
 ## Observe when no button is clicked ####
 observeEvent(input$Remove_Project_No_Button, {
   
+  project_table_message("")
   portal(NULL)
   removeModal()
   
@@ -1168,20 +1171,23 @@ observeEvent(input$SaveProject, {
 ## Observe when save project yes button is clicked ####
 observeEvent(input$Save_Project_Yes_Button, {
   
-  data <- projectdata(); portal <- portal();
-  
-  #print(portal)
+  portal <- portal() 
   
   if(!is.null(portal)){
+    data <- projectdata() %>% full_join(read_csv(paste0("data/Project_List.csv")) %>% filter(!Portal %in% portal$Portal))
+
     if(!portal$Portal %in% data$Portal){
       unlink(paste0('data/', portal$Portal), recursive=TRUE, force=TRUE)
       unlink(paste0("www/JSON/", portal$Portal), recursive=TRUE, force=TRUE)
       unlink(paste0("www/RMD/introduction_", portal$Portal, ".Rmd"), recursive=TRUE, force=TRUE)
     }
+  }else{
+    data <- projectdata() %>% full_join(read_csv(paste0("data/Project_List.csv")))
   }
   
-  write.csv(data, paste0("data/Project_List.csv"), row.names = FALSE)
   project_table_message("Project list has been saved.")
+  write.csv(data, paste0("data/Project_List.csv"), row.names = FALSE)
+  projectdata(data)
   removeModal()
   
 })
@@ -1189,9 +1195,7 @@ observeEvent(input$Save_Project_Yes_Button, {
 ## Observe when save project no button is clicked ####
 observeEvent(input$Save_Project_No_Button, {
   
-  data <- read.csv(paste0("data/Project_List.csv"), header = TRUE)
   project_table_message("")
-  projectdata(data)
   removeModal()
   
 })
@@ -1246,7 +1250,15 @@ AddUser <- function() {
         ),
         column(
           width=3,
+          textInput(inputId="addemail", label=strong(span(style="color:red;", "*"), "Email:"), value="")
+        ),
+        column(
+          width=3,
           passwordInput(inputId="addpassword", label=strong(span(style="color:red;", "*"), "Password:"), value="")
+        ),
+        column(
+          width=3,
+          passwordInput(inputId="addretypepassword", label=strong(span(style="color:red;", "*"), "Re-type Password:"), value="")
         )
       ),
       br(),
@@ -1280,7 +1292,6 @@ output$AddUserWarningMessage <- renderUI({
 ## Observe when cancel button is clicked ####
 observeEvent(input$AddUser, {
   
-  login_table_message("")
   showModal(AddUser())
   
 })
@@ -1292,20 +1303,22 @@ observeEvent(input$Add_User_Add_Button, {
   Lastname=trimws(input$addlastname);
   Username=trimws(input$addusername);
   Password=trimws(input$addpassword);
+  RetypePassword=trimws(input$addretypepassword);
   Status="Moderator";
-  
-  #print(Password)
-  
-  login_dat <- data.frame(logindata(), stringsAsFactors=FALSE)
+  Email=trimws(input$addemail);
+
+  login_dat <- read.csv(paste0("data/User_Login_List.csv"), header=TRUE)                                       
+
   new_user <- data.frame(
     Firstname=Firstname, 
     Lastname=Lastname, 
     Username=Username, 
     Password=sodium::password_store(Password), 
-    Status=Status
+    Status=Status,
+    Email=Email
   )
   
-  if(Firstname=="" | Lastname=="" | Username=="" | Password==""){
+  if(Firstname=="" | Lastname=="" | Username=="" | Password=="" | RetypePassword=="" | Email==""){
     
     adduserwarningmsg("Please fill in the required (*) fields.")
     
@@ -1319,11 +1332,15 @@ observeEvent(input$Add_User_Add_Button, {
     if(nrow(validate_user) > 0){
       adduserwarningmsg("This username is already existed. Please enter another username.")
     }else{
-      adduserwarningmsg("")
-      login_table_message(paste0('User ', Username, ' has been added. Click "Save" to keep the changes.'))
-      newlogin <- login_dat %>% rbind(new_user)
-      logindata(newlogin)
-      removeModal()
+      if(Password == RetypePassword){
+      	adduserwarningmsg("")
+      	login_table_message(paste0('User ', Username, ' has been added. Click "Save" to keep the changes.'))
+      	newlogin <- login_dat %>% rbind(new_user)
+      	logindata(newlogin)
+      	removeModal()
+      }else{
+      	adduserwarningmsg("Password does not match.")
+      }
     }
     
   }
@@ -1331,8 +1348,11 @@ observeEvent(input$Add_User_Add_Button, {
 
 ## Observe the cancel user button is clicked #####
 observeEvent(input$Add_User_Cancel_Button, {
-  adduserwarningmsg(NULL)
+
+  login_table_message("")
+  adduserwarningmsg("")
   removeModal()
+
 })
 
 # Functions to add new data for user login #####
@@ -1361,6 +1381,10 @@ EditUser <- function(table) {
           shinyjs::disabled(
             passwordInput(inputId="editpassword", label=strong(span(style="color:red;", "*"), "Password:"), value=table$Password)
           )
+        ),
+        column(
+          width=3,
+          textInput(inputId="editemail", label=strong(span(style="color:red;", "*"), "Email:"), value=table$Email)
         )
       ),
       br(),
@@ -1398,7 +1422,6 @@ observeEvent(input$EditUser, {
   row <- input$logintable_rows_selected
   
   if(length(input$logintable_rows_selected) > 0){
-    login_table_message("")
     table <- logindata()
     user(table[row,])
     showModal(EditUser(table=table[row,]))
@@ -1417,14 +1440,13 @@ observeEvent(input$Edit_User_Add_Button, {
   Username=trimws(input$editusername);
   Password=trimws(input$editpassword);
   Status="Moderator";
+  Email=trimws(input$editemail);
 
-  row <- input$logintable_rows_selected
-  login_dat <- data.frame(logindata(), stringsAsFactors=FALSE)
   user <- user()
+  login_dat <- read.csv(paste0("data/User_Login_List.csv"), header=TRUE)
+  row <- which(login_dat$Username %in% user$Username)
   
-  #print(row); print(login_dat);
-  
-  if(Firstname=="" | Lastname=="" | Username=="" | Password==""){
+  if(Firstname=="" | Lastname=="" | Username=="" | Password=="" | Email==""){
     
     edituserwarningmsg("Please fill in the required (*) fields.")
     
@@ -1433,7 +1455,7 @@ observeEvent(input$Edit_User_Add_Button, {
     #Validate to see user exists
     validate_user <- which(Username %in% login_dat$Username[which(!login_dat$Username %in% user$Username)])
     
-    if(length(validate_user)){
+    if(length(validate_user) > 0){
       
       edituserwarningmsg("This username is already existed. Please enter another username.")
 
@@ -1442,7 +1464,7 @@ observeEvent(input$Edit_User_Add_Button, {
       login_table_message(paste0("User ", Username, " has been modified. Click 'Save' to keep the changes."))
       edituserwarningmsg("")
       login_dat <- login_dat[-row,] 
-      edit_user <- data.frame(Firstname=Firstname, Lastname=Lastname, Username=Username, Password=Password, Status="Moderator")
+      edit_user <- data.frame(Firstname=Firstname, Lastname=Lastname, Username=Username, Password=Password, Status="Moderator", Email=Email)
       user(edit_user)
       login_dat <- login_dat %>% rbind(edit_user)
       logindata(login_dat)
@@ -1455,11 +1477,9 @@ observeEvent(input$Edit_User_Add_Button, {
 ## Observe when remove user no button is clicked ####
 observeEvent(input$Edit_User_Cancel_Button, {
   
+  login_table_message("")  
   edituserwarningmsg("")
-  row <- input$logintable_rows_selected
-  login_dat <- read_csv(paste0("data/User_Login_List.csv"))
-  user(login_dat[row,])
-  logindata(login_dat)
+  user(NULL)
   removeModal()
   
 })
@@ -1475,7 +1495,8 @@ ChangePwd <- function() {
       fluidRow(
         column(
           width=12,
-          textInput(inputId="newpassword", label=strong(span(style="color:red;", "*"), "New Password:"), value=""),
+          passwordInput(inputId="newpassword", label=strong(span(style="color:red;", "*"), "New Password:"), value=""),
+          passwordInput(inputId="retypepassword", label=strong(span(style="color:red;", "*"), "Re-type Password:"), value="")
         ),
         column(
           width=12,
@@ -1511,20 +1532,28 @@ observeEvent(input$Edit_Change_Pwd, {
 observeEvent(input$Submit_Pwd, {
   
   Password=trimws(input$newpassword);
-  
-  if(Password==""){
+  RetypePassword=trimws(input$retypepassword);
+
+  if(Password=="" | RetypePassword==""){
     
     changepwdwarningmsg("Please fill in the required (*) fields.")
     
   }else{
     
-    changepwdwarningmsg("")
-    row <- input$logintable_rows_selected
-    login_dat <- logindata()
-    login_dat$Password[row] <- sodium::password_store(Password)
-    user(login_dat[row,])
-    showModal(EditUser(table=login_dat[row,]))
-    
+    if(Password != RetypePassword){
+
+         changepwdwarningmsg("Password does not match.")
+
+    }else{
+
+	 changepwdwarningmsg("")
+   	 row <- input$logintable_rows_selected
+   	 login_dat <- logindata()
+   	 login_dat$Password[row] <- sodium::password_store(Password)
+   	 user(login_dat[row,])
+   	 showModal(EditUser(table=login_dat[row,]))
+
+    }
   }
 
 }, ignoreInit = TRUE)
@@ -1567,9 +1596,12 @@ RemoveUser <- function(){
 
 ## Observe when remove user button is clicked ####
 observeEvent(input$RemoveUser, {
+
+  row <- input$logintable_rows_selected
   
   if(length(input$logintable_rows_selected) > 0){
-    login_table_message("")
+    table <- logindata()
+    user(table[row,])
     showModal(RemoveUser())
   }else{
     login_table_message("Please select a user to remove.")
@@ -1590,8 +1622,11 @@ observeEvent(input$Remove_User_Yes_Button, {
 
 ## Observe when remove user no button is clicked ####
 observeEvent(input$Remove_User_No_Button, {
-  row <- input$logintable_rows_selected
+
+  login_table_message("")
+  user(NULL)
   removeModal()
+
 })
 
 ##pop-up for save user ####
@@ -1629,10 +1664,18 @@ observeEvent(input$SaveUser, {
 
 ## Observe when save user yes button is clicked ####
 observeEvent(input$Save_User_Yes_Button, {
+
+  user <- user()
   
-  data <- logindata()
-  write.csv(data, paste0("data/User_Login_List.csv"), row.names = FALSE)
+  if(is.null(user)){
+    data <- logindata() %>% full_join(read.csv(paste0("data/User_Login_List.csv"), header=TRUE))
+  }else{
+    data <- logindata() %>% full_join(read.csv(paste0("data/User_Login_List.csv"), header=TRUE) %>% filter(!Username %in% user$Username))           
+  }
+
   login_table_message("Login list has been saved.")
+  write.csv(data, paste0("data/User_Login_List.csv"), row.names = FALSE)
+  logindata(data)
   removeModal()
   
 })
@@ -1640,8 +1683,7 @@ observeEvent(input$Save_User_Yes_Button, {
 ## Observe when save user no button is clicked ####
 observeEvent(input$Save_User_No_Button, {
   
-  data <- read.csv(paste0("data/User_Login_List.csv"), header = TRUE)
-  logindata(data)
+  login_table_message("")
   removeModal()
   
 })
