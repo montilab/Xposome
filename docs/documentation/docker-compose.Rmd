@@ -1,0 +1,169 @@
+---
+title: "NGINX & Docker Compose"
+output: html_document
+---
+
+### NGINX & Docker Compose
+
+<br>
+
+<strong>NGINX</strong> - An open source web server and reverse proxy technology used for hosting websites and applications
+
+<strong>Docker-compose</strong> - A technology for enabling docker containers to communicate to each other
+
+Here are the seven steps to set-up NGINX and docker compose:
+
+1.	Install docker-compose
+2.	Pull nginx:latest image from Docker Hub without installing Nginx software
+3.	Build a docker image locally or pull it from Docker Hub
+4.	Create a docker-compose.yml file
+5.	Edit nginx.conf and default.conf.template (NGINX configuration files)
+6.	Run your docker-compose file
+7.	Check to make sure your application is running on http or https
+
+
+#### Install docker compose
+
+To check if docker-compose is installed on VM. 
+
+    docker-compose --version
+
+#### Pull nginx:latest image from Docker Hub (done)
+
+To check if the image is built successfully. 
+
+    docker images
+
+Also see this link on how to use this image https://hub.docker.com/_/nginx
+
+#### Build a docker image for your application locally or pull it from a repo on Docker Hub
+
+To build an image locally, cd to the directory of where your Dockerfile is stored and run the following command:
+      
+    docker build -t [your image name]:tag .
+
+Or to pull an image from a repo on Docker Hub: 
+      
+    docker pull [your image name]:tag
+
+#### Edit nginx.conf and default.conf.template files
+
+The main configuration file (nginx.conf):
+    
+    /home/docker/nginx/nginx.conf
+
+The main configuration file contains the standard configuration for NGINX. Unless you know how to add directives specified for a configuration file. Otherwise, I do not recommend making any changes to this file.
+
+The http configuration file (default.conf.template):
+    
+    /home/docker/nginx/conf.d/default.conf.template
+
+The http configuration file contains configuration that allows NGINX to direct any encrypt (or unencrypt) traffics to an application that is published on a specific port on the VM.  
+
+How NGINX talks to Docker
+
+    With NGINX,
+    nginx → listens on → port 80 (http) and 443 (https) 
+
+    With Docker,
+    Docker → listens on → port 80/443/8080/3838/8000/… 
+
+    With SHINY
+    Shiny → listens on → port 3838/8787/4848/… (on localhost such as 127.0.0.1:3838)
+
+In other words, when you run a docker container you are exposing your shiny application through a port (for example: port 7856) hosted on a localhost domain. Docker is listened on this port and published this port to a specified port on the host interface (for example: port 7856 for simplicity). Therefore, when you navigate to port 7856 on the VM domain (for example http://[domain_name/ip address]:7856) you will see that the shiny app is hosted there. 
+
+However, you probably do not want to provide your users with just a port link. Thus, you can use NGINX configuration files to create an alias location for your applications (for example http://[domain_name/ip address]/carcinogenome/). When a user is looking for that specific location on your VM domain. NGINX will transfer that traffic to the port (i.e 7856) where the application was published on. As a result, NGINX is served as a reverse proxy for hosting your applications.
+
+Here is a snapshot of how the http configuration file looks like:
+
+      server {
+          listen       80;			
+          server_name  155.41.202.164;
+          server_tokens off;
+  
+          # Load configuration files for the default server block.
+          include /etc/nginx/default.d/*.conf;
+      
+          # Redirect the location to carcinogenome/ location
+          location /Carcinogenome {
+            return 301 http://155.41.202.164/Carcinogenome/;
+          }
+  
+          # Specific the location for the carcinogenome app
+          location /Carcinogenome/ {
+            rewrite ^/Carcinogenome/(.*)$ /$1 break;
+            proxy_pass http://155.41.202.164:7856/; 
+  
+            proxy_redirect off;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Host $server_name;
+  
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection $connection_upgrade;
+            proxy_read_timeout 20d;
+            proxy_buffering off;
+          }
+      }
+
+
+Note: If we have multiple domains on the VM, we can have a separate configuration file for each domain. For example, default.conf.template can be configured for the montilab.bu.edu domain, and carcinogenome.conf.template can be configured for the carcinogenome.org domain, etc.
+
+#### Create a docker-compose.yml file
+
+docker-compose.yml is a file that comprises of all the containers that we want to communicate with the NGINX container.
+
+In step 2 and 3, you had built a NGINX image and a docker image for your application. Let’s say the image for your app is called montibot/carcinogenome:latest. Next, you would want to publish this application on a specific port of the VM domain and use NGINX to redirect the encrypt (or unencrypt) traffics to your application. 
+
+To do that, in the docker-compose file, you need to create a service to run the NGINX container (called it “nginx”) and a service to run the container for your shiny application (called it “carcinogenome”). Under each service, you need to specify a list of instructions of how the container is built, for example, what image is used to build the container (use arg image), what do you want to name the container (use arg container_name), and what port is used to expose the app to Docker and what port is used to publish the app on the VM interface (use arg ports). 
+
+Most importantly, in the NGINX service, you need to match the exact location of where you want to link your NGINX configuration files with the Docker NGINX configuration files (use arg volumes).
+
+In your app service, make sure that the host port (7856) matches the port that you want NGINX to redirect the encrypt or unencrypt traffic to (see the http configuration file)
+
+Here is a snapshot of the docker-compose.yml file:
+
+    version: '3'
+    
+    services:
+      nginx:
+        build:
+          context: /home/docker
+          dockerfile: Dockerfile
+        image: nginx:latest         #name of the image
+        container_name: nginx       #name of the container you want to build
+        restart: always             #allow the connection to restart if it gets disconnected
+        ports:
+          - 80:80   #specify the unencrypt port
+          - 443:443 #specify the encrypt but will need ssl later
+        volumes:
+          - /home/docker/nginx/nginx.conf:/etc/nginx/nginx.conf #connect the host configuration files to docker config files
+          - /home/docker/nginx/conf.d:/etc/nginx/templates #connect the host configuration files to docker config files
+          - /home/carcinogenome/shinyApps/www:/var/www/carcinogenome
+          - /home/xposome/Xposome/shinyApps:/var/data/xposome
+        command: [nginx-debug, '-g', 'daemon off;']
+     
+      carcinogenome:
+        image: montibot/carcinogenome:latest  #name of your docker image
+        container_name: carcinogenome         #name of the container you want to build
+        restart: always
+        ports:
+          - 7856:7856    
+        volumes:
+          - /home/carcinogenome/shinyApps/:/srv/shiny-server/
+          - /home/carcinogenome/shinyApps-log/:/var/log/shiny-server/      
+
+#### Run your docker-compose file
+
+After you have docker-compose file and NGINX configuration files all set up. You can cd to where docker-compose.yml is stored and run the following command.
+
+    docker-compose up -d
+    
+    -d is used to run docker compose in detach mode
+
+#### Check to make sure your application is running on http or https 
+
+Navigate to your subdomain and see if your application is running.
