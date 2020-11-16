@@ -739,7 +739,7 @@ EditProject <- function(table) {
             ),
             conditionalPanel(
               condition = "input.edit_files == 'Profile Annotation' | input.edit_files == 'All' | (input.edit_files == 'Gene Expression' && input.edit_ge_pro_option=='Yes')  | (input.edit_files == 'Connectivity Map' && input.edit_conn_pro_option=='Yes')",
-              fileInput(inputId="edit_pro_file", label=strong(span(style="color:red;", "*"), "Choose a profile annotation file", downloadButton(outputId="edit_pro_download_file", label=em(style="font-size: 11px", "Profile_annotation.RDS")))),
+              fileInput(inputId="edit_pro_file", label=strong(span(style="color:red;", "*"), "Choose a profile annotation file", downloadButton(outputId="edit_pro_download_file", label=em(style="font-size: 11px", "Profile_Annotation.RDS")))),
               fileInputRadioButtonsWithTooltip(
                 inputId="edit_pro_file_type", label="File type:", bId="edit_pro_template", helptext="", choices=c(".csv", ".RDS"), selected=NULL, inline=TRUE
               ),
@@ -2129,30 +2129,34 @@ output$edit_intro_download_file <- downloadHandler(
   
 )
 
-##Download profile annotation file
+# Download profile annotation file
 output$edit_pro_download_file <- downloadHandler(
-  
-  filename = paste0("Profile_Annotation.RDS"),
-  
-  content = function(file){
-    file.copy(paste0("data/", portal()$Portal, "/Profile_Annotation.RDS"), file)
+  filename = "Profile_Annotation.RDS",
+  content = function (file) {
+    # Retrieve list of all PortalDataset entities in hive matching portal name
+    datasets <- listEntities("PortalDataset", portal=portal()$Portal)
+    # Sort by timestamp and extract most recent dataset to convenience object
+    datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
+    dataset <- datasets[[length(datasets)]]
+    # Retrieve profile annotation object to local file
+    GeneHive::getWorkFile(hiveWorkFileID(dataset@ProfileAnnotationRDS), file)
   },
-  
   contentType = "application"
-  
 )
 
-##Download gene expression file
+# Download gene expression file
 output$edit_ge_download_file <- downloadHandler(
-  
-  filename = paste0("Expression_Set.RDS"),
-  
-  content = function(file){
-    file.copy(paste0("data/", portal()$Portal, "/Expression_Set.RDS"), file)
+  filename = "Expression_Set.RDS",
+  content = function (file) {
+    # Retrieve list of all PortalDataset entities in hive matching portal name
+    datasets <- listEntities("PortalDataset", portal=portal()$Portal)
+    # Sort by timestamp and extract most recent dataset to convenience object
+    datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
+    dataset <- datasets[[length(datasets)]]
+    # Retrieve ExpressionSet to local file
+    GeneHive::getWorkFile(hiveWorkFileID(dataset@GeneExpressionRDS), file)
   },
-  
   contentType = "application"
-  
 )
 
 ##Download gs collection file
