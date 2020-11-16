@@ -1177,7 +1177,23 @@ observeEvent(input$Save_Project_Yes_Button, {
     data <- projectdata() %>% full_join(read_csv(paste0("data/Project_List.csv")) %>% filter(!Portal %in% portal$Portal))
 
     if(!portal$Portal %in% data$Portal){
-      unlink(paste0('data/', portal$Portal), recursive=TRUE, force=TRUE)
+      # Retrieve list of all PortalDataset entities in hive matching portal name
+      datasets <- listEntities("PortalDataset", portal=portal$Portal)
+      # Remove all entities in list
+      for (dataset in datasets) {
+        # Trash all WorkFiles associated with the PortalDataset record
+        workFileSlots <- names(
+          which(getSlots("hivePortalDatasetEntity") == "hiveWorkFileID")
+        )
+        for (workFileSlot in workFileSlots) {
+          GeneHive::updateWorkFileProperties(
+            id=slot(dataset, workFileSlot), isTrashed=TRUE
+          )
+        }
+        # Delete the PortalDataset Entity record
+        GeneHive::deleteEntity(objectId(dataset))
+      }
+
       unlink(paste0("www/JSON/", portal$Portal), recursive=TRUE, force=TRUE)
       unlink(paste0("www/RMD/introduction_", portal$Portal, ".Rmd"), recursive=TRUE, force=TRUE)
     }

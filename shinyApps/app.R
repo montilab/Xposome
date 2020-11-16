@@ -225,7 +225,7 @@ server <- function(input, output, session) {
   data_files <- list.files("data/")
 
   ##Create a list of wanted folders and files####
-  wanted_files <- c(projectlist$Portal, "Connectivity Map", "Enrichment Gene Set", "Landmark", "Project_List.csv", "Template", "User_Login_List.csv") 
+  wanted_files <- c("Connectivity Map", "Enrichment Gene Set", "Landmark", "Project_List.csv", "Template", "User_Login_List.csv") 
   
   ##Remove unwanted folders/files####
   if(any(!data_files %in% wanted_files)){
@@ -296,7 +296,7 @@ server <- function(input, output, session) {
     source("edit_project.R", local=TRUE)
     
   }else{
-    # Retrieve list of all PortalDataset entities in hive
+    # Retrieve list of all PortalDataset entities in hive matching portal name
     datasets <- listEntities("PortalDataset", portal=fname)
     # Sort by timestamp and extract most recent dataset to convenience object
     datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]

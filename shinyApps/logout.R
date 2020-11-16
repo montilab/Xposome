@@ -45,7 +45,7 @@ logout <- function(input, output, session, active) {
       data_files <- list.files("data/")
       
       ##Create a list of wanted folders and files####
-      wanted_files <- c(projectlist$Portal, "Connectivity Map", "Enrichment Gene Set", "Landmark", "Project_List.csv", "Template", "User_Login_List.csv") 
+      wanted_files <- c("Connectivity Map", "Enrichment Gene Set", "Landmark", "Project_List.csv", "Template", "User_Login_List.csv") 
       
       ##Remove unwanted folders/files####
       if(any(!data_files %in% wanted_files)){

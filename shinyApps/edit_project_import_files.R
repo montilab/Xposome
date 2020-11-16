@@ -80,8 +80,17 @@ observeEvent({
   exposure <- unlist(strsplit(as.character(portal$Exposure_Levels), ",", fixed=TRUE)) %>% trimws()
   exposure_phenotype <- unlist(strsplit(as.character(portal$Exposure_Phenotype), ",", fixed=TRUE)) %>% trimws()
   
+  # Retrieve list of all PortalDataset entities in hive matching portal name
+  datasets <- listEntities("PortalDataset", portal=portal$Portal)
+  # Sort by timestamp and extract most recent dataset to convenience object
+  datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
+  dataset <- datasets[[length(datasets)]]
+
   tryCatch({ 
-    pro_dat <- readRDS(paste0("data/", portal$Portal, "/Profile_Annotation.RDS"))
+    # Read the profile annotation object from the hive
+    pro_dat <- GeneHive::getWorkFileAsObject(
+      hiveWorkFileID(dataset@ProfileAnnotationRDS)
+    )
     exposure_variable <- unique(colnames(pro_dat)[which(!colnames(pro_dat) %in% c("Sig_Id", "Chemical_Id", "Chemical_Name", "BUID", "CAS", "TAS"))])
     if((input$edit_files == 'Gene Expression' & input$edit_ge_pro_option == 'No') | input$edit_files %in% "K2Taxonomer" | input$edit_files %in% "GS Enrichment"){
       updateSelectInput(session, inputId="edit_variable_compound", choices="Chemical_Id")
@@ -97,7 +106,10 @@ observeEvent({
   })
   
   tryCatch({ 
-    chem_dat <- readRDS(paste0("data/", portal$Portal, "/Chemical_Annotation.RDS")) 
+    # Read the chemical annotation object from the hive
+    chem_dat <- GeneHive::getWorkFileAsObject(
+      hiveWorkFileID(dataset@ChemicalAnnotationRDS)
+    )
     chem_file(chem_dat)
   }, error=function(err){
     print(err)
@@ -307,7 +319,15 @@ observeEvent({
   
   tryCatch({
     
-    dat <- readRDS(paste0("data/", portal$Portal, "/Expression_Set.RDS"))
+    # Retrieve list of all PortalDataset entities in hive matching portal name
+    datasets <- listEntities("PortalDataset", portal=portal$Portal)
+    # Sort by timestamp and extract most recent dataset to convenience object
+    datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
+    dataset <- datasets[[length(datasets)]]
+    # Read the ExpressionSet object from the hive
+    dat <- GeneHive::getWorkFileAsObject(
+      hiveWorkFileID(dataset@GeneExpressionRDS)
+    )
 
     if(!is.null(pro_ann)){
       if(all(colnames(dat) %in% pro_ann$Sig_Id) | all(colnames(dat) %in% pro_ann$Chemical_Id)){
@@ -451,8 +471,18 @@ observeEvent({
   
   tryCatch({
     
-    pcl_dat <- readRDS(paste0("data/", portal$Portal, "/Connectivity.RDS"))[["pcl"]]
-    pert_dat <- readRDS(paste0("data/", portal$Portal, "/Connectivity.RDS"))[["pert"]]
+    # Retrieve list of all PortalDataset entities in hive matching portal name
+    datasets <- listEntities("PortalDataset", portal=portal$Portal)
+    # Sort by timestamp and extract most recent dataset to convenience object
+    datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
+    dataset <- datasets[[length(datasets)]]
+    # Read the list of ExpressionSets from the hive
+    CMap <- GeneHive::getWorkFileAsObject(
+      hiveWorkFileID(dataset@ConnectivityRDS)
+    )
+    # Copy the ExpressionSets into convenience variables
+    pcl_dat <- CMap$pcl
+    pert_dat <- CMap$pert
     
     if(!is.null(pro_ann)){
       if(all(colnames(pcl_dat) %in% pro_ann$Sig_Id) | all(colnames(pcl_dat) %in% pro_ann$Chemical_Id)){

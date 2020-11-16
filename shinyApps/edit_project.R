@@ -248,12 +248,6 @@ observeEvent(input$Edit_Project_Add_Button, {
       
       ##Rename portal directory if portal name changed####
       if(Portal != portal$Portal){
-        ##Create directory to store data
-        data_path <- paste0('data/', portal$Portal); 
-        data_files <- list.files(data_path)
-        new_data_path <- paste0('data/', Portal); 
-        dir.create(new_data_path, showWarnings=FALSE)
-        walk(seq_along(data_files), function(f){ file.copy(from=file.path(data_path, data_files[f]), to=new_data_path, overwrite=TRUE) })        
         
         ##Create directory to store json files
         json_path <- paste0('www/JSON/', portal$Portal);
@@ -266,11 +260,15 @@ observeEvent(input$Edit_Project_Add_Button, {
         rmd_path <- paste0('www/RMD');
         file.copy(from=paste0(rmd_path, "/introduction_", portal$Portal, ".Rmd"), to=paste0(rmd_path, "/introduction_", Portal, ".Rmd")) 
       }else{
-        ##Create portal directory to store data and results####
-        dir.create(paste0("data/", Portal), showWarnings=FALSE, recursive=TRUE)
+        ##Create new portal directories to store Morpheus heatmaps and .Rmd file
         dir.create(paste0("www/JSON/", Portal), showWarnings=FALSE, recursive=TRUE)
         dir.create(paste0("www/RMD"), showWarnings=FALSE, recursive=TRUE)
       }
+
+      # Initialize list to hold values for PortalDataset entity
+      portalDataset <- list(
+        timestamp = format(Sys.Date(), "%a %b %d %X %Z %Y")
+      )
       
       ##########################################################################################
       #
@@ -400,9 +398,14 @@ observeEvent(input$Edit_Project_Add_Button, {
         
       }
       
-      ##save data to portal folder####
-      saveRDS(pro_file, paste0("data/", Portal, "/Profile_Annotation.RDS"))
-      saveRDS(chem_file, paste0("data/", Portal, "/Chemical_Annotation.RDS"))
+      # Upload profile and chemical annotation to WorkFiles,
+      # and add WorkFile IDs to list of values for portal dataset list
+      portalDataset$ProfileAnnotationRDS <- GeneHive::objectId(
+        GeneHive::storeObjectAsWorkFile(pro_file)
+      )
+      portalDataset$ChemicalAnnotationRDS <- GeneHive::objectId(
+        GeneHive::storeObjectAsWorkFile(chem_file)
+      )
       
       print("Saving chemical and profile annotation")
       
@@ -444,8 +447,11 @@ observeEvent(input$Edit_Project_Add_Button, {
       #create expression set
       expressionSet <- ExpressionSet(assayData=gene_expression, phenoData=phenoData, featureData=featureData)
       
-      ##Add data to portal object####
-      saveRDS(expressionSet, paste0("data/", Portal, "/Expression_Set.RDS"))
+      # Upload ExpressionSet to WorkFile,
+      # and add WorkFile ID to list of values for portal dataset list
+      portalDataset$GeneExpressionRDS <- GeneHive::objectId(
+        GeneHive::storeObjectAsWorkFile(expressionSet)
+      )
       print("Saving gene expression file")
       
       ##Create morpheus heatmap####
@@ -583,8 +589,11 @@ observeEvent(input$Edit_Project_Add_Button, {
           }
         }
         
-        ##save data to portal folder####
-        saveRDS(connectivity_map, paste0("data/", Portal, "/Connectivity.RDS"))
+        # Upload CMap data to WorkFile,
+        # and add WorkFile ID to list of values for portal dataset list
+        portalDataset$ConnectivityRDS <- GeneHive::objectId(
+          GeneHive::storeObjectAsWorkFile(connectivity_map)
+        )
         
         print("Saving connectivity map file")
         print("Saving connectivity Morpheous heatmap")
@@ -686,8 +695,11 @@ observeEvent(input$Edit_Project_Add_Button, {
           }
         }
         
-        ##Add data to portal object####
-        saveRDS(gsscores, paste0("data/", Portal, "/GS_Enrichment.RDS"))
+        # Upload GSEA data to WorkFile,
+        # and add WorkFile ID to list of values for portal dataset list
+        portalDataset$GeneSetEnrichmentRDS <- GeneHive::objectId(
+          GeneHive::storeObjectAsWorkFile(gsscores)
+        )
         
         print("Saving gene set enrichment file")
         print("Saving gene set enrichment Morpheous heatmap")
@@ -770,8 +782,11 @@ observeEvent(input$Edit_Project_Add_Button, {
             stabThresh = 0.67
           )
           
-          ##save K2Taxonomer results
-          saveRDS(K2res, paste0("data/", Portal, "/K2results.RDS"))
+          # Upload K2Taxonomer results to WorkFile,
+          # and add WorkFile ID to list of values for portal dataset list
+          portalDataset$K2TaxonomerResultsRDS <- GeneHive::objectId(
+            GeneHive::storeObjectAsWorkFile(K2res)
+          )
           
         }
         
@@ -845,6 +860,12 @@ observeEvent(input$Edit_Project_Add_Button, {
       proj_dat <- proj_dat[-row,]
       newproject <- proj_dat %>% rbind(new_proj)
       projectdata(newproject)
+
+      # Add PortalDataset entity to GeneHive
+      do.call(
+        GeneHive::addEntity, args=c(.class="PortalDataset", portalDataset)
+      )
+
       removeModal()
       
       shinyjs::enable(id="Edit_Project_Add_Button")
