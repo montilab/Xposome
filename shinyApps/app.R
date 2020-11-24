@@ -273,11 +273,7 @@ server <- function(input, output, session) {
   if(fname %in% c("home", "about", "contact", "sign_in")){
     fname=fname
   }else{
-    if(dir.exists(paste0("data/", fname))){
-      fname=fname
-    }else{
-      fname="empty"
-    }
+    fname=fname
   }
   
   ## Get the R files for the selected page ####

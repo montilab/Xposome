@@ -76,7 +76,7 @@ data.table.round <- function(dt, digits = 3){
   
 }
 
-# # ## Read in the project list ####
+# ### Read in the project list ####
 # fname = "TGGates";
 # profile_dat <- readRDS(paste0("data/", fname, "/Profile_Annotation.RDS"))
 # chemical_dat <- readRDS(paste0("data/", fname, "/Chemical_Annotation.RDS"))
@@ -168,7 +168,7 @@ get_de <- function(
   
   if(do.scorecutoff){
     #TODO: rank by score here too
-    x.ind.scorecutoff <- which(x > scorecutoff[2] | x < scorecutoff[1])
+    x.ind.scorecutoff <- which(x >= scorecutoff[1] & x <= scorecutoff[2])
   }else {
     x.ind.scorecutoff <- 1:n
   }
