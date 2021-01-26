@@ -1,0 +1,540 @@
+---
+output: html_document
+---
+
+## API EXPLORER
+
+The API Explorer provides documentation on how users can extract data from Xposome application and create their next project. All successful responses are returned in JSON. Only queries that respond with a 200 response code is considered successful. Here are standard HTTP codes you will find in the “Status” element of the response body. 
+
+<table id="api-table">
+  <tbody>
+    <tr>
+      <td><strong>Status Code</strong></td>
+      <td><strong>Description</strong></td>
+    </tr>
+    <tr>
+      <td>200 OK</td>
+      <td>Standard HTTP successful response</td>
+    </tr>
+    <tr>
+      <td>400 Bad Request</td>
+      <td>Standard HTTP invalid request response/td>
+    </tr>
+    <tr>
+      <td>401 Unauthorized</td>
+      <td>Standard HTTP unauthorized access response</td>
+    </tr>
+    <tr>
+      <td>500 Internal Server Error</td>
+      <td>There was an unexpected error on our server. If you see this please contact <a href="mailto:montilab@bu.edu">montilab@bu.edu</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+Below are R code and packages that use to execute the API calls, but one can use python or other programs.
+
+```{r packages}
+
+# R packages required for API calls
+library(jsonlite)
+library(httr)
+
+```
+
+### RETRIEVE A LIST OF PORTALS AVAILABLE IN GENEHIVE
+
+#### Property
+
+<table id="api-table">
+  <tbody>
+    <tr>
+      <td><strong>Parameter</strong></td>
+      <td><strong>Syntax</strong></td>
+      <td><strong>Description</strong></td>
+    </tr>
+    <tr>
+      <td>all</td>
+      <td>Yes</td>
+      <td>Whether to return all the portal names</td>
+    </tr>
+  </tbody>
+</table>
+
+#### API Structure
+http://155.41.202.164:8989/portals?all=Yes
+
+#### Example in R
+
+```{r run-portals}
+
+# url for local testing
+url <- "http://155.41.202.164:8989/portals?all=Yes"
+
+# Send GET Request to API
+res <- GET(url = url, encode = 'json')
+
+stop_for_status(res)
+
+portals <- fromJSON(fromJSON(rawToChar(res$content)))
+
+print(portals)
+
+portal_name = portals[2]
+
+```
+
+### RETRIEVE A LIST OF CHEMICALS IN A PORTAL
+
+#### Property
+
+<table id="api-table">
+  <tbody>
+    <tr>
+      <td><strong>Parameter</strong></td>
+      <td><strong>Syntax</strong></td>
+      <td><strong>Description</strong></td>
+    </tr>
+    <tr>
+      <td>portal</td>
+      <td>MCF10A</td>
+      <td>Name of the portal</td>
+    </tr>
+  </tbody>
+</table>
+
+
+#### API Structure
+http://155.41.202.164:8989/chemicals?portal=MCF10A
+
+#### Example in R
+
+```{r run-chemicals}
+
+# url for local testing
+url0 <- paste0("http://155.41.202.164:8989/chemicals?portal=", portal_name)
+
+# Send GET Request to API
+res <- GET(url = url0, encode = 'json')
+
+stop_for_status(res)
+
+chemicals <- fromJSON(fromJSON(rawToChar(res$content)))
+
+print(head(chemicals))
+
+chemical_id = chemicals[4]
+
+```
+
+### RETRIEVE GENE EXPRESSION STATISTICS PER EACH CHEMICAL IN A PORTAL
+
+#### Property
+
+<table id="api-table">
+  <tbody>
+    <tr>
+      <td><strong>Parameter</strong></td>
+      <td><strong>Syntax</strong></td>
+      <td><strong>Description</strong></td>
+    </tr>
+    <tr>
+      <td>portals</td>
+      <td>MCF10A</td>
+      <td>Name of the portal</td>
+    </tr>
+    <tr>
+      <td>chemical_id</td>
+      <td>1,2-Dibromo-3-chloropropane</td>
+      <td>Name of the chemicals in the portal</td>
+    </tr>    
+    <tr>
+      <td>summarize.func</td>
+      <td>mean/median/min/max/Q1/Q3</td>
+      <td>Name of the summarize function</td>
+    </tr>
+    <tr>
+      <td>landmark</td>
+      <td>TRUE or FALSE</td>
+      <td>Whether to include landmark genes</td>
+    </tr>
+    <tr>
+      <td>do.nmarkers</td>
+      <td>TRUE or FALSE</td>
+      <td>Whether to filter the number of landmark genes</td>
+    </tr>  
+    <tr>
+      <td>nmarkers</td>
+      <td>1 to 1000</td>
+      <td>Range of landmark genes</td>
+    </tr>
+    <tr>
+      <td>do.scorecutoff</td>
+      <td>TRUE or FALSE</td>
+      <td>Whether to filter the z-scores</td>
+    </tr>
+    <tr>
+      <td>scorecutoff</td>
+      <td>-2 to 2</td>
+      <td>Range of z-score cutoff</td>
+    </tr>
+  </tbody>
+</table>
+
+#### API Structure
+http://155.41.202.164:8989/gene_expression?portal=MCF10A&chemical_id=1,2-Dibromo-3-chloropropane&summarize.func=median&landmark=TRUE&do.markers=TRUE&do.scorecutoff=TRUE
+
+#### Example in R
+
+```{r run-gene-expression-stat}
+
+# url for local testing
+url1 <- paste0("http://155.41.202.164:8989/gene_expression?portal=", portal_name, "&chemical_id=", chemical_id, "&summarize.func=median&landmark=TRUE&do.markers=TRUE&do.scorecutoff=TRUE")
+
+# Send GET Request to API
+res <- GET(url = url1, encode = 'json')
+
+stop_for_status(res)
+
+gene_expression_stat <- fromJSON(fromJSON(rawToChar(res$content)))
+
+print(head(gene_expression_stat))
+
+```
+
+### RETRIEVE GENE SET ENRICHMEMT STATISTICS PER EACH CHEMICAL IN A PORTAL
+
+#### Property
+
+<table id="api-table">
+  <tbody>
+    <tr>
+      <td><strong>Parameter</strong></td>
+      <td><strong>Syntax</strong></td>
+      <td><strong>Description</strong></td>
+    </tr>
+    <tr>
+      <td>portals</td>
+      <td>MCF10A</td>
+      <td>Name of the portal</td>
+    </tr>
+    <tr>
+      <td>chemical_id</td>
+      <td>1,2-Dibromo-3-chloropropane</td>
+      <td>Name of the chemicals in the portal</td>
+    </tr>    
+    <tr>
+      <td>geneset</td>
+      <td>Hallmark/C2/NURSA</td>
+      <td>Name of the gene set enrichment</td>
+    </tr>
+    <tr>
+      <td>gsva</td>
+      <td>gsva (default)</td>
+      <td>The gene set enrichment method</td>
+    </tr>
+    <tr>
+      <td>summarize.func</td>
+      <td>mean/median/min/max/Q1/Q3</td>
+      <td>Name of the summarize function</td>
+    </tr>  
+  </tbody>
+</table>
+
+#### API Structure
+http://155.41.202.164:8989/gs_enrichment?portal=MCF10A&chemical_id=1,2-Dibromo-3-chloropropane&geneset=Hallmark&gsva=gsva&summarize.func=median
+
+#### Example in R
+
+```{r run-gene-set-enrichment-stat}
+
+# url for local testing
+url2 <- paste0("http://155.41.202.164:8989/gs_enrichment?portal=", portal_name, "&chemical_id=", chemical_id, "&geneset=Hallmark&gsva=gsva&summarize.func=median")
+
+# Send GET Request to API
+res <- GET(url = url2, encode = 'json')
+
+stop_for_status(res)
+
+gs_enrichment_stat <- fromJSON(fromJSON(rawToChar(res$content)))
+
+print(head(gs_enrichment_stat))
+
+```
+
+### RETRIEVE CONNECTIVITY STATISTICS PER EACH CHEMICAL IN A PORTAL
+
+#### Property
+
+<table id="api-table">
+  <tbody>
+    <tr>
+      <td><strong>Parameter</strong></td>
+      <td><strong>Syntax</strong></td>
+      <td><strong>Description</strong></td>
+    </tr>
+    <tr>
+      <td>portals</td>
+      <td>MCF10A</td>
+      <td>Name of the portal</td>
+    </tr>
+    <tr>
+      <td>chemical_id</td>
+      <td>1,2-Dibromo-3-chloropropane</td>
+      <td>Name of the chemicals in the portal</td>
+    </tr>    
+    <tr>
+      <td>connectivity_classes</td>
+      <td>pcl for Perturbagen Classes and pert for Perturbagens</td>
+      <td>Name of the connectivity classes</td>
+    </tr>
+    <tr>
+      <td>summarize.func</td>
+      <td>mean/median/min/max/Q1/Q3</td>
+      <td>Name of the summarize function</td>
+    </tr>  
+  </tbody>
+</table>
+
+#### API Structure
+http://155.41.202.164:8989/connectivity?portal=MCF10A&chemical_id=1,2-Dibromo-3-chloropropane&connectivity_classes=pcl&summarize.func=median
+
+#### Example in R
+
+```{r run-connecitivity-stat}
+
+# url for local testing
+url3 <- paste0("http://155.41.202.164:8989/connectivity?portal=", portal_name, "&chemical_id=", chemical_id, "&connectivity_classes=pcl&summarize.func=median")
+
+# Send GET Request to API
+res <- GET(url = url3, encode = 'json')
+
+stop_for_status(res)
+
+connectivity_stat <- fromJSON(fromJSON(rawToChar(res$content)))
+
+print(head(connectivity_stat))
+
+```
+
+### RETRIEVE PROFILE ANNOTATION FOR A PORTAL
+
+#### Property
+
+<table id="api-table">
+  <tbody>
+    <tr>
+      <td><strong>Parameter</strong></td>
+      <td><strong>Syntax</strong></td>
+      <td><strong>Description</strong></td>
+    </tr>
+    <tr>
+      <td>portal</td>
+      <td>MCF10A</td>
+      <td>Name of the portal</td>
+    </tr>
+  </tbody>
+</table>
+
+
+#### API Structure
+http://155.41.202.164:8989/profile_annotation?portal=MCF10A
+
+#### Example in R
+
+```{r run-profile-annotation}
+
+# url for local testing
+url4 <- paste0("http://155.41.202.164:8989/profile_annotation?portal=", portal_name)
+
+# Send GET Request to API
+res <- GET(url = url4, encode = 'json')
+
+stop_for_status(res)
+
+profile_annotation <- fromJSON(fromJSON(rawToChar(res$content)))
+
+print(head(profile_annotation))
+
+```
+
+### RETRIEVE CHEMICAL ANNOTATION FOR A PORTAL
+
+#### Property
+
+<table id="api-table">
+  <tbody>
+    <tr>
+      <td><strong>Parameter</strong></td>
+      <td><strong>Syntax</strong></td>
+      <td><strong>Description</strong></td>
+    </tr>
+    <tr>
+      <td>portal</td>
+      <td>MCF10A</td>
+      <td>Name of the portal</td>
+    </tr>
+  </tbody>
+</table>
+
+
+#### API Structure
+http://155.41.202.164:8989/chemical_annotation?portal=MCF10A
+
+#### Example in R
+
+```{r run-chemical-annotation}
+
+# url for local testing
+url5 <- paste0("http://155.41.202.164:8989/chemical_annotation?portal=", portal_name)
+
+# Send GET Request to API
+res <- GET(url = url5, encode = 'json')
+
+stop_for_status(res)
+
+chemical_annotation <- fromJSON(fromJSON(rawToChar(res$content)))
+
+print(head(chemical_annotation))
+
+```
+
+### RETRIEVE GENE EXPRESSION SET FOR A PORTAL
+
+#### Property
+
+<table id="api-table">
+  <tbody>
+    <tr>
+      <td><strong>Parameter</strong></td>
+      <td><strong>Syntax</strong></td>
+      <td><strong>Description</strong></td>
+    </tr>
+    <tr>
+      <td>portal</td>
+      <td>MCF10A</td>
+      <td>Name of the portal</td>
+    </tr>
+  </tbody>
+</table>
+
+
+#### API Structure
+http://155.41.202.164:8989/expression_set?portal=MCF10A
+
+#### Example in R
+
+```{r run-gene-expression}
+
+# url for local testing
+url6 <- paste0("http://155.41.202.164:8989/expression_set?portal=", portal_name)
+
+# Send GET Request to API
+res <- GET(url = url6, encode = 'json')
+
+stop_for_status(res)
+
+expression_set <- fromJSON(fromJSON(rawToChar(res$content)))
+
+print(head(expression_set))
+
+```
+
+### RETRIEVE GENE SET ENRICHMENT FOR A PORTAL
+
+#### Property
+
+<table id="api-table">
+  <tbody>
+    <tr>
+      <td><strong>Parameter</strong></td>
+      <td><strong>Syntax</strong></td>
+      <td><strong>Description</strong></td>
+    </tr>
+    <tr>
+      <td>portal</td>
+      <td>MCF10A</td>
+      <td>Name of the portal</td>
+    </tr>
+    <tr>
+      <td>geneset</td>
+      <td>Hallmark/C2/NURSA</td>
+      <td>Name of the gene set enrichment</td>
+    </tr>
+    <tr>
+      <td>gsva</td>
+      <td>gsva (default)</td>
+      <td>The gene set enrichment method</td>
+    </tr>
+  </tbody>
+</table>
+
+#### API Structure
+http://155.41.202.164:8989/enrichment_set?portal=MCF10A&geneset=Hallmark&gsva=gsva
+
+#### Example in R
+
+```{r run-gene-set-entrichment}
+
+# url for local testing
+url7 <- paste0("http://155.41.202.164:8989/enrichment_set?portal=", portal_name, "&geneset=Hallmark&gsva=gsva")
+
+# Send GET Request to API
+res <- GET(url = url7, encode = 'json')
+
+stop_for_status(res)
+
+enrichment_set <- fromJSON(fromJSON(rawToChar(res$content)))
+
+print(head(enrichment_set))
+
+```
+
+### RETRIEVE CONNECTIVITY MAP FOR A PORTAL
+
+#### Property
+
+<table id="api-table">
+  <tbody>
+    <tr>
+      <td><strong>Parameter</strong></td>
+      <td><strong>Syntax</strong></td>
+      <td><strong>Description</strong></td>
+    </tr>
+    <tr>
+      <td>portal</td>
+      <td>MCF10A</td>
+      <td>Name of the portal</td>
+    </tr>
+    <tr>
+      <td>connectivity_classes</td>
+      <td>pcl for Perturbagen Classes and pert for Perturbagens</td>
+      <td>Name of the connectivity classes</td>
+    </tr>
+  </tbody>
+</table>
+
+
+#### API Structure
+http://155.41.202.164:8989/connectivity_map?portal=MCF10A&connectivity_classes=pcl
+
+#### Example in R
+
+```{r run-connectivity}
+
+# url for local testing
+url8 <- paste0("http://155.41.202.164:8989/connectivity_map?portal=", portal_name, "&connectivity_classes=pcl")
+
+# Send GET Request to API
+res <- GET(url = url8, encode = 'json')
+
+stop_for_status(res)
+
+connectivity_map <- fromJSON(fromJSON(rawToChar(res$content)))
+
+print(head(connectivity_map))
+
+```
+
+

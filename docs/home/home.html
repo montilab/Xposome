@@ -1,0 +1,178 @@
+<html>
+
+<head>
+<style type="text/css">
+.inline {
+  background-color: #f7f7f7;
+  border:solid 1px #B0B0B0;
+}
+.error {
+	font-weight: bold;
+	color: #FF0000;
+}
+.warning {
+	font-weight: bold;
+}
+.message {
+	font-style: italic;
+}
+.source, .output, .warning, .error, .message {
+	padding: 0 1em;
+  border:solid 1px #F7F7F7;
+}
+.source {
+  background-color: #f5f5f5;
+}
+.left {
+  text-align: left;
+}
+.right {
+  text-align: right;
+}
+.center {
+  text-align: center;
+}
+.hl.num {
+  color: #AF0F91;
+}
+.hl.str {
+  color: #317ECC;
+}
+.hl.com {
+  color: #AD95AF;
+  font-style: italic;
+}
+.hl.opt {
+  color: #000000;
+}
+.hl.std {
+  color: #585858;
+}
+.hl.kwa {
+  color: #295F94;
+  font-weight: bold;
+}
+.hl.kwb {
+  color: #B05A65;
+}
+.hl.kwc {
+  color: #55aa55;
+}
+.hl.kwd {
+  color: #BC5A65;
+  font-weight: bold;
+}
+</style>
+<title>home</title>
+</head>
+
+<body>
+
+<p><img src="https://github.com/montilab/bieulergy/workflows/build/badge.svg" alt="build"><a href="https://www.tidyverse.org/lifecycle/#experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></p>
+<!-- badges: end -->
+
+<!-- introduction: start -->
+<h4>Introduction</h4>
+
+<p><span style="color: #377eb8; font-size: 16px;"><strong>Xposome</strong></span> is a project that aims to build a repository of gene expression datasets that profile the transcriptomic response to exposure of known toxins.</p>
+<!-- introduction: end -->
+
+<br>
+
+<!-- local installation: start -->
+<h4>Local Installation</h4>
+
+<p>Must have R and Rstudio installed before proceeding:</p>
+<ul>
+  <li>Download <a href="https://www.r-project.org/">R</a></li>
+  <li>Download <a href="https://rstudio.com/products/rstudio/download/">RStudio</a></li>
+</ul>
+
+<p>To run Xposome application locally:</p> 
+<ul>
+  <li>Download the source code from <a href="https://github.com/montilab/Xposome">GitHub</a> repo</li>
+  <li>Unzip the file and navigate to <span class="highlight-text">shinyApps</span> folder</li>
+  <li>Open <span class="highlight-text">app.R</span> within that folder</li>
+  <li>Click <span class="highlight-text">"Run App"</span> button to launch the application in Rstudio</li>
+</ul>
+<!-- local installation: end -->
+
+<br>
+
+<!-- dockerize application: start -->
+<h4 id="dockerize">Dockerize Xposome</h4>
+
+<p>Not familiar with Docker? Download it <a href="https://www.docker.com/products/docker-desktop">here</a> and check out the <a href="https://ropenscilabs.github.io/r-docker-tutorial/">R Docker tutorials</a>.</p>
+
+<p>To dockerize the Xposome application:</p>
+<ul>
+  <li>Download the source code from <a href="https://github.com/montilab/Xposome">GitHub</a> repo</li>
+  <li>Unzip the file and open the terminal. "cd" to where the <span class="highlight-text">dockerfile</span> is stored. The dockerfile is a text file that contains all of the dependences and instructions of how to run the Xposome app.</li>
+  <li>Run the following command to build the docker image that contains all of the dependences of the Xposome application:
+  <div class="code">docker build xposome .</div>
+  To check if the image is built succesfully,<br>
+  <div class="code">docker images </div>   
+  </li>
+  <li>Create a docker container that contains the Xposome image and publish the application on the host machine
+  <div class="code">docker run -d -p 3838:3838 \ <br>
+  &emsp; -v shinyApps/:/srv/shiny-server/ \ <br>
+  &emsp; -v shinyApps-log/:/var/log/shiny-server/ \ <br>
+  &emsp; xposome:latest
+  </div>
+  -d: to run the container in detached mode <br>
+  -v: to mount the codebase or data files from the host directory onto the container directory <span class="highlight-text">&lt;host_dir&gt;:&lt;container_dir&gt;</span> <br>
+  -p: to link the container port onto the host port and publish the application through the host domain <span class="highlight-text">&lt;host_port&gt;:&lt;container_port&gt;</span><br>
+  For more information about the syntax usage, see <a href="https://docs.docker.com/engine/reference/builder/">docker documentation</a><br><br>
+  To check if the container is built and running sucessfully,<br>
+  <div class="code">docker container ps</div>
+  </li>
+  <li>Once the app is up and running, you can visit the local host, <span class="highlight-text">http://localhost:3838</span> to vertify if the application is indeed hosted there.</li>
+</ul>
+
+<p>The docker image for Xposome is also available to download at <a href="">Docker Hub</a>. To pull the image, type the following command in the terminal:</p>
+<div class="code">docker pull montibot/Xposome</div><br>
+<!-- dockerize application: end -->
+
+<p>Additionally, check out how to configure http or https web posting with <a href="#nginx-and-docker-compose">NGINX and Docker-Compose</a></p>
+
+<br>
+
+<!-- data access: start -->
+<h4>Data Access</h4>
+<p>Xposome application requires several structural datasets in order for it to run smoothly. Contact <a href="mailto:montilab@bu.edu">maintainer</a> for data access and details on data formats.</p>
+<!-- data access: end -->
+
+<br>
+
+<!-- app usage: start -->
+<h4>Application Usage</h4>
+<p>There are two main parts of the Xposome application:</p>
+<ul>
+  <li>Portal Page</li>
+  <li>Moderator Page</li>
+</ul>
+
+<br>
+
+<h4>The Portal Page</h4>
+<p>Contains a list of chemical screenings that exposed to high-throughput transcriptomics assays. Each screen provides information about the chemicals and cell-line that was used in the experiment. A detailed analysis was also done to explore gene expression set of interested cell-line that exposed to a panel of known carcinogens.</p>
+<img class="img-box" src="www/portal-page.png">
+
+<br><br>
+
+<h4>The Moderator Page</h4>
+<p>Requires access from authorized users. This restricted page only allows authorized users to make changes to the existed screens or to upload new screens to the portal page.</p>
+<p>The default login credentials are set as:</p>
+&emsp; Username: Xposome<br>
+&emsp; Password: Xposome<br>
+<br>
+<p>Lastly, check out the documentation about how to reset password if users forgot their login credentials with <a href="#send-emails-with-postfix">Postfix</a></p>
+
+<img class="img-box" src="www/moderator-page.png">
+
+
+
+<!-- app usage: end --> 
+
+</body>
+</html>
