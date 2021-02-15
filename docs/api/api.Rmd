@@ -62,7 +62,7 @@ There are four data sources that are returned from the API.
 
 Below are a list of R packages and GET requests in R to retrieve data from Xposome portals. However, one can use Python or other programs to implement the REST API calls.
 
-```{r api-packages, echo=TRUE}
+```{r api-packages}
 
 # R packages required for API calls
 library(jsonlite)
@@ -107,7 +107,7 @@ https://montilab.bu.edu/Xposome-API/portals?orderby=asc
 
 #### Example in R
 
-```{r get-portals, echo=TRUE}
+```{r get-portals}
 
 # url for local testing
 url <- "https://montilab.bu.edu/Xposome-API/portals?orderby=asc"
@@ -180,7 +180,7 @@ https://montilab.bu.edu/Xposome-API/chemicals?portal=MCF10A
 
 #### Example in R
 
-```{r get-chemicals, echo=TRUE}
+```{r get-chemicals}
 
 portal_name = "MCF10A"
 
@@ -285,7 +285,7 @@ https://montilab.bu.edu/Xposome-API/gene_expression?portal=MCF10A&chemical_id=1,
 
 #### Example in R
 
-```{r get-gene-expression-stat, echo=TRUE}
+```{r get-gene-expression-stat}
 
 chemical_id = chemicals[4]
 
