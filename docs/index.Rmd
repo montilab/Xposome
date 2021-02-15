@@ -8,7 +8,6 @@ output:
     - www/style.css
     - www/docsearch.css
     - www/bootstrap-toc.css
-runtime: shiny
 ---
 
 ```{r packages, include=FALSE}
