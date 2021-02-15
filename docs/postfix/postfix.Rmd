@@ -142,11 +142,11 @@ On the shiny interface, when a user clicks the <span class="highlight-text">forg
     
 Here a snapshoot of the Xposome interface:
 
-<img class="img-box" src="www/forgot-password.png">
+<img class="img-box" src="www/forgot-password.png" width="50%" height="50%">
  
 #### Step 5: Check to see if the email is sent correctly
 
 if you are using the same email format that I have structured, then you should receive an email similar to this one.
 
-<img class="img-box" src="www/email.png">
+<img class="img-box" src="www/email.png" width="50%" height="50%">
 

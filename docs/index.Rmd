@@ -3,19 +3,21 @@ output:
   flexdashboard::flex_dashboard:
     source_code: "https://github.com/montilab/Xposome/"
     orientation: rows
-    vertical_layout: scroll
-    theme: bootstrap
+    vertical_layout: fill
     css:
     - www/style.css
     - www/docsearch.css
     - www/bootstrap-toc.css
-    includes:
-      after_body: footer.Rhtml
+runtime: shiny
 ---
 
-```{r setup, include=FALSE}
+```{r packages, include=FALSE}
+
+library(flexdashboard)
 library(rmarkdown)
+library(knitr)
 library(shiny)
+library(shinyjs)
 
 version= "0.0.1"
 
@@ -37,21 +39,19 @@ Home {data-icon="fa-home"}
 
 ```{r mainpage}
 fluidRow(
-  style="padding: 0 20px 20px 20px;",
-  
   column(
-    width=9,
-    includeHTML("home/home.Rhtml")
+    width=8,
+    includeMarkdown("home/home.Rmd")
   ),
   column(
-    width=3, id="pkgdown-sidebar",
-    includeHTML("links.Rhtml")
+    width=3, offset=1, id="pkgdown-sidebar",
+    includeMarkdown("links.Rmd")
+  ),
+  column(
+    width=12,
+    includeMarkdown("footer.Rmd")
   )
 )
-
-observeEvent(input$docker-compose, {
-  updateNavbarPage(session, inputId="docker-compose", selected="NGINX and Docker-Compose")
-})
 
 ```
 
@@ -61,15 +61,17 @@ NGINX and Docker-Compose {data-icon="fa-plug"}
 ```{r docker-compose}
 
 fluidRow(
-  style="padding: 0 20px 20px 20px;",
-
   column(
     width=9,
-    includeMarkdown("documentation/docker-compose.Rmd")
+    includeMarkdown("docker-compose/docker-compose.Rmd")
   ),
   column(
     width=3, id="pkgdown-sidebar",
-    includeHTML("links.Rhtml")
+    includeMarkdown("links.Rmd")
+  ),
+  column(
+    width=12,
+    includeMarkdown("footer.Rmd")
   )
 )
 
@@ -81,15 +83,17 @@ Send Emails with Postfix {data-icon="fa-envelope-square"}
 ```{r set-up postfix}
 
 fluidRow(
-  style="padding: 0 20px 20px 20px;",
-
   column(
     width=9,
-    includeMarkdown("documentation/postfix.Rmd")
+    includeMarkdown("postfix/postfix.Rmd")
   ),
   column(
     width=3, id="pkgdown-sidebar",
-    includeHTML("links.Rhtml")
+    includeMarkdown("links.Rmd")
+  ),
+  column(
+    width=12,
+    includeMarkdown("footer.Rmd")
   )
 )
 
@@ -101,21 +105,19 @@ API Explorer {data-icon="fa-link"}
 ```{r api}
 
 fluidRow(
-  style="padding: 0 20px 20px 20px;",
-
   column(
     width=9,
     includeMarkdown("api/api.Rmd")
   ),
   column(
     width=3, id="pkgdown-sidebar",
-    includeHTML("links.Rhtml")
+    includeMarkdown("links.Rmd")
+  ),
+  column(
+    width=12,
+    includeMarkdown("footer.Rmd")
   )
 )
+
 ```
-
-
-
-
-
 

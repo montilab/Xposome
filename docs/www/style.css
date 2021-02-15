@@ -1,20 +1,7 @@
-/* Sticky footer */
-
-/**
- * Basic idea: https://philipwalton.github.io/solved-by-flexbox/demos/sticky-footer/
- * Details: https://github.com/philipwalton/solved-by-flexbox/blob/master/assets/css/components/site.css
- *
- * .Site -> body > .container
- * .Site-content -> body > .container .row
- * .footer -> footer
- *
- * Key idea seems to be to ensure that .container and __all its parents__
- * have height set to 100%
- *
- */
 
 html, body {
   height: 100%;
+  width: 100%;
   font-family: Verdana, sans-serif, !important;
   margin: auto;
   padding: auto;
@@ -25,8 +12,7 @@ body {
 }
 
 footer {
-  padding: 35px 20px 35px 20px;
-  margin: 0 0 0 0;
+  margin: 50px 0 0 0;
   color: #666;
   display: flex;
   flex-shrink: 0;
@@ -56,19 +42,8 @@ img {
   max-width: 100%;
 }
 
-/* Fix bug in bootstrap (only seen in firefox) */
-summary {
-  display: list-item;
-}
-
-/* Typographic tweaking ---------------------------------*/
-
-.contents .page-header {
-  margin-top: calc(-10px + 1em);
-}
-
-dd {
-  margin-left: 3em;
+h1, h2, h3, h4, h5, h6 {
+  font-weight: bold;
 }
 
 /* Section anchors ---------------------------------*/
@@ -91,96 +66,121 @@ a.anchor {
   background-position: center center;
 }
 
-#api-table table {
- 
-}
-
-#api-table td {
-  padding: 10px;
-  border-top: 1px solid gray;
-  border-bottom: 1px solid gray;
-}
-
-/*
-.hasAnchor{
-  background-color: #c994c7;
-  border-radius: 3px;
-}
-*/
-
 .hasAnchor:hover a.anchor {
   visibility: visible;
 }
 
 @media (max-width: 767px) {
   .hasAnchor:hover a.anchor {
-    visibility: hidden;
+  visibility: hidden;
   }
 }
 
+/* tables ---------------------------------*/
 
-/* Fixes for fixed navbar --------------------------*/
+.status-table table {
+  width: 100%;
+}
 
+.status-table td {
+  text-align: left;
+  padding: 10px;
+  border-top: 1px solid gray;
+  border-bottom: 1px solid gray;
+}
 
-.contents h1, .contents h2, .contents h3, .contents h4 {
-  
+.status-table td:nth-child(1) {
+  width: 40%;
+}
+
+.status-table td:nth-child(2) {
+  width: 60%;
+}
+
+.source-table table {
+  width: 100%;
+}
+
+.source-table td {
+  text-align: left;
+  padding: 10px 30px 10px 10px;
+  border-top: 1px solid gray;
+  border-bottom: 1px solid gray;
+}
+
+.source-table td:nth-child(1) {
+  width: 30%;
+}
+
+.source-table td:nth-child(2) {
+  width: 40%;
+}
+
+.source-table td:nth-child(3) {
+  width: 30%;
 }
 
 
-
-/* Navbar submenu --------------------------*/
-
-.dropdown-submenu {
-  position: relative;
+.get-table table {
+  width: 100%;
 }
 
-.dropdown-submenu>.dropdown-menu {
-  top: 0;
-  left: 100%;
-  margin-top: -6px;
-  margin-left: -1px;
-  border-radius: 0 6px 6px 6px;
+.get-table td {
+  text-align: left;
+  padding: 10px;
+  border-top: 1px solid gray;
+  border-bottom: 1px solid gray;
 }
 
-.dropdown-submenu:hover>.dropdown-menu {
-  display: block;
+.get-table td:nth-child(1) {
+  width: 20%;
 }
 
-.dropdown-submenu>a:after {
-  display: block;
-  content: " ";
-  float: right;
-  width: 0;
-  height: 0;
-  border-color: transparent;
-  border-style: solid;
-  border-width: 5px 0 5px 5px;
-  border-left-color: #cccccc;
-  margin-top: 5px;
-  margin-right: -10px;
+.get-table td:nth-child(2) {
+  width: 20%;
 }
 
-.dropdown-submenu:hover>a:after {
-  border-left-color: #ffffff;
+.get-table td:nth-child(3) {
+  width: 40%;
 }
 
-.dropdown-submenu.pull-left {
-  float: none;
+.get-table td:nth-child(4) {
+  width: 20%;
 }
 
-.dropdown-submenu.pull-left>.dropdown-menu {
-  left: -100%;
-  margin-left: 10px;
-  border-radius: 6px 0 6px 6px;
+.api-table table {
+  width: 100%;
+}
+
+.api-table td {
+  text-align: left;
+  padding: 10px 30px 10px 10px;
+  border-top: 1px solid gray;
+  border-bottom: 1px solid gray;
+}
+
+.api-table td:nth-child(1) {
+  width: 25%;
+}
+
+.api-table td:nth-child(2) {
+  width: 25%;
+}
+
+.api-table td:nth-child(3) {
+  width: 25%;
+}
+
+.api-table td:nth-child(4) {
+  width: 25%;
 }
 
 /* Sidebar --------------------------*/
 
 #pkgdown-sidebar {
-  margin-top: 30px;
   position: -webkit-sticky;
   position: sticky;
-  top: 70px;
+  top: 100px;
 }
 
 #pkgdown-sidebar h2 {
@@ -196,186 +196,24 @@ a.anchor {
   margin-bottom: 0.5em;
 }
 
-/* bootstrap-toc tweaks ------------------------------------------------------*/
-
-/* All levels of nav */
-
-nav[data-toggle='toc'] .nav > li > a {
-  padding: 4px 20px 4px 6px;
-  font-size: 1.5rem;
-  font-weight: 400;
-  color: inherit;
+#dashboard-container{
+  padding: 0px 20px 10px 10px;
+  width: 100%;
 }
 
-nav[data-toggle='toc'] .nav > li > a:hover,
-nav[data-toggle='toc'] .nav > li > a:focus {
-  padding-left: 5px;
-  color: inherit;
-  border-left: 1px solid #878787;
+.navbar-nav > li {
+  font-weight: bold;
 }
 
-nav[data-toggle='toc'] .nav > .active > a,
-nav[data-toggle='toc'] .nav > .active:hover > a,
-nav[data-toggle='toc'] .nav > .active:focus > a {
-  padding-left: 5px;
-  font-size: 1.5rem;
-  font-weight: 400;
-  color: inherit;
-  border-left: 2px solid #878787;
+.navbar-brand {
+  font-weight: bold;
 }
-
-/* Nav: second level (shown on .active) */
-
-nav[data-toggle='toc'] .nav .nav {
-  display: none; /* Hide by default, but at >768px, show it */
-  padding-bottom: 10px;
-}
-
-nav[data-toggle='toc'] .nav .nav > li > a {
-  padding-left: 16px;
-  font-size: 1.35rem;
-}
-
-nav[data-toggle='toc'] .nav .nav > li > a:hover,
-nav[data-toggle='toc'] .nav .nav > li > a:focus {
-  padding-left: 15px;
-}
-
-nav[data-toggle='toc'] .nav .nav > .active > a,
-nav[data-toggle='toc'] .nav .nav > .active:hover > a,
-nav[data-toggle='toc'] .nav .nav > .active:focus > a {
-  padding-left: 15px;
-  font-weight: 500;
-  font-size: 1.35rem;
-}
-
-/* orcid ------------------------------------------------------------------- */
-
-.orcid {
-  font-size: 16px;
-  color: #A6CE39;
-  /* margins are required by official ORCID trademark and display guidelines */
-  margin-left:4px;
-  margin-right:4px;
-  vertical-align: middle;
-}
-
-/* Reference index & topics ----------------------------------------------- */
-
-.ref-index th {font-weight: normal;}
-
-.ref-index td {vertical-align: top; min-width: 100px}
-.ref-index .icon {width: 40px;}
-.ref-index .alias {width: 40%;}
-.ref-index-icons .alias {width: calc(40% - 40px);}
-.ref-index .title {width: 60%;}
-
-.ref-arguments th {text-align: right; padding-right: 10px;}
-.ref-arguments th, .ref-arguments td {vertical-align: top; min-width: 100px}
-.ref-arguments .name {width: 20%;}
-.ref-arguments .desc {width: 80%;}
 
 /* Nice scrolling for wide elements --------------------------------------- */
 
 table {
   display: block;
   overflow: auto;
-}
-
-/* Syntax highlighting ---------------------------------------------------- */
-
-pre {
-  word-wrap: normal;
-  word-break: normal;
-  border: 1px solid #eee;
-}
-
-pre, code {
-  background-color: #f8f8f8;
-  color: #333;
-}
-
-pre code {
-  overflow: auto;
-  word-wrap: normal;
-  white-space: pre;
-}
-
-pre .img {
-  margin: 5px 0;
-}
-
-pre .img img {
-  background-color: #fff;
-  display: block;
-  height: auto;
-}
-
-code a, pre a {
-  color: #375f84;
-}
-
-a.sourceLine:hover {
-  text-decoration: none;
-}
-
-.fl      {color: #1514b5;}
-.fu      {color: #000000;} /* function */
-.ch,.st  {color: #036a07;} /* string */
-.kw      {color: #264D66;} /* keyword */
-.co      {color: #888888;} /* comment */
-
-.message { color: black;   font-weight: bolder;}
-.error   { color: orange;  font-weight: bolder;}
-.warning { color: #6A0366; font-weight: bolder;}
-
-/* Clipboard --------------------------*/
-
-.hasCopyButton {
-  position: relative;
-}
-
-.btn-copy-ex {
-  position: absolute;
-  right: 0;
-  top: 0;
-  visibility: hidden;
-}
-
-.hasCopyButton:hover button.btn-copy-ex {
-  visibility: visible;
-}
-
-/* headroom.js ------------------------ */
-
-.headroom {
-  will-change: transform;
-  transition: transform 200ms linear;
-}
-.headroom--pinned {
-  transform: translateY(0%);
-}
-.headroom--unpinned {
-  transform: translateY(-100%);
-}
-
-/* mark.js ----------------------------*/
-
-mark {
-  background-color: rgba(255, 255, 51, 0.5);
-  border-bottom: 2px solid rgba(255, 153, 51, 0.3);
-  padding: 1px;
-}
-
-/* vertical spacing after htmlwidgets */
-.html-widget {
-  margin-bottom: 10px;
-}
-
-/* font awesome ------------------------ */
-
-.fab {
-    font-family: "Font Awesome 5 Brands" !important;
 }
 
 /* don't display links in code chunks when printing */
@@ -387,11 +225,12 @@ mark {
 }
 
 /* my own style ------------------------ */
+
 .version-label {
-  background-color: #8856a7;
+  background-color: black;
   color: white;
-  padding: 3px;
-  border-radius: 2px;
+  padding: 3px 3px 3px 3px;
+  border-radius: 3px;
   font-size: 15px;
   font-weight: bold;
 }
@@ -422,10 +261,6 @@ mark {
   z-index: 99999;
 }
 
-.navbar-nav > li {
-  font-weight: bold;
-}
-
 .contents{
   padding: 10px 30px 0 30px;
 }
@@ -433,9 +268,4 @@ mark {
 .main-header {
   font-weight: bold;
 }
-
-.navbar-brand {
-  font-weight: bold;
-}
-
 

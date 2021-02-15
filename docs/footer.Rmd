@@ -1,7 +1,7 @@
-<!DOCTYPE html>
-<head>
-</head>
-<body>
+---
+output: html_document
+---
+
 <!------------------------------------- footer: start ------------------------------->
 <footer>
 <div class="copyright">
@@ -13,5 +13,3 @@
 </div>
 </footer>
 <!------------------------------------- footer: end ------------------------------->
-</body>     
-</html>

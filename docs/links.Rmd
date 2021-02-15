@@ -1,10 +1,6 @@
-<html>
-
-<head>
-<title>Title</title>
-</head>
-
-<body>
+---
+output: html_document
+---
 
 <div class="links">
   <h2>Links</h2>
@@ -30,5 +26,3 @@
   </ul>
 </div>
 
-</body>
-</html>

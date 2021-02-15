@@ -1,12 +1,11 @@
-<html>
+---
+output: html_document
+---
 
-<head>
-<title>home</title>
-</head>
+<!-- badges: start -->
 
-<body>
+<div><img src="https://github.com/montilab/bieulergy/workflows/build/badge.svg" alt="build"><a href="https://www.tidyverse.org/lifecycle/#experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></div>
 
-<p><img src="https://github.com/montilab/bieulergy/workflows/build/badge.svg" alt="build"><a href="https://www.tidyverse.org/lifecycle/#experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></p>
 <!-- badges: end -->
 
 <!-- introduction: start -->
@@ -38,7 +37,7 @@
 <br>
 
 <!-- dockerize application: start -->
-<h4 id="dockerize">Dockerize Xposome</h4>
+<h4 id="dockerize">Dockerize Xposome Application</h4>
 
 <p>Not familiar with Docker? You can download it <a href="https://www.docker.com/products/docker-desktop">here</a> and check out the <a href="https://ropenscilabs.github.io/r-docker-tutorial/">R Docker tutorials</a>.</p>
 
@@ -83,6 +82,7 @@
 <br>
 
 <!-- app usage: start -->
+
 <h4>Application Usage</h4>
 <p>There are two main parts of the Xposome application:</p>
 <ul>
@@ -113,9 +113,5 @@
 
 <img class="img-box" src="www/moderator-page.png">
 
-
-
 <!-- app usage: end --> 
 
-</body>
-</html>
