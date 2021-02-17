@@ -8,9 +8,9 @@ output: html_document
 
 <strong>Docker-compose</strong> - A technology for enabling docker containers to communicate to each other
 
-In this post, I will go over steps of how to create an unencrypt (http) or encrypt (https) traffic that allows users to interact with the Xposome application that is published through a docker container. To achieve that, we need both NGINX and docker-compose.
+In this post, I will go over steps of how to create an encrypt (https) traffic that allows users to interact with the Xposome application that is published through a docker container. To achieve that, we need both NGINX and docker-compose.
 
-Here are the seven steps to set-up NGINX and docker-compose:
+Here are seven steps to set-up NGINX and docker-compose:
 
 1.	Install docker-compose
 2.	Build a NGINX image from Docker Hub without installing NGINX software
@@ -18,7 +18,9 @@ Here are the seven steps to set-up NGINX and docker-compose:
 4.	Configure NGINX configuration files 
 5.	Create a docker-compose.yml file
 6.	Run the docker-compose.yml file
-7.	Check to see if the application is running on http or https
+7.	Check to see if the application is running on https
+
+<br>
 
 #### Step 1: Install docker-compose
 
@@ -30,11 +32,11 @@ To check if docker-compose is installed,
 
 #### Step 2: Build a docker image for NGINX
 
-An image for NGINX can be found at <a href="https://hub.docker.com/_/nginx">Docker Hub</a>. You can pull this image without the need to install the NGINX software locally,
+An image for NGINX can be found at <a href="https://hub.docker.com/_/nginx">Docker Hub</a>. You can pull this image without the need to install the NGINX software locally.
 
     docker pull nginx:latest 
 
-To check if the image is built successfully, 
+To check if the image is built successfully 
 
     docker images
 
@@ -42,15 +44,15 @@ Also see this <a href="https://hub.docker.com/_/nginx">link</a> on how to use th
 
 #### Step 3: Dockerize the Xposome application locally or pull the image from Docker Hub
 
-Check out this <a href='#dockerize'>post</a> for more details
+Check out this post <a href='#dockerize'>here</a> for more details
 
 #### Step 4: Configure NGINX configuration files
 
-There are two configuration files for NGINX, <span class="highlight-text">nginx.conf</span> and <span class="highlight-text">default.conf.template files</span>. 
+Once the images for NGINX and Xposome are build successfully, we can start configure the NGINX configuration files. There are two configuration files for NGINX, <span class="highlight-text">nginx.conf</span> and <span class="highlight-text">default.conf.template files</span>. 
 
-The nginx.conf file contains the standard configuration for NGINX. Unless you know how to add directives specified for a configuration file, otherwise, I do not recommend making any changes to this file.
+The nginx.conf file contains the standard configuration for NGINX. Unless you know how to add directives specific to a configuration file, otherwise, I do not recommend making any changes to this file.
 
-The default.conf.templat file contains configuration that allows NGINX to direct any encrypt or unencrypt traffics to an application that is published on a specific port on the host machine.  
+The default.conf.templat file contains HTTP configuration that allows NGINX to direct any encrypt (https) or unencrypt (http) traffics to the application that is published on a specific port on the host machine.  
 
 How NGINX talks to Docker
 
@@ -63,15 +65,15 @@ How NGINX talks to Docker
     With SHINY
     Shiny → listens on localhost → port 3838/8787/4848/… 
 
-In other words, when we run a docker container, we basically expose our application through a port that can be viewable thru a Shiny's localhost. Docker listens to this port and will publish the application to a specified port on the host machine (for example: port 7856 for simplicity). Therefore, when we navigate to port 7856 on the host domain (for example http://[domain_name/ip address]:7856), we will see that the shiny app is hosted there. 
+In other words, when we run a docker container, we basically expose our application through a port that is viewable on a Shiny's localhost (for example: port 3838). Docker listens to this port and publish the application to a specific port on the host machine (for example: port 7856). Therefore, when we navigate to port 7856 on the host domain (for example http://[domain_name/ip address]:7856), we will see that the shiny app is hosted there. 
 
-Nevertheless, we probably don't want to navigate to the application via a port link. Thus, we can use the NGINX configuration files to create an alias location for the application (for example http://[domain_name/ip address]/Xposome/). When a user is navigating to that specific address on the host domain, NGINX will transfer that traffic to the port 7856 which the application was originally published on. As the result, NGINX is served as a reverse proxy for hosting our applications.
+Nevertheless, we probably do not want to direct our users to the application via a port link. Thus, we can use the NGINX configuration files to create an alias location for the application (for example https://[domain_name/ip address]/Xposome/). Hence, when a user is navigated to that specific address on the host domain, NGINX will transfer that traffic to the port 7856 of where the application was originally published on. Furthermore, NGINX will encrypt that traffic with a https protocol. As the result, NGINX is served as a reverse proxy for hosting our applications.
 
 Here is a snapshot of how the http configuration file looks like:
 
       server {
           listen       80;			
-          server_name  155.41.202.164;  #ip address or domain name
+          server_name  montilab.bu.edu;  #ip address or domain name
           server_tokens off;
   
           # Load configuration files for the default server block.
@@ -80,7 +82,7 @@ Here is a snapshot of how the http configuration file looks like:
           # Specific the location for the xposome app
           location /Xposome/ {
             rewrite ^/Xposome/(.*)$ /$1 break;
-            proxy_pass http://example.com:7856/; 
+            proxy_pass http://montilab.bu.edu:7856/; 
   
             proxy_redirect off;
             proxy_set_header Host $host;
@@ -98,11 +100,11 @@ Here is a snapshot of how the http configuration file looks like:
 
 #### Step 5: Create a docker-compose.yml file
 
-Once we had configured NGINX as a reverse proxy for our application, we can create a docker-compose.yml file that comprises of all the containers that we want to communicate with the NGINX container.
+Once we had configured NGINX as a reverse proxy for our application, we can create a docker-compose.yml file that comprises of all the containers that we want to communicate with NGINX container.
 
-To enable communication between containers, in the docker-compose file, we must create a service to run the NGINX container and a service to run the container for the Xposome application. Under each service, we need to specify a list of instructions of how the container can be built, for instance, what image is used to build the container, what do we want to name the container, what port is used to expose the shiny app to Docker, and what port is used to publish the app onto the host machine.
+To enable communication between containers, in the docker-compose file, we must create a service to run the NGINX container and a service to run the Xposome container. Under each service, we need to specify a list of instructions of how the container can be built, for instance, what image is used to build the container, what do we want to name the container, what port is used to expose the shiny app to Docker, and what port is used to publish the app on the host machine, etc.
 
-After we had defined all of these keys components of how the containers are built, in the NGINX configuration files, we need to make sure that the host port matches the port that NGINX redirect the encrypt or unencrypt traffic to the application.
+After we had defined all of the key components of how the containers can be built, in the NGINX configuration files, we need to make sure that the host port matches the port that NGINX redirects the encrypt traffics to the application.
 
 Here is a snapshot of the docker-compose.yml file:
 
@@ -122,11 +124,11 @@ Here is a snapshot of the docker-compose.yml file:
         command: [nginx-debug, '-g', 'daemon off;']
      
       xposome:
-        image: montibot/xposome:latest  #name of the docker image
+        image: montilab/xposome:latest  #name of the docker image
         container_name: xposome         #name of the container
         restart: always
         ports:
-          - 7856:7856                   #port where the application is published on   
+          - 7856:3838                   #port where the application is published on   
         volumes:
           - /home/xposome/shinyApps/:/srv/shiny-server/           #location to the codebse or data files
           - /home/xposome/shinyApps-log/:/var/log/shiny-server/   #location to store log information from the shiny app
@@ -134,12 +136,12 @@ Here is a snapshot of the docker-compose.yml file:
 
 #### Step 6: Run the docker-compose file
 
-After we have the docker-compose file and NGINX configuration files all set up, we can cd to where docker-compose.yml is located and run the following command on the terminal.
+After we have the docker-compose file and NGINX configuration files all set up, we can cd to where docker-compose.yml is located and run the following command to fire up all the containers that are defined within the docker-compose file.
 
     docker-compose up -d
     
     -d is used to run docker compose in detach mode
 
-#### Step 7: Check to make sure the application is running on http or https 
+#### Step 7: Check to make sure the application is running on https 
 
-Navigate to the pre-specified domain (for example http://155.41.202.164/Xposome/) on host server and see if the application is hosted there.
+Navigate to the alias domain for the application (for example https://montilab.bu.edu/Xposome/) and see if the application is indeed hosted there.

@@ -8,9 +8,9 @@ output: html_document
 
 <strong>Docker</strong> - A software platform that allows developers to build, test, deploy, and run applications using containers
 
-In this post, I will go over steps of how to send emails from a docker container through Postfix installed on the host machine. In my previous post, we have learned to <a href='#dockerize'>dockerize the Xposome application</a>. The Xposome application has two parts: the portal page and the moderator page. In the moderator page, we have an option that allow users to retrieve their passwords if they forgot their login credentials. 
+In this post, I will go over steps of how to send emails from a docker container through Postfix installed on the host machine. In my previous posts, I went over how to <a href='#dockerize'>dockerize the Xposome application</a>. The Xposome application has two parts: the <a href='#project-page'>Project Page</a> and the <a href='#moderator-page'>Moderator Page</a>. In the Moderator Page, we have an option that allow users to retrieve their passwords if they forgot their login credentials. 
 
-Here are five steps to set-up Postfix and send new passwords to users:
+Here are five steps to set-up Postfix and send new passwords to users if they forgot their login credentials:
 
 1.	Install Postfix
 2.	Dockerize the Xposome application locally or pull the image from Docker Hub
@@ -20,7 +20,7 @@ Here are five steps to set-up Postfix and send new passwords to users:
 
 #### Step 1: Install Postfix
 
-Depending on your OS, for mine, I have CentOS 8 server. Therefore, I use this <a href="https://www.linuxtechi.com/install-configure-postfix-mailserver-centos-8/">documenation</a> on how to install and configure postfix mail server on CentOS 8. You can see this <a href="https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-on-ubuntu-16-04">link</a> to install and configure Postfix on Ubuntu 16.04.
+Depending on your Operating System, for mine, I have CentOS 8 server. Therefore, I will use this <a href="https://www.linuxtechi.com/install-configure-postfix-mailserver-centos-8/">documenation</a> on how to install and configure postfix mail server on CentOS 8. You can also see this <a href="https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-on-ubuntu-16-04">link</a> to install and configure Postfix on Ubuntu 16.04.
 
 #### Step 2: Dockerize the Xposome application locally or pull the image from Docker Hub
 
@@ -30,13 +30,13 @@ See my previous post <a href='#dockerize'>here</a>
 
 After Postfix is installed, the main configuration files is stored at <span class="highlight-text">/etc/postfix/main.cf</span>.
 
-To configure Postfix to listen to requests from docker container, there is something called docker bridge (docker0) which acts as a bridge between the ethernet port and the docker container so that data can go back and forth. Hence, we want to listen on the docker0 interface. To do that, type <span class="highlight-text">ifconfig</span> on your host system to find out the bridge address and set your Postfix to listen on it.
+To configure Postfix to listen to requests from docker container, there is something called <span class="highlight-text">docker bridge (docker0)</span> which acts as a bridge between the ethernet port and the docker container so that data can go back and forth. Hence, we want Postfix to listen on the docker0 interface. To do that, type <span class="highlight-text">ifconfig</span> on your host system to find out the bridge address and set your Postfix to listen on it.
 
 <img class="img-box" src="www/postfix.png">
 
 As you can see in the image above, the IP address is 172.17.0.1
 
-In the Postfix configuration file, set
+In the Postfix configuration file (/etc/postfix/main.cf), set
 
 <p class="code">inet_interfaces = 172.17.0.1</p>
 
@@ -46,13 +46,13 @@ While you are there, add your actual docker container ip address to mynetworks
 
 172.17.0.5 is the private IP address of my docker container from which I use to send emails.
 
-You can find the IP address of your docker container by
+You can find the IP address for your docker container by
 
 <p class="code">docker inspect [container_id/container_name]</p>
 
 For example,
 
-<p class="code">docker inspect Xposome</p>
+<p class="code">docker inspect montilab/xposome</p>
 
 #### Step 4: Write an email to test the Postfix Mail Server
 
@@ -98,7 +98,7 @@ Here is an email function that sends a temporary password to users who forgot th
       
     }
 
-On the shiny interface, when a user clicks the <span class="highlight-text">forgot password?</span> link, a modal dialog will pop up. After he/she provided the user account information and click the submit button, a new temporary password will be send to his/her email. 
+On the shiny interface, when a user clicks the <span class="highlight-text">forgot password?</span>, a modal dialog will pop up. After he/she provided the user account information and click the submit button, a new temporary password will be send to his/her email. 
 
     observeEvent(input$FG_Button, {
       

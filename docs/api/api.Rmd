@@ -1,10 +1,12 @@
 ---
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ## API EXPLORER
 
-The API Explorer provides documentation on how users can retrieve data from Xposome application and create their next project. All successful responses are returned in JSON. Only queries that respond with a 200 response code is considered successful. 
+The API Explorer provides documentation on how users can retrieve data from the Xposome application and create their next project. All successful responses are returned in JSON. Only queries that respond with a 200 response code is considered successful. 
 
 Here are standard HTTP codes you will find in the “Status” element of the response body. 
 
@@ -23,44 +25,45 @@ Here are standard HTTP codes you will find in the “Status” element of the re
   </tr>
   <tr>
     <td>500 Internal Server Error</td>
-    <td>There was an unexpected error on our server. If you see this please contact <a href="mailto:montilab@bu.edu">montilab@bu.edu</a></td>
+    <td>There was an unexpected error on our server. If you see this error, please help us notify the issue on on our <a href="https://github.com/montilab/Xposome/">GitHub page</a></td>
   </tr>
 </table>
 
 <br>
 
-There are four data sources that are returned from the API.
+There are four data sources that are currently returned from the API.
 
 <table class="source-table">
   <tr>
     <td><strong>Data</strong></td>
     <td><strong>Description</strong></td>
-    <td><strong>Data Type</strong></td>
+    <td><strong>Return</strong></td>
   </tr>
   <tr>
-    <td>Portals</td>
-    <td>a list of portals in the GeneHive Database</td>
+    <td>Projects</td>
+    <td>a list of projects in the GeneHive Database. See <a href="https://montilab.bu.edu/Xposome/">here</a> on how we define projects on our web page</td>
     <td>list</td>
   </tr>
   <tr>
     <td>Chemicals</td>
-    <td>a list of chemicals available in a specific portal</td>
+    <td>a list of chemicals available in a specific project</td>
     <td>list</td>
   </tr>
   <tr>
     <td>Statistics</td>
-    <td>a summary statistic for a specific chemical based on gene expression, gene set enrichment analysis and gene connectivity</a></td>
+    <td>a summary statistics for a specific chemical  within a particular project. The statistics are calculated based on its gene expression, gene set enrichment and gene connectivity</a></td>
     <td>data frame</td>
   </tr>
   <tr>
     <td>Datasets</td>
-    <td>provide the data source for the Xposome portals such as profile and chemical annotation, expression set, gene set enrichent, etc.</a></td>
+    <td>a list of data sources for the Xposome projects such as profile and chemical annotation, expression set, gene set enrichment and connectivity set</a></td>
     <td>data frame</td>
   </tr>
 </table>
 
+<br>
 
-Below are a list of R packages and GET requests in R to retrieve data from Xposome portals. However, one can use Python or other programs to implement the REST API calls.
+Below are a list of R packages and GET requests in R to retrieve data from the Xposome projects. However, one can use Python or other programs to implement the REST API calls.
 
 ```{r api-packages}
 
@@ -70,13 +73,13 @@ library(httr)
 
 ```
 
-### Portals
+### Projects
 
 <table class="get-table">
   <tr>
     <td><button type="button" class="btn btn-default action-button">GET</button></td>
-    <td>/portals</td>
-    <td>Return a list of portals available in the GeneHive database</td>
+    <td>/projects</td>
+    <td>Return a list of projects available in the GeneHive database</td>
   </tr>
 </table>
   
@@ -84,7 +87,7 @@ library(httr)
 
 #### Implementation
 
-https://montilab.bu.edu/Xposome-API/portals?orderby=asc
+https://montilab.bu.edu/Xposome-API/projects?orderby=asc
 
 <br>
 
@@ -107,10 +110,10 @@ https://montilab.bu.edu/Xposome-API/portals?orderby=asc
 
 #### Example in R
 
-```{r get-portals}
+```{r get-projects}
 
 # url for local testing
-url <- "https://montilab.bu.edu/Xposome-API/portals?orderby=asc"
+url <- "https://montilab.bu.edu/Xposome-API/projects?orderby=asc"
 
 # Send GET Request to API
 res <- GET(url = url, encode = 'json')
@@ -137,8 +140,8 @@ test_request <- tryCatch({
 ### If GET request is successful, return the results
 if(test_request == "pass"){
   
-  portals <- fromJSON(fromJSON(rawToChar(res$content)))
-  print(head(portals))
+  projects <- fromJSON(fromJSON(rawToChar(res$content)))
+  print(head(projects))
   
 }
 
@@ -150,14 +153,14 @@ if(test_request == "pass"){
   <tr>
     <td><button type="button" class="btn btn-default action-button">GET</button></td>
     <td>/chemicals</td>
-    <td>Return a list of chemicals available in a specific portal</td>
+    <td>Return a list of chemicals available in a specific project</td>
   </tr>
 </table>
   
 <br>
 
 #### Implementation
-https://montilab.bu.edu/Xposome-API/chemicals?portal=MCF10A
+https://montilab.bu.edu/Xposome-API/chemicals?project=MCF10A
 
 <br>
 
@@ -169,9 +172,9 @@ https://montilab.bu.edu/Xposome-API/chemicals?portal=MCF10A
     <td><strong>Data Type</strong></td>
   </tr>
   <tr>
-    <td>portal</td>
+    <td>project</td>
     <td>MCF10A or HEPG2 or ...</td>
-    <td>Name of the portals</td>
+    <td>Name of the projects</td>
     <td>string</td>
   </tr>
 </table>
@@ -182,10 +185,10 @@ https://montilab.bu.edu/Xposome-API/chemicals?portal=MCF10A
 
 ```{r get-chemicals}
 
-portal_name = "MCF10A"
+project_name = "MCF10A"
 
 # url for local testing
-url0 <- paste0("https://montilab.bu.edu/Xposome-API/chemicals?portal=", portal_name)
+url0 <- paste0("https://montilab.bu.edu/Xposome-API/chemicals?project=", project_name)
 
 # Send GET Request to API
 res <- GET(url = url0, encode = 'json')
@@ -232,7 +235,7 @@ if(test_request == "pass"){
 <br>
 
 #### Implementation
-https://montilab.bu.edu/Xposome-API/gene_expression?portal=MCF10A&chemical_id=1,2-Dibromo-3-chloropropane&summarize.func=median&landmark=TRUE&do.markers=TRUE&do.scorecutoff=TRUE
+https://montilab.bu.edu/Xposome-API/gene_expression?project=MCF10A&chemical_id=1,2-Dibromo-3-chloropropane&summarize.func=median&landmark=TRUE&do.markers=TRUE&do.scorecutoff=TRUE
 
 <br>
    
@@ -244,15 +247,15 @@ https://montilab.bu.edu/Xposome-API/gene_expression?portal=MCF10A&chemical_id=1,
     <td><strong>Data Type</strong></td>
   </tr>
   <tr>
-    <td>portal</td>
+    <td>project</td>
     <td>MCF10A or HEPG2 or ...</td>
-    <td>Name of the portals</td>
+    <td>Name of the projects</td>
     <td>string</td>
   </tr>
   <tr>
     <td>chemical_id</td>
     <td>1,2-Dibromo-3-chloropropane or ...</td>
-    <td>Name of the chemicals or CAS ids of a chemical in a specific portal</td>
+    <td>Name of the chemicals or CAS ids of a chemical in a specific project</td>
     <td>string</td>
   </tr>    
   <tr>
@@ -290,7 +293,7 @@ https://montilab.bu.edu/Xposome-API/gene_expression?portal=MCF10A&chemical_id=1,
 chemical_id = chemicals[4]
 
 # url for local testing
-url1 <- paste0("https://montilab.bu.edu/Xposome-API/gene_expression?portal=", portal_name, "&chemical_id=", chemical_id, "&summarize.func=median&landmark=TRUE&do.markers=TRUE&do.scorecutoff=TRUE")
+url1 <- paste0("https://montilab.bu.edu/Xposome-API/gene_expression?project=", project_name, "&chemical_id=", chemical_id, "&summarize.func=median&landmark=TRUE&do.markers=TRUE&do.scorecutoff=TRUE")
 
 # Send GET Request to API
 res <- GET(url = url1, encode = 'json')
@@ -318,7 +321,7 @@ test_request <- tryCatch({
 if(test_request == "pass"){
   
   gene_expression_stat <- fromJSON(fromJSON(rawToChar(res$content)))
-  print(head(gene_expression_stat))
+  print(head(gene_expression_stat[1:5, 1:5]))
   
 }
 
@@ -335,7 +338,7 @@ if(test_request == "pass"){
 <br>
 
 #### Implementation
-https://montilab.bu.edu/Xposome-API/gs_enrichment?portal=MCF10A&chemical_id=1,2-Dibromo-3-chloropropane&geneset=Hallmark&gsva=gsva&summarize.func=median
+https://montilab.bu.edu/Xposome-API/gs_enrichment?project=MCF10A&chemical_id=1,2-Dibromo-3-chloropropane&geneset=Hallmark&gsva=gsva&summarize.func=median
 
 <br>
 
@@ -347,15 +350,15 @@ https://montilab.bu.edu/Xposome-API/gs_enrichment?portal=MCF10A&chemical_id=1,2-
     <td><strong>Data Type</strong></td>
   </tr>
   <tr>
-    <td>portal</td>
+    <td>project</td>
     <td>MCF10A or HEPG2 or ...</td>
-    <td>Name of the portals</td>
+    <td>Name of the projects</td>
     <td>string</td>
   </tr>
   <tr>
     <td>chemical_id</td>
     <td>1,2-Dibromo-3-chloropropane or ...</td>
-    <td>Name of the chemicals or CAS ids of a chemical in a specific portal</td>
+    <td>Name of the chemicals or CAS ids of a chemical in a specific project</td>
     <td>string</td>
   </tr>    
   <tr>
@@ -385,7 +388,7 @@ https://montilab.bu.edu/Xposome-API/gs_enrichment?portal=MCF10A&chemical_id=1,2-
 ```{r get-gene-set-enrichment-stat}
 
 # url for local testing
-url2 <- paste0("https://montilab.bu.edu/Xposome-API/gs_enrichment?portal=", portal_name, "&chemical_id=", chemical_id, "&geneset=Hallmark&gsva=gsva&summarize.func=median")
+url2 <- paste0("https://montilab.bu.edu/Xposome-API/gs_enrichment?project=", project_name, "&chemical_id=", chemical_id, "&geneset=Hallmark&gsva=gsva&summarize.func=median")
 
 # Send GET Request to API
 res <- GET(url = url2, encode = 'json')
@@ -413,7 +416,7 @@ test_request <- tryCatch({
 if(test_request == "pass"){
   
   gs_enrichment_stat <- fromJSON(fromJSON(rawToChar(res$content)))
-  print(head(gs_enrichment_stat))
+  print(head(gs_enrichment_stat[1:5, 1:5]))
   
 }
 
@@ -423,14 +426,14 @@ if(test_request == "pass"){
   <tr>
     <td><button type="button" class="btn btn-default action-button">GET</button></td>
     <td>/connectivity</td>
-    <td>Return  a collection of human diseases that are linked to exposure of a known chemical</td>
+    <td>Return  a collection of gene connectivity that are linked to exposure of a known chemical</td>
   </tr>
 </table>
 
 <br>
 
 #### Implementation
-https://montilab.bu.edu/Xposome-API/connectivity?portal=MCF10A&chemical_id=1,2-Dibromo-3-chloropropane&connectivity_classes=pcl&summarize.func=median
+https://montilab.bu.edu/Xposome-API/connectivity?project=MCF10A&chemical_id=1,2-Dibromo-3-chloropropane&connectivity_classes=pcl&summarize.func=median
 
 <br>
 
@@ -442,15 +445,15 @@ https://montilab.bu.edu/Xposome-API/connectivity?portal=MCF10A&chemical_id=1,2-D
     <td><strong>Data Type</strong></td>
   </tr>
   <tr>
-    <td>portal</td>
+    <td>project</td>
     <td>MCF10A or HEPG2 or ...</td>
-    <td>Name of the portals</td>
+    <td>Name of the projects</td>
     <td>string</td>
   </tr>
   <tr>
     <td>chemical_id</td>
     <td>1,2-Dibromo-3-chloropropane or ...</td>
-    <td>Name of the chemicals or CAS ids of a chemical in a specific portal</td>
+    <td>Name of the chemicals or CAS ids of a chemical in a specific project</td>
     <td>string</td>
   </tr>    
   <tr>
@@ -474,7 +477,7 @@ https://montilab.bu.edu/Xposome-API/connectivity?portal=MCF10A&chemical_id=1,2-D
 ```{r get-connecitivity-stat}
 
 # url for local testing
-url3 <- paste0("https://montilab.bu.edu/Xposome-API/connectivity?portal=", portal_name, "&chemical_id=", chemical_id, "&connectivity_classes=pcl&summarize.func=median")
+url3 <- paste0("https://montilab.bu.edu/Xposome-API/connectivity?project=", project_name, "&chemical_id=", chemical_id, "&connectivity_classes=pcl&summarize.func=median")
 
 # Send GET Request to API
 res <- GET(url = url3, encode = 'json')
@@ -502,7 +505,7 @@ test_request <- tryCatch({
 if(test_request == "pass"){
   
   connectivity_stat <- fromJSON(fromJSON(rawToChar(res$content)))
-  print(head(connectivity_stat))
+  print(head(connectivity_stat[1:5, 1:5]))
   
 }
 
@@ -514,14 +517,14 @@ if(test_request == "pass"){
   <tr>
     <td><button type="button" class="btn btn-default action-button">GET</button></td>
     <td>/profile_annotation</td>
-    <td>Return the profile annotation of a specific portal</td>
+    <td>Return the profile annotation of a specific project</td>
   </tr>
 </table>
 
 <br>
 
 #### Implementation
-https://montilab.bu.edu/Xposome-API/profile_annotation?portal=MCF10A
+https://montilab.bu.edu/Xposome-API/profile_annotation?project=MCF10A
 
 <br>
 
@@ -533,9 +536,9 @@ https://montilab.bu.edu/Xposome-API/profile_annotation?portal=MCF10A
     <td><strong>Data Type</strong></td>
   </tr>
   <tr>
-    <td>portal</td>
+    <td>project</td>
     <td>MCF10A or HEPG2 or ...</td>
-    <td>Name of the portals</td>
+    <td>Name of the projects</td>
     <td>string</td>
   </tr>
 </table>
@@ -547,7 +550,7 @@ https://montilab.bu.edu/Xposome-API/profile_annotation?portal=MCF10A
 ```{r get-profile-annotation}
 
 # url for local testing
-url4 <- paste0("https://montilab.bu.edu/Xposome-API/profile_annotation?portal=", portal_name)
+url4 <- paste0("https://montilab.bu.edu/Xposome-API/profile_annotation?project=", project_name)
 
 # Send GET Request to API
 res <- GET(url = url4, encode = 'json')
@@ -575,7 +578,7 @@ test_request <- tryCatch({
 if(test_request == "pass"){
   
   profile_annotation <- fromJSON(fromJSON(rawToChar(res$content)))
-  print(head(profile_annotation))
+  print(head(profile_annotation[1:5, 1:5]))
   
 }
 
@@ -585,14 +588,14 @@ if(test_request == "pass"){
   <tr>
     <td><button type="button" class="btn btn-default action-button">GET</button></td>
     <td>/chemical_annotation</td>
-    <td>Return the chemical annotation of of a specific portal</td>
+    <td>Return the chemical annotation of of a specific project</td>
   </tr>
 </table>
 
 <br>
 
 #### Implementation
-https://montilab.bu.edu/Xposome-API/chemical_annotation?portal=MCF10A
+https://montilab.bu.edu/Xposome-API/chemical_annotation?project=MCF10A
 
 <br>
 
@@ -604,9 +607,9 @@ https://montilab.bu.edu/Xposome-API/chemical_annotation?portal=MCF10A
     <td><strong>Data Type</strong></td>
   </tr>
   <tr>
-    <td>portal</td>
+    <td>project</td>
     <td>MCF10A or HEPG2 or ...</td>
-    <td>Name of the portals</td>
+    <td>Name of the projects</td>
     <td>string</td>
   </tr>
 </table>
@@ -618,7 +621,7 @@ https://montilab.bu.edu/Xposome-API/chemical_annotation?portal=MCF10A
 ```{r get-chemical-annotation}
 
 # url for local testing
-url5 <- paste0("https://montilab.bu.edu/Xposome-API/chemical_annotation?portal=", portal_name)
+url5 <- paste0("https://montilab.bu.edu/Xposome-API/chemical_annotation?project=", project_name)
 
 # Send GET Request to API
 res <- GET(url = url5, encode = 'json')
@@ -646,7 +649,7 @@ test_request <- tryCatch({
 if(test_request == "pass"){
   
   chemical_annotation <- fromJSON(fromJSON(rawToChar(res$content)))
-  print(head(chemical_annotation))
+  print(head(chemical_annotation[1:5, 1:5]))
   
 }
 
@@ -656,14 +659,14 @@ if(test_request == "pass"){
   <tr>
     <td><button type="button" class="btn btn-default action-button">GET</button></td>
     <td>/expression_set</td>
-    <td>Return the gene expression dataset of a specific portal</td>
+    <td>Return the gene expression dataset of a specific project</td>
   </tr>
 </table>
 
 <br>
 
 #### Implementation
-https://montilab.bu.edu/Xposome-API/expression_set?portal=MCF10A
+https://montilab.bu.edu/Xposome-API/expression_set?project=MCF10A
 
 <br>
 
@@ -675,9 +678,9 @@ https://montilab.bu.edu/Xposome-API/expression_set?portal=MCF10A
     <td><strong>Data Type</strong></td>
   </tr>
   <tr>
-    <td>portal</td>
+    <td>project</td>
     <td>MCF10A or HEPG2 or ...</td>
-    <td>Name of the portals</td>
+    <td>Name of the projects</td>
     <td>string</td>
   </tr>
 </table>
@@ -689,7 +692,7 @@ https://montilab.bu.edu/Xposome-API/expression_set?portal=MCF10A
 ```{r get-gene-expression}
 
 # url for local testing
-url6 <- paste0("https://montilab.bu.edu/Xposome-API/expression_set?portal=", portal_name)
+url6 <- paste0("https://montilab.bu.edu/Xposome-API/expression_set?project=", project_name)
 
 # Send GET Request to API
 res <- GET(url = url6, encode = 'json')
@@ -717,7 +720,7 @@ test_request <- tryCatch({
 if(test_request == "pass"){
   
   expression_set <- fromJSON(fromJSON(rawToChar(res$content)))
-  print(head(expression_set))
+  print(head(expression_set[1:5, 1:5]))
   
 }
 
@@ -727,14 +730,14 @@ if(test_request == "pass"){
   <tr>
     <td><button type="button" class="btn btn-default action-button">GET</button></td>
     <td>/enrichment_set</td>
-    <td>Return the enrichment dataset of a specific portal</td>
+    <td>Return the enrichment dataset of a specific project</td>
   </tr>
 </table>
 
 <br>
 
 #### Implementation
-https://montilab.bu.edu/Xposome-API/enrichment_set?portal=MCF10A&geneset=Hallmark&gsva=gsva
+https://montilab.bu.edu/Xposome-API/enrichment_set?project=MCF10A&geneset=Hallmark&gsva=gsva
 
 <table class="api-table">
   <tr>
@@ -744,9 +747,9 @@ https://montilab.bu.edu/Xposome-API/enrichment_set?portal=MCF10A&geneset=Hallmar
     <td><strong>Data Type</strong></td>
   </tr>
   <tr>
-    <td>portal</td>
+    <td>project</td>
     <td>MCF10A or HEPG2 or ...</td>
-    <td>Name of the portals</td>
+    <td>Name of the projects</td>
     <td>string</td>
   </tr>
   <tr>
@@ -770,7 +773,7 @@ https://montilab.bu.edu/Xposome-API/enrichment_set?portal=MCF10A&geneset=Hallmar
 ```{r get-gene-set-entrichment}
 
 # url for local testing
-url7 <- paste0("https://montilab.bu.edu/Xposome-API/enrichment_set?portal=", portal_name, "&geneset=Hallmark&gsva=gsva")
+url7 <- paste0("https://montilab.bu.edu/Xposome-API/enrichment_set?project=", project_name, "&geneset=Hallmark&gsva=gsva")
 
 # Send GET Request to API
 res <- GET(url = url7, encode = 'json')
@@ -798,7 +801,7 @@ test_request <- tryCatch({
 if(test_request == "pass"){
   
   enrichment_set <- fromJSON(fromJSON(rawToChar(res$content)))
-  print(head(enrichment_set))
+  print(head(enrichment_set[1:5, 1:5]))
   
 }
 
@@ -808,14 +811,14 @@ if(test_request == "pass"){
   <tr>
     <td><button type="button" class="btn btn-default action-button">GET</button></td>
     <td>/connectivity_set</td>
-    <td>Return the connectivity dataset of a specific portal</td>
+    <td>Return the connectivity dataset of a specific project</td>
   </tr>
 </table>
 
 <br>
 
 #### Implementation
-https://montilab.bu.edu/Xposome-API/connectivity_set?portal=MCF10A&connectivity_classes=pcl
+https://montilab.bu.edu/Xposome-API/connectivity_set?project=MCF10A&connectivity_classes=pcl
 
 <table class="api-table">
   <tr>
@@ -825,9 +828,9 @@ https://montilab.bu.edu/Xposome-API/connectivity_set?portal=MCF10A&connectivity_
     <td><strong>Data Type</strong></td>
   </tr>
   <tr>
-    <td>portal</td>
+    <td>project</td>
     <td>MCF10A or HEPG2 or ...</td>
-    <td>Name of the portals</td>
+    <td>Name of the projects</td>
     <td>string</td>
   </tr>
   <tr>
@@ -843,7 +846,7 @@ https://montilab.bu.edu/Xposome-API/connectivity_set?portal=MCF10A&connectivity_
 ```{r get-connectivity}
 
 # url for local testing
-url8 <- paste0("https://montilab.bu.edu/Xposome-API/connectivity_map?portal=", portal_name, "&connectivity_classes=pcl")
+url8 <- paste0("https://montilab.bu.edu/Xposome-API/connectivity_map?project=", project_name, "&connectivity_classes=pcl")
 
 # Send GET Request to API
 res <- GET(url = url8, encode = 'json')
@@ -871,7 +874,7 @@ test_request <- tryCatch({
 if(test_request == "pass"){
   
   connectivity_map <- fromJSON(fromJSON(rawToChar(res$content)))
-  print(head(connectivity_map))
+  print(head(connectivity_map[1:5, 1:5]))
 
 }
 

@@ -5,7 +5,7 @@ output: html_document
 <!------------------------------------- footer: start ------------------------------->
 <footer>
 <div class="copyright">
-  <p>Developed by Reina Chau, Stefano Monti.</p>
+  <p>Developed by <a href="mailto:lilychau999@gmail.com">Reina Chau</a>, <a href="mailto:montilab@bu.edu">Stefano Monti</a>.</p>
 </div>
 
 <div class="pkgdown">
