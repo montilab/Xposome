@@ -2,22 +2,25 @@
 output: html_document
 ---
 
-<!-- badges: start -->
-
-<div><img src="https://github.com/montilab/bieulergy/workflows/build/badge.svg" alt="build"><a href="https://www.tidyverse.org/lifecycle/#experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></div>
-
-<!-- badges: end -->
-
 <!-- introduction: start -->
-<h4>Introduction</h4>
+<p><div style="float: right; padding: 0 0 15px 15px;"><img width="100px" height="120px" src="www/shiny.svg"><img width="100px" height="120px" src="www/rmarkdown.svg"><img width="100px" height="120px" src="www/ggplot2.svg"><img width="100px" height="120px" src="www/plumber.svg">
+</div>
 
-<p><span style="color: #377eb8; font-size: 16px;"><strong>Xposome</strong></span> is a shiny application that aims to build a repository of gene expression datasets that profile the transcriptomic response to exposure of known toxins.</p>
+<h3>Introduction</h3>
+
+<span style="color: #377eb8; font-size: 16px;"><strong><a href="https://montilab.bu.edu/Xposome/">Xposome</a></strong></span> is a shiny application that aims to build a repository of gene expression datasets that profile the transcriptomic response to exposure of known toxins.</p>
+
+<p>There are two types of Xposome application that you can install on your local machine:</p>
+<ul>
+  <li>Xposome with GeneHive database incorporated</li>
+  <li>Xposome without GeneHive</li>
+</ul>
+
+<p>In this post, I will only go over instructions of how to install Xposome without GeneHive on your local machine. If you are interested in incorporating GeneHive as a database, please contact us for further implementation.</p>
 <!-- introduction: end -->
 
-<br>
-
 <!-- local installation: start -->
-<h4>Local Installation</h4>
+### Local Installation
 
 <p>Must have R and Rstudio installed before proceeding:</p>
 <ul>
@@ -34,17 +37,16 @@ output: html_document
 </ul>
 <!-- local installation: end -->
 
-<br>
-
 <!-- dockerize application: start -->
-<h4 id="dockerize">Dockerize Xposome Application</h4>
+### <div id="dockerize">Dockerize Xposome Application</div>
 
 <p>Not familiar with Docker? You can download it <a href="https://www.docker.com/products/docker-desktop">here</a> and check out the <a href="https://ropenscilabs.github.io/r-docker-tutorial/">R Docker tutorials</a>.</p>
 
 <p>To dockerize the Xposome application:</p>
+
 <ul>
   <li>Download the source code from <a href="https://github.com/montilab/Xposome">GitHub</a> repo</li>
-  <li>Unzip the file and open the terminal. Use the <span class="highlight-text">cd</span> command to navigate to where the <span class="highlight-text">dockerfile</span> is stored. The dockerfile is a text file that contains all of the dependences and instructions of how to run the Xposome app.</li>
+  <li>Unzip the file and open the terminal. Use the <span class="highlight-text">cd</span> command to navigate to where the <span class="highlight-text">dockerfile</span> is stored. The dockerfile is a text file that contains all of the dependencies and instructions on how to run the Xposome app.</li>
   <li>Run the following command to build the docker image for the Xposome application
   <div class="code">docker build xposome .</div>
   To check if the image is built succesfully,<br>
@@ -57,33 +59,37 @@ output: html_document
   &emsp; xposome:latest
   </div>
   -d is to run the container in detached mode <br>
-  -v is to mount the codebase or data files from the host directory onto the container directory <span class="highlight-text">&lt;host_dir&gt;:&lt;container_dir&gt;</span> <br>
+  -v is to mount the code base or data files from the host directory onto the container directory <span class="highlight-text">&lt;host_dir&gt;:&lt;container_dir&gt;</span> <br>
   -p is to link the container port onto the host port and publish the application on the host domain <span class="highlight-text">&lt;host_port&gt;:&lt;container_port&gt;</span><br>
   For more information about the syntax usage, see <a href="https://docs.docker.com/engine/reference/builder/">docker documentation</a><br><br>
   To check if the container is built and running sucessfully,<br>
   <div class="code">docker container ps</div>
   </li>
-  <li>Once the app is up and running, you can visit the local host, <span class="highlight-text">http://localhost:3838</span> to vertify if the application is indeed hosted there.</li>
+  <li>Once the app is up and running, you can visit the local host on your machine, i.e. <span class="highlight-text">http://localhost:3838</span> to vertify if the application is indeed hosted there.</li>
 </ul>
 
 <p>The docker image for Xposome is also available at <a href="">Docker Hub</a>. To pull the image, just type the following command in the terminal:</p>
-<div class="code">docker pull montilab/xposome</div><br>
+
+<div class="code">docker pull montilab/xposome</div>
 <!-- dockerize application: end -->
 
-<p>Additionally, check out how to configure http and https traffics with <a href="#nginx-and-docker-compose">NGINX and Docker-Compose</a></p>
+<br>
+
+<p>Additionally, check out how you can configure your web applications with HTTPS traffics with <a href="#nginx-and-docker-compose">NGINX and Docker-Compose</a></p>
 
 <br>
 
 <!-- data access: start -->
-<h4>Data Access</h4>
+### Data Access
+
 <p>The Xposome application requires several structural datasets in order for it to run smoothly. We provide API access to our data, see <a href="#api-explorer">API Explorer</a>.</p>
 <!-- data access: end -->
 
 <br>
 
 <!-- app usage: start -->
+### Application Usage
 
-<h4>Application Usage</h4>
 <p>There are two main parts of the Xposome application:</p>
 <ul>
   <li>Project Page</li>
@@ -92,29 +98,29 @@ output: html_document
 
 <br>
 
-<h4 id="project-page">The Project Page</h4>
+### <div id="project-page">The Project Page</div>
+
 <p>Contains a list of projects or chemical screenings that were exposed to high-throughput transcriptomics assays. Each screen provides annotation about the chemicals and cell-line samples that were used in the experiment. A detailed analysis was also done to explore gene expression set, gene set enrichment, and gene connectivity that was exposed to a panel of known carcinogens.</p>
 
-<p>Below is a screenshot of our <a href="https://montilab.bu.edu/Xposome/">home page</a>.</p>
+<p>Below is a screenshot of our <a href="https://montilab.bu.edu/Xposome/">home page</a> and a snapshot of the <strong>Adipogenicity</strong> project:</p>
 
-<img class="img-box" src="www/project-page.png">
+<a href="www/project-page.png" target="blank"><img src="www/project-page.png"></a>
 
-<br><br>
+<a href="www/project-page-2.png" target="blank"><img class="img-box" src="www/project-page-2.png"></a>
 
-<p>Below is a snapshot of the <strong>Adipogenicity</strong> project:</p>
-<img class="img-box" src="www/project-page-2.png">
+<br>
 
-<br><br>
+### <div id="moderator-page">The Moderator Page</div>
 
-<h4 id="moderator-page">The Moderator Page</h4>
 <p>Requires access from authorized users. This restricted page only allows certain users to make changes to the existed screens or to upload new screens onto the Project Page.</p>
 <p>The default login credentials are set as:</p>
 &emsp; Username: Xposome<br>
 &emsp; Password: Xposome<br>
 <br>
-<p>Lastly, check out the documentation of how to reset password if users forgot their login credentials using <a href="#send-emails-with-postfix">Send Emails with Postfix</a></p>
+<p>Lastly, check out the documentation of how to reset password if users forgot their login credentials using <a href="#send-emails-with-postfix">Send Emails with Postfix</a>.</p>
 
-<img class="img-box" src="www/moderator-page.png">
+<a href="www/moderator-page.png" target="blank"><img class="img-box" src="www/moderator-page.png"></a>
 
+<br><br>
 <!-- app usage: end --> 
 

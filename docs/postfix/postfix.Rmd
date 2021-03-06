@@ -8,9 +8,9 @@ output: html_document
 
 <strong>Docker</strong> - A software platform that allows developers to build, test, deploy, and run applications using containers
 
-In this post, I will go over steps of how to send emails from a docker container through Postfix installed on the host machine. In my previous posts, I went over how to <a href='#dockerize'>dockerize the Xposome application</a>. The Xposome application has two parts: the <a href='#project-page'>Project Page</a> and the <a href='#moderator-page'>Moderator Page</a>. In the Moderator Page, we have an option that allow users to retrieve their passwords if they forgot their login credentials. 
+In this post, I will go over steps of how to send emails from a docker container through Postfix installed on the host machine. In my previous posts, I went over how to <a href='#dockerize'>dockerize the Xposome application</a>. The Xposome application has two parts: the <a href='#project-page'>Project Page</a> and the <a href='#moderator-page'>Moderator Page</a>. In the Moderator Page, we have an option that allow users to retrieve their passwords if they forgot their login credentials. Postfix is actually used here to send a notification email to users and remind them that their password has changed.
 
-Here are five steps to set-up Postfix and send new passwords to users if they forgot their login credentials:
+Here are five steps to set-up Postfix and send new password to users if they forgot their login credentials:
 
 1.	Install Postfix
 2.	Dockerize the Xposome application locally or pull the image from Docker Hub
@@ -24,7 +24,7 @@ Depending on your Operating System, for mine, I have CentOS 8 server. Therefore,
 
 #### Step 2: Dockerize the Xposome application locally or pull the image from Docker Hub
 
-See my previous post <a href='#dockerize'>here</a>
+See my previous post <a href='#dockerize'>here</a> for more details
 
 #### Step 3: Configure Postfix to listen to requests from docker container
 
@@ -32,7 +32,7 @@ After Postfix is installed, the main configuration files is stored at <span clas
 
 To configure Postfix to listen to requests from docker container, there is something called <span class="highlight-text">docker bridge (docker0)</span> which acts as a bridge between the ethernet port and the docker container so that data can go back and forth. Hence, we want Postfix to listen on the docker0 interface. To do that, type <span class="highlight-text">ifconfig</span> on your host system to find out the bridge address and set your Postfix to listen on it.
 
-<img class="img-box" src="www/postfix.png">
+<a href="www/postfix.png" target="blank"><img class="img-box" src="www/postfix.png"></a>
 
 As you can see in the image above, the IP address is 172.17.0.1
 
@@ -50,15 +50,11 @@ You can find the IP address for your docker container by
 
 <p class="code">docker inspect [container_id/container_name]</p>
 
-For example,
-
-<p class="code">docker inspect montilab/xposome</p>
-
 #### Step 4: Write an email to test the Postfix Mail Server
 
 Here is an email function that sends a temporary password to users who forgot their login credentials:
 
-    sendpassword <- function(from_sender="rchau88@bu.edu", to_recipient="lilychau999@gmail.com", recipient_first="Reina", recipient_last="Chau", recipient_account="Reina", tmp_pwd){
+    sendpassword <- function(from_sender="montilab@bu.edu", to_recipient="montilab@bu.edu", recipient_first="Montilab", recipient_last="Montilab", recipient_account="Montilab", tmp_pwd){
       
       recipient=paste(recipient_first, recipient_last)
       
@@ -80,6 +76,8 @@ Here is an email function that sends a temporary password to users who forgot th
           '<p>Username: <strong>', recipient_account, '</strong></p>',
           '<p>Temporary password: <strong>', tmp_pwd, '</strong></p>',
           '<br>',
+          '<p>Log back in? Follow this link, <strong>https://montilab.bu.edu/Xposome/?page=sign_in</strong></p>',
+          '<br>',
           '<p>Best,</p>',
           '<p>Montilab Team</p>',
           '</body>',
@@ -98,55 +96,16 @@ Here is an email function that sends a temporary password to users who forgot th
       
     }
 
-On the shiny interface, when a user clicks the <span class="highlight-text">forgot password?</span>, a modal dialog will pop up. After he/she provided the user account information and click the submit button, a new temporary password will be send to his/her email. 
-
-    observeEvent(input$FG_Button, {
-      
-      Firstname=trimws(input$FG_Firstname);
-      Lastname=trimws(input$FG_Lastname);
-      Username=trimws(input$FG_Username);
-      
-      login_dat <- read.csv(paste0("data/User_Login_List.csv"), header = TRUE, stringsAsFactors = FALSE)
-
-      if(Firstname=="" | Lastname=="" | Username==""){
-        
-        forgotpasswordwarningmsg("Please fill in the required (*) fields.")
-        
-      }else{
-        
-        row <- which(login_dat$Username == Username)
-
-        if(length(row) > 0){
-          
-          tmp_pwd <- password(n = 10, numbers = TRUE, case = TRUE, special = c("?", "!", "&", "%", "$"))
-          login_dat$Password[row[1]] <- sodium::password_store(as.character(tmp_pwd))
-          sendpassword(
-            from_sender="rchau88@bu.edu",
-            to_recipient="lilychau999@gmail.com", 
-            recipient_first=Firstname, 
-            recipient_last=Lastname, 
-            recipient_account=Username, 
-            tmp_pwd=tmp_pwd
-          )
-          write.csv(login_dat, paste0("data/User_Login_List.csv"), row.names = FALSE)
-          forgotpasswordwarningmsg("Thank you for your submission! A temporary password has been sent to your email.")
-          
-        }else{
-          
-          forgotpasswordwarningmsg("This username does not exist in our database. Please enter another username.")
-          
-        }
-        
-      }
-    })
+On the Xposome application, there is a sign in page. When a user clicks on the <span class="highlight-text">forgot password?</span> link, a modal dialog will pop up. After he/she provided the user account information and click the submit button, a new temporary password will be send to his/her email. 
     
 Here a snapshoot of the Xposome interface:
 
-<img class="img-box" src="www/forgot-password.png" width="50%" height="50%">
+<a href="www/forgot-password.png" target="blank"><img class="img-box" src="www/forgot-password.png" width="350px" height="550px"></a>
  
-#### Step 5: Check to see if the email is sent correctly
+#### Step 5: Check to see if the email sent correctly
 
-if you are using the same email format that I have structured, then you should receive an email similar to this one.
+if you are using the same email format that I have structured above, you should receive an email similar to this one.
 
-<img class="img-box" src="www/email.png" width="50%" height="50%">
+<a href="www/email.png"><img class="img-box" src="www/email.png" width="812px" height="500px"></a>
 
+<br><br>

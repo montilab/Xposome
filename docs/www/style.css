@@ -2,9 +2,7 @@
 html, body {
   height: 100%;
   width: 100%;
-  font-family: Verdana, sans-serif, !important;
-  margin: auto;
-  padding: auto;
+  font-family: Verdana, sans-serif;
 }
 
 body {
@@ -78,8 +76,11 @@ a.anchor {
 
 /* tables ---------------------------------*/
 
-.status-table table {
+/* status-table */
+
+.status-table {
   width: 100%;
+  border: 1px solid gray;
 }
 
 .status-table td {
@@ -97,8 +98,11 @@ a.anchor {
   width: 60%;
 }
 
-.source-table table {
+/* source-table */
+
+.source-table {
   width: 100%;
+  border: 1px solid gray;
 }
 
 .source-table td {
@@ -109,44 +113,43 @@ a.anchor {
 }
 
 .source-table td:nth-child(1) {
-  width: 30%;
+  width: 20%;
 }
 
 .source-table td:nth-child(2) {
-  width: 40%;
+  width: 60%;
 }
 
 .source-table td:nth-child(3) {
-  width: 30%;
+  width: 20%;
 }
 
+/* get-table */
 
-.get-table table {
+.get-table {
   width: 100%;
+  border: 1px solid gray;
+  table-layout: fixed;
+  text-align: left;
 }
 
 .get-table td {
-  text-align: left;
   padding: 10px;
-  border-top: 1px solid gray;
-  border-bottom: 1px solid gray;
 }
 
 .get-table td:nth-child(1) {
-  width: 20%;
+  width: 200px;
 }
 
 .get-table td:nth-child(2) {
-  width: 20%;
+  width: 300px;
 }
 
 .get-table td:nth-child(3) {
-  width: 40%;
+  width: 700px;
 }
 
-.get-table td:nth-child(4) {
-  width: 20%;
-}
+/* api-table */
 
 .api-table table {
   width: 100%;

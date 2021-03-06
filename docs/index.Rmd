@@ -10,10 +10,11 @@ output:
     - www/bootstrap-toc.css
 ---
 
-```{r packages, include=FALSE}
+```{r packages}
 
 library(flexdashboard)
 library(rmarkdown)
+library(badger)
 library(knitr)
 library(shiny)
 library(shinyjs)
@@ -21,17 +22,26 @@ library(shinyjs)
 version= "0.0.1"
 
 my_title <- paste0("<span><a class='navbar-link' href='#home'><strong>Xposome</strong></a>&ensp;<span class='version-label label-default' data-toggle='tooltip' data-placement='bottom' title='Released version'>", version, "</span></span>")
+
 ```
 
----
-title: '`r htmltools::HTML(my_title)`'
----
-
 <script type="text/javascript">
-    $(document).ready(function() {
-        document.title = "Xposome";
-    });
+  document.querySelector(".navbar-header > span.navbar-brand").innerHTML = "`r my_title`";
+
+  $(document).ready(function() {
+    document.title = "Xposome";
+  });
+  
+  function ToggleOperation(id) {
+    var x = document.getElementById(id+"-block");
+    if (x.style.display === "none") {
+      x.style.display = "block";
+    } else {
+      x.style.display = "none";
+    }
+  }
 </script>
+
 
 Home {data-icon="fa-home"}
 =====================================
@@ -61,11 +71,11 @@ NGINX and Docker-Compose {data-icon="fa-plug"}
 
 fluidRow(
   column(
-    width=9,
+    width=8,
     includeMarkdown("docker-compose/docker-compose.Rmd")
   ),
   column(
-    width=3, id="pkgdown-sidebar",
+    width=3, offset=1, id="pkgdown-sidebar",
     includeMarkdown("links.Rmd")
   ),
   column(
@@ -79,15 +89,15 @@ fluidRow(
 Send Emails with Postfix {data-icon="fa-envelope-square"}
 =====================================  
 
-```{r set-up postfix}
+```{r postfix}
 
 fluidRow(
   column(
-    width=9,
+    width=8,
     includeMarkdown("postfix/postfix.Rmd")
   ),
   column(
-    width=3, id="pkgdown-sidebar",
+    width=3, offset=1, id="pkgdown-sidebar",
     includeMarkdown("links.Rmd")
   ),
   column(
@@ -105,11 +115,11 @@ API Explorer {data-icon="fa-link"}
 
 fluidRow(
   column(
-    width=9,
+    width=8,
     includeMarkdown("api/api.Rmd")
   ),
   column(
-    width=3, id="pkgdown-sidebar",
+    width=3, offset=1, id="pkgdown-sidebar",
     includeMarkdown("links.Rmd")
   ),
   column(
@@ -119,4 +129,3 @@ fluidRow(
 )
 
 ```
-
