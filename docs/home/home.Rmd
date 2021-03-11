@@ -3,14 +3,14 @@ output: html_document
 ---
 
 <!-- introduction: start -->
-<p><div style="float: right; padding: 0 0 15px 15px;"><img width="100px" height="120px" src="www/shiny.svg"><img width="100px" height="120px" src="www/rmarkdown.svg"><img width="100px" height="120px" src="www/ggplot2.svg"><img width="100px" height="120px" src="www/plumber.svg">
+<p><div style="float: right; padding: 10px 0 15px 15px;"><img width="100px" height="120px" src="www/shiny.svg"><img width="100px" height="120px" src="www/rmarkdown.svg"><img width="100px" height="120px" src="www/ggplot2.svg"><img width="100px" height="120px" src="www/plumber.svg">
 </div>
 
 <h3>Introduction</h3>
 
 <span style="color: #377eb8; font-size: 16px;"><strong><a href="https://montilab.bu.edu/Xposome/">Xposome</a></strong></span> is a shiny application that aims to build a repository of gene expression datasets that profile the transcriptomic response to exposure of known toxins.</p>
 
-<p>There are two types of Xposome application that you can install on your local machine:</p>
+<p>There are two types of Xposome applications that you can install on your local machine:</p>
 <ul>
   <li>Xposome with GeneHive database incorporated</li>
   <li>Xposome without GeneHive</li>
@@ -73,19 +73,16 @@ output: html_document
 <div class="code">docker pull montilab/xposome</div>
 <!-- dockerize application: end -->
 
-<br>
 
 <p>Additionally, check out how you can configure your web applications with HTTPS traffics with <a href="#nginx-and-docker-compose">NGINX and Docker-Compose</a></p>
 
-<br>
 
 <!-- data access: start -->
 ### Data Access
 
-<p>The Xposome application requires several structural datasets in order for it to run smoothly. We provide API access to our data, see <a href="#api-explorer">API Explorer</a>.</p>
+<p>The Xposome application requires several structural datasets in order for it to run smoothly. We provide API access to our data, see <a href="#api-calls">API Explorer</a>.</p>
 <!-- data access: end -->
 
-<br>
 
 <!-- app usage: start -->
 ### Application Usage
@@ -96,7 +93,6 @@ output: html_document
   <li>Moderator Page</li>
 </ul>
 
-<br>
 
 ### <div id="project-page">The Project Page</div>
 
@@ -108,7 +104,6 @@ output: html_document
 
 <a href="www/project-page-2.png" target="blank"><img class="img-box" src="www/project-page-2.png"></a>
 
-<br>
 
 ### <div id="moderator-page">The Moderator Page</div>
 

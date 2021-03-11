@@ -1,0 +1,134 @@
+---
+output: html_document
+---
+
+## Links to Application
+
+We provide a direct link to a specific page on our <a target="blank" href="https://montilab.bu.edu/Xposome-API/">Xposome interface</a>. This feature allows users to connect information from their web application to our website.
+
+There are two types of queries that users can request from our web page through a web browser:
+<ul>
+  <li>Query the Information Page (e.g. home page, about page, contact page, and sign-in page) </li>
+  <li>Query the Project Page (e.g. a list of project portals or chemical screenings that are available in our GeneHive database)</li>
+</ul>
+
+Hera are four URL tags that can be used to search our web page:
+
+<table class="tag-table">
+  <tr>
+    <td><strong>Tag</strong></td>
+    <td><strong>Description</strong></td>
+  </tr>
+  <tr>
+    <td>?page</td>
+    <td>a url tag that searches for a specific page on the Xposome interface (e.g. an Information Page or a Project Page)</td>
+  </tr>
+  <tr>
+    <td>&tab</td>
+    <td>an additional tag that navigates to a specific tab on the project page</td>
+  </tr>
+  <tr>
+    <td>&chemical_id</td>
+    <td>an additional tag that navigates to a specific chemical id/CAS id/chemical name on the project page</a></td>
+  </tr>
+  <tr>
+    <td>&stat</td>
+    <td>an additional tag that navigates to a statistical tab on the project page</a></td>
+  </tr>
+</table>
+
+<br>
+
+<p>Below is a snapshot of how the URL tags are defined on our web page:</p>
+
+<a href="www/page-link.png" target="blank"><img src="www/page-link.png"></a>
+
+<a href="www/project-link.png" target="blank"><img class="img-box" src="www/project-link.png"></a>
+
+<br>
+
+### Link to Information Page
+
+<!-- Projects: start -->
+<p><strong>URL: </strong><a href="https://montilab.bu.edu/Xposome/?page=home">https://montilab.bu.edu/Xposome/?page=home</a></p>
+
+<br>
+
+<table class="link-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>page</td>
+    <td><em>
+      - home (default) <br>
+      - about <br> 
+      - contact <br>
+      - sign_in
+    </td>
+    <td>a page that contains an overview about the Xposome project and how to contact us</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<!-- Projects: start -->
+### Link to Project Page
+
+<p><strong>URL: </strong><a target="blank" href="https://montilab.bu.edu/Xposome/?page=ADIPO&tab=chemical_explorer&chemical_id=2-ethylhexanol&stat=gene_expression">https://montilab.bu.edu/Xposome/?page=ADIPO&tab=chemical_explorer&chemical_id=2-ethylhexanol&stat=gene_expression</a></p>
+
+<br>
+
+<table class="link-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>page</td>
+    <td>name of a particular project in the GeneHive database (see <a href="#api-calls">API Explorer</a> on how to retrieve a list of project names)<br>
+    </td>
+    <td>a project page on the Xposome application</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td>tab</td>
+    <td><em>
+      - about (default) <br> 
+      - annotation <br> 
+      - chemical_explorer <br> 
+      - marker_explorer <br> 
+      - heatmap_explorer <br> 
+      - k2_taxanomer_results <br> 
+      - compare_multiple
+      </em>
+    </td>
+    <td>a tab panel of a particular project. Currently, there are seven tab-panels defined for a given project.</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td>chemical_id</td>
+    <td>see <a href="#api-calls">API Explorer</a> on how to retrieve a list of chemical ids/CAS ids/chemical names of a particular project</td>
+    <td>a chemical id/CAS id/chemical name located in the chemical explorer page of a particular project</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td>stat</td>
+    <td><em>
+      - gene_expression (default) <br> 
+      - gene_set_enrichment <br> 
+      - connectivity
+      </em>
+    </td>
+    <td>a statistical tab-panel located in the chemical explorer page of a particular project</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br><br>

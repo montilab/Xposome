@@ -1,6 +1,7 @@
 ---
 output:
   flexdashboard::flex_dashboard:
+    theme: cosmo
     source_code: "https://github.com/montilab/Xposome/"
     orientation: rows
     vertical_layout: fill
@@ -10,7 +11,7 @@ output:
     - www/bootstrap-toc.css
 ---
 
-```{r packages}
+```{r packages, include=FALSE}
 
 library(flexdashboard)
 library(rmarkdown)
@@ -42,11 +43,11 @@ my_title <- paste0("<span><a class='navbar-link' href='#home'><strong>Xposome</s
   }
 </script>
 
-
 Home {data-icon="fa-home"}
 =====================================
 
 ```{r mainpage}
+
 fluidRow(
   column(
     width=8,
@@ -70,7 +71,7 @@ NGINX and Docker-Compose {data-icon="fa-plug"}
 ```{r docker-compose}
 
 fluidRow(
-  column(
+    column(
     width=8,
     includeMarkdown("docker-compose/docker-compose.Rmd")
   ),
@@ -108,7 +109,7 @@ fluidRow(
 
 ```
 
-API Explorer {data-icon="fa-link"}
+API Calls {data-navmenu="API Explorer"}
 =====================================
 
 ```{r api}
@@ -116,7 +117,29 @@ API Explorer {data-icon="fa-link"}
 fluidRow(
   column(
     width=8,
-    includeMarkdown("api/api.Rmd")
+    HTML(markdown::markdownToHTML(knit('api/api-calls.Rmd', quiet = TRUE)))
+  ),
+  column(
+    width=3, offset=1, id="pkgdown-sidebar",
+    includeMarkdown("links.Rmd")
+  ),
+  column(
+    width=12,
+    includeMarkdown("footer.Rmd")
+  )
+)
+
+```
+
+Links to Application {data-navmenu="API Explorer"}
+=====================================
+
+```{r app-link}
+
+fluidRow(
+  column(
+    width=8,
+    includeMarkdown("api/links-to-application.Rmd")
   ),
   column(
     width=3, offset=1, id="pkgdown-sidebar",

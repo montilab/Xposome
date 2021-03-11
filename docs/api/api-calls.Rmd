@@ -1,0 +1,1662 @@
+
+## API EXPLORER
+
+<p>The API Explorer provides documentation on how users can retrieve data from the Xposome application and create their next project. All successful responses are returned in JSON. Only queries that respond with a 200 response code is considered successful.</p>
+
+<p>Here are standard HTTP codes you will find in the “Status” element of the response body.</p>
+
+```{r status-table, include=TRUE, echo=TRUE, results='asis'}
+```
+<table class="status-table">
+  <tr>
+    <td><strong>Status Code</strong></td>
+    <td><strong>Description</strong></td>
+  </tr>
+  <tr>
+    <td>200 OK</td>
+    <td>Standard HTTP successful response</td>
+  </tr>
+  <tr>
+    <td>404 Bad Request or Source Not Found</td>
+    <td>Standard HTTP invalid request response</td>
+  </tr>
+  <tr>
+    <td>500 Internal Server Error</td>
+    <td>There was an unexpected error on our server. If you see this error, please help us notify the issue on our <a href="https://github.com/montilab/Xposome/">GitHub page</a></td>
+  </tr>
+</table>
+
+<br>
+
+<p>There are four data sources that are currently returned from the API.</p>
+
+```{r source-table, include=TRUE, echo=TRUE, results='asis'}
+```
+<table class="source-table">
+  <tr>
+    <td><strong>Data</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Return</strong></td>
+  </tr>
+  <tr>
+    <td>Projects</td>
+    <td>a list of projects in the GeneHive Database. Visit our <a href="https://montilab.bu.edu/Xposome/">webpage</a> to see on how we define each project</td>
+    <td>list</td>
+  </tr>
+  <tr>
+    <td>Datasets</td>
+    <td>a list of data sources for generating the Xposome portal such as profile and chemical annotation, expression set, gene set enrichment, connectivity set, and K2-taxonomer</a></td>
+    <td>data frame or RDS file</td>
+  </tr>
+  <tr>
+    <td>RDS Bundle</td>
+    <td>a bundle of RDS files for a given Xposome projects, including profile annotation, chemical annotation, expression set, gene set enrichment, connectivity set, and K2-taxonomer</a></td>
+    <td>zip file</td>
+  </tr> 
+  <tr>
+    <td>Statistics</td>
+    <td>a summary statistics for a specific chemical  within a particular project. The statistics are calculated based on its gene expression, gene set enrichment and gene connectivity</a></td>
+    <td>data frame</td>
+  </tr>
+</table>
+
+<br>
+
+Below are a list of R packages and GET requests in R to retrieve data from the Xposome projects. However, one can use Python or other programs to implement the REST API calls.
+
+<!-- packages: start -->
+```{r api-packages, include=TRUE, echo=TRUE, results='asis'}
+
+# R packages required for API calls
+library(K2Taxonomer)
+library(Biobase)
+library(jsonlite)
+library(httr)
+
+```
+
+<!-- packages: end -->
+
+<!-- Projects: start -->
+### Projects
+
+<table class="get-table">
+  <tr>
+    <td><button type="button" onclick="ToggleOperation('projects')" class="btn btn-default action-button">GET</button></td>
+    <td>&#47;projects</td>
+    <td>Return a list of projects available in the GeneHive database</td>
+  </tr>
+</table>
+  
+<br>
+
+<div id="projects-block" style="display: none;">
+
+<h4>Implementation</h4>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome-API/projects?orderby=asc">https://montilab.bu.edu/Xposome-API/projects?orderby=asc</a></p>
+
+<br>
+
+<table class="api-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>orderby</td>
+    <td>asc (default) or desc</td>
+    <td>Sort options</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<h4>Return</h4>
+
+<p>A list of values</p>
+
+<br>
+
+<h4>Example in R</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+  # url for local testing
+  url0 <- "https://montilab.bu.edu/Xposome-API/projects?orderby=asc"
+  
+  # Send GET Request to API
+  res <- GET(url = url0, encode = "json")
+  
+  # Check the status of GET request 
+  test_request <- tryCatch({
+    
+    stop_for_status(res)
+    
+    "pass"
+    
+  }, error = function(e) {
+    
+    "fail"
+    
+  })
+</pre>
+'
+)
+
+# url for local testing
+url0 <- "https://montilab.bu.edu/Xposome-API/projects?orderby=asc"
+
+# Send GET Request to API
+res <- GET(url = url0, encode = "json")
+
+# Check the status of GET request 
+test_request <- tryCatch({
+  
+  stop_for_status(res)
+  
+  "pass"
+  
+}, error = function(e) {
+  
+  "fail"
+  
+})
+
+```
+
+<h4>Output</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+  # If GET request is successful, return the results
+  if(test_request == "pass"){
+    
+    projects <- fromJSON(fromJSON(rawToChar(res$content)))
+    print(head(projects))
+    
+  }
+</pre>
+'
+)
+
+
+# If GET request is successful, return the results
+if(test_request == "pass"){
+  
+  projects <- fromJSON(fromJSON(rawToChar(res$content)))
+  cat("<pre class='output'>", head(projects), "</pre>")
+  
+}
+      
+```
+
+<br>
+
+</div>
+<!-- Projects: end -->
+
+<!-- Datasets - profile annotation: start -->
+### Datasets
+
+```{r profile-annotation, include=TRUE, echo=TRUE, results='asis'}
+```
+<table class="get-table">
+  <tr>
+    <td><button type="button" onclick="ToggleOperation('profile-annotation')" class="btn btn-default action-button">GET</button></td>
+    <td>/profile_annotation</td>
+    <td>Return the profile annotation of a specific project</td>
+  </tr>
+</table>
+
+<br>
+
+<div id="profile-annotation-block" style="display: none;">
+
+<h4>Implementation</h4>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome-API/profile_annotation?project=ADIPO">https://montilab.bu.edu/Xposome-API/profile_annotation?project=ADIPO</a></p>
+
+<br>
+
+<table class="api-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>project</td>
+    <td>ADIPO or HEPG2 or ...</td>
+    <td>Name of the projects</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<h4>Return</h4>
+
+<p>A data frame object</p>
+
+<br>
+
+<h4>Example in R</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# url for local testing
+url1 <- paste0("https://montilab.bu.edu/Xposome-API/profile_annotation?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url1, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+</pre>
+'
+)
+
+# url for local testing
+url1 <- paste0("https://montilab.bu.edu/Xposome-API/profile_annotation?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url1, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+
+```
+
+<h4>Output</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  profile_annotation <- fromJSON(fromJSON(rawToChar(res$content)))
+  n_row <- ifelse(nrow(profile_annotation) > 10, 10, nrow(profile_annotation))
+  n_col <- ifelse(ncol(profile_annotation) > 10, 10, ncol(profile_annotation))  
+  print(profile_annotation[1:n_row, 1:n_col])
+
+}
+</pre>
+'
+)
+
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  profile_annotation <- fromJSON(fromJSON(rawToChar(res$content)))
+  n_row <- ifelse(nrow(profile_annotation) > 10, 10, nrow(profile_annotation))
+  n_col <- ifelse(ncol(profile_annotation) > 10, 10, ncol(profile_annotation))  
+  cat("<pre class='output'>", knitr::kable(profile_annotation[1:n_row, 1:n_col], format="html"), "</pre>")
+
+}
+
+```
+
+<br>
+
+</div>
+<!-- Datasets - profile annotation: end -->
+
+<!-- Datasets - chemical annotation: start -->
+```{r chemical-annotation, include=TRUE, echo=TRUE, results='asis'}
+```
+<table class="get-table">
+  <tr>
+    <td><button type="button" onclick="ToggleOperation('chemical-annotation')" class="btn btn-default action-button">GET</button></td>
+    <td>/chemical_annotation</td>
+    <td>Return the chemical annotation of of a specific project</td>
+  </tr>
+</table>
+
+<br>
+
+<div id="chemical-annotation-block" style="display: none;">
+
+<h4>Implementation</h4>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome-API/chemical_annotation?project=ADIPO">https://montilab.bu.edu/Xposome-API/chemical_annotation?project=ADIPO</a></p>
+
+<br>
+
+<table class="api-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>project</td>
+    <td>ADIPO or HEPG2 or ...</td>
+    <td>Name of the projects</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<h4>Return</h4>
+
+<p>A data frame object</p>
+
+<br>
+
+<h4>Example in R</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# url for local testing
+url2 <- paste0("https://montilab.bu.edu/Xposome-API/chemical_annotation?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url2, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+</pre>
+'
+)
+
+
+# url for local testing
+url2 <- paste0("https://montilab.bu.edu/Xposome-API/chemical_annotation?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url2, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+
+```
+
+<h4>Output</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  chemical_annotation <- fromJSON(fromJSON(rawToChar(res$content)))
+  n_row <- ifelse(nrow(chemical_annotation) > 10, 10, nrow(chemical_annotation))
+  n_col <- ifelse(ncol(chemical_annotation) > 10, 10, ncol(chemical_annotation))  
+  print(chemical_annotation[1:n_row, 1:n_col])
+
+}
+</pre>
+'
+)
+
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  chemical_annotation <- fromJSON(fromJSON(rawToChar(res$content)))
+  n_row <- ifelse(nrow(chemical_annotation) > 10, 10, nrow(chemical_annotation))
+  n_col <- ifelse(ncol(chemical_annotation) > 10, 10, ncol(chemical_annotation))  
+  cat("<pre class='output'>", knitr::kable(chemical_annotation[1:n_row, 1:n_col], format="html"), "</pre>")
+
+}
+
+```
+
+<br>
+
+</div>
+<!-- Datasets - chemical annotation: end -->
+
+<!-- Datasets - expression set: start -->
+```{r expression-set, include=TRUE, echo=TRUE, results='asis'}
+```
+<table class="get-table">
+  <tr>
+    <td><button type="button" onclick="ToggleOperation('expression-set')" class="btn btn-default action-button">GET</button></td>
+    <td>/expression_set</td>
+    <td>Return the gene expression dataset of a specific project</td>
+  </tr>
+</table>
+
+<br>
+
+<div id="expression-set-block" style="display: none;">
+
+<h4>Implementation</h4>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome-API/expression_set?project=ADIPO">https://montilab.bu.edu/Xposome-API/expression_set?project=ADIPO</a></p>
+
+<br>
+
+<table class="api-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>project</td>
+    <td>ADIPO or HEPG2 or ...</td>
+    <td>Name of the projects</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<h4>Return</h4>
+
+<p>An RDS file that contains a S4 class object</p>
+
+<br>
+
+<h4>Example in R</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# url for local testing
+url3 <- paste0("https://montilab.bu.edu/Xposome-API/expression_set?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url3, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+</pre>
+'
+)
+
+# url for local testing
+url3 <- paste0("https://montilab.bu.edu/Xposome-API/expression_set?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url3, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+
+```
+
+<h4>Output</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  temp = tempfile()
+  download.file(url3, temp)
+  expression_set <- readRDS(temp)
+  expression_set = as.data.frame(exprs(expression_set), row.names=rownames(expression_set), col.names=colnames(expression_set))
+  unlink(temp)
+
+  n_row <- ifelse(nrow(expression_set) > 10, 10, nrow(expression_set))
+  n_col <- ifelse(ncol(expression_set) > 10, 10, ncol(expression_set))  
+  print(expression_set[1:n_row, 1:n_col])
+  
+}
+</pre>
+'
+)
+
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  temp = tempfile()
+  download.file(url3, temp)
+  expression_set <- readRDS(temp)
+  expression_set = as.data.frame(exprs(expression_set), row.names=rownames(expression_set), col.names=colnames(expression_set))
+  unlink(temp)
+
+  n_row <- ifelse(nrow(expression_set) > 10, 10, nrow(expression_set))
+  n_col <- ifelse(ncol(expression_set) > 10, 10, ncol(expression_set))  
+
+  cat("<pre class='output'>", knitr::kable(expression_set[1:n_row, 1:n_col], format="html"), "</pre>")
+
+}
+
+```
+
+<br>
+
+</div>
+<!-- Datasets - expression set: end -->
+
+<!-- Datasets - enrichment set: start -->
+```{r enrichment-set, include=TRUE, echo=TRUE, results='asis'}
+```
+<table class="get-table">
+  <tr>
+    <td><button type="button" onclick="ToggleOperation('enrichment-set')" class="btn btn-default action-button">GET</button></td>
+    <td>/enrichment_set</td>
+    <td>Return the enrichment dataset of a specific project</td>
+  </tr>
+</table>
+
+<br>
+
+<div id="enrichment-set-block" style="display: none;">
+
+<h4>Implementation</h4>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome-API/enrichment_set?project=ADIPO">https://montilab.bu.edu/Xposome-API/enrichment_set?project=ADIPO</a></p>
+
+<table class="api-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>project</td>
+    <td>ADIPO or HEPG2 or ...</td>
+    <td>Name of the projects</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<h4>Return</h4>
+
+<p>An RDS file that contains a S4 class object</p>
+
+<br>
+
+<h4>Example in R</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# url for local testing
+url4 <- paste0("https://montilab.bu.edu/Xposome-API/enrichment_set?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url4, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+</pre>
+'
+)
+
+# url for local testing
+url4 <- paste0("https://montilab.bu.edu/Xposome-API/enrichment_set?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url4, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+
+```
+
+<h4>Output</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  temp = tempfile()
+  download.file(url4, temp)
+  enrichment_set <- readRDS(temp)
+  hallmark_set = as.data.frame(exprs(enrichment_set[["gsscores_h.all.v7.0_gsva"]]), row.names=rownames(enrichment_set), col.names=colnames(enrichment_set))
+  unlink(temp)
+
+  n_row <- ifelse(nrow(hallmark_set) > 10, 10, nrow(hallmark_set))
+  n_col <- ifelse(ncol(hallmark_set) > 10, 10, ncol(hallmark_set))  
+  print(hallmark_set[1:n_row, 1:n_col])
+  
+}
+</pre>
+'
+)
+
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  temp = tempfile()
+  download.file(url4, temp)
+  enrichment_set <- readRDS(temp)
+  hallmark_set = as.data.frame(exprs(enrichment_set[["gsscores_h.all.v7.0_gsva"]]), row.names=rownames(enrichment_set), col.names=colnames(enrichment_set))
+  unlink(temp)
+
+  n_row <- ifelse(nrow(hallmark_set) > 10, 10, nrow(hallmark_set))
+  n_col <- ifelse(ncol(hallmark_set) > 10, 10, ncol(hallmark_set))  
+  cat("<pre class='output'>", knitr::kable(hallmark_set[1:n_row, 1:n_col], format="html"), "</pre>")
+
+}
+
+```
+
+<br>
+
+</div>
+<!-- Datasets - enrichment set: end -->
+
+<!-- Datasets - connectivity set: start -->
+```{r connectivity-set, include=TRUE, echo=TRUE, results='asis'}
+```
+<table class="get-table">
+  <tr>
+    <td><button type="button" onclick="ToggleOperation('connectivity-set')" class="btn btn-default action-button">GET</button></td>
+    <td>/connectivity_set</td>
+    <td>Return the connectivity dataset of a specific project</td>
+  </tr>
+</table>
+
+<br>
+
+<div id="connectivity-set-block" style="display: none;">
+
+<h4>Implementation</h4>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome-API/connectivity_set?project=ADIPO">https://montilab.bu.edu/Xposome-API/connectivity_set?project=ADIPO</a></p>
+
+<table class="api-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>project</td>
+    <td>ADIPO or HEPG2 or ...</td>
+    <td>Name of the projects</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<h4>Return</h4>
+
+<p>An RDS file that contains a S4 class object</p>
+
+<br>
+
+<h4>Example in R</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# url for local testing
+url5 <- paste0("https://montilab.bu.edu/Xposome-API/connectivity_set?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url5, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+</pre>
+'
+)
+
+# url for local testing
+url5 <- paste0("https://montilab.bu.edu/Xposome-API/connectivity_set?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url5, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+
+```
+
+<h4>Output</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  temp = tempfile()
+  download.file(url5, temp)
+  connectivity_set <- readRDS(temp)
+  pcl_set = as.data.frame(exprs(connectivity_set[["pcl"]]), row.names=rownames(connectivity_set), col.names=colnames(connectivity_set))
+  unlink(temp)
+
+  n_row <- ifelse(nrow(pcl_set) > 10, 10, nrow(pcl_set))
+  n_col <- ifelse(ncol(pcl_set) > 10, 10, ncol(pcl_set))  
+  print(pcl_set[1:n_row, 1:n_col])
+  
+}
+</pre>
+'
+)
+
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  temp = tempfile()
+  download.file(url5, temp)
+  connectivity_set <- readRDS(temp)
+  pcl_set = as.data.frame(exprs(connectivity_set[["pcl"]]), row.names=rownames(connectivity_set), col.names=colnames(connectivity_set))
+  unlink(temp)
+
+  n_row <- ifelse(nrow(pcl_set) > 10, 10, nrow(pcl_set))
+  n_col <- ifelse(ncol(pcl_set) > 10, 10, ncol(pcl_set))  
+  cat("<pre class='output'>", knitr::kable(pcl_set[1:n_row, 1:n_col], format="html"), "</pre>")
+
+}
+
+```
+
+<br>
+
+</div>
+<!-- Datasets - connectivity set: end -->
+
+<!-- Datasets - k2taxonomer: start -->
+```{r k2taxonomer, include=TRUE, echo=TRUE, results='asis'}
+```
+<table class="get-table">
+  <tr>
+    <td><button type="button" onclick="ToggleOperation('k2taxonomer')" class="btn btn-default action-button">GET</button></td>
+    <td>/k2_taxonomer</td>
+    <td>Return the K2Taxonomer dataset of a specific project</td>
+  </tr>
+</table>
+
+<br>
+
+<div id="k2taxonomer-block" style="display: none;">
+
+<h4>Implementation</h4>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome-API/k2_taxonomer?project=ADIPO">https://montilab.bu.edu/Xposome-API/k2_taxonomer?project=ADIPO</a></p>
+
+<table class="api-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>project</td>
+    <td>ADIPO or HEPG2 or ...</td>
+    <td>Name of the projects</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<h4>Return</h4>
+
+<p>An RDS file that contains a K2 class object. Requires K2Taxonomer package to extract the content of the object.</p>
+
+<br>
+
+<h4>Example in R</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# url for local testing
+url6 <- paste0("https://montilab.bu.edu/Xposome-API/k2_taxonomer?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url6, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+</pre>
+'
+)
+
+# url for local testing
+url6 <- paste0("https://montilab.bu.edu/Xposome-API/k2_taxonomer?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url6, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+
+```
+
+<h4>Output</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  temp = tempfile()
+  download.file(url6, temp)
+  k2_taxonomer <- readRDS(temp)
+  k2_eset <- k2_taxonomer@eSet
+  k2_eset = as.data.frame(exprs(k2_eset[["pcl"]]), row.names=rownames(k2_eset), col.names=colnames(k2_eset))
+  unlink(temp)
+
+  n_row <- ifelse(nrow(k2_eset) > 10, 10, nrow(k2_eset))
+  n_col <- ifelse(ncol(k2_eset) > 10, 10, ncol(k2_eset))  
+  print(k2_eset[1:n_row, 1:n_col])
+  
+}
+</pre>
+'
+)
+
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  temp = tempfile()
+  download.file(url6, temp)
+  k2_taxonomer <- readRDS(temp)
+  k2_eset <- k2_taxonomer@eSet
+  k2_eset = as.data.frame(k2_eset, row.names=rownames(k2_eset), col.names=colnames(k2_eset))
+  unlink(temp)
+
+  n_row <- ifelse(nrow(k2_eset) > 10, 10, nrow(k2_eset))
+  n_col <- ifelse(ncol(k2_eset) > 10, 10, ncol(k2_eset))   
+  cat("<pre class='output'>", knitr::kable(k2_eset[1:n_row, 1:n_col], format="html"), "</pre>")
+
+}
+
+```
+
+<br>
+
+</div>
+<!-- Datasets - k2taxonomer: end -->
+
+<!-- Datasets - rds_bundle: start -->
+### RDS Bundle
+
+```{r rds_bundle, include=TRUE, echo=TRUE, results='asis'}
+```
+<table class="get-table">
+  <tr>
+    <td><button type="button" onclick="ToggleOperation('rds_bundle')" class="btn btn-default action-button">GET</button></td>
+    <td>/rds_bundle</td>
+    <td>Return a bundle of RDS files for a given project</td>
+  </tr>
+</table>
+
+<br>
+
+<div id="rds_bundle-block" style="display: none;">
+
+<h4>Implementation</h4>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome-API/rds_bundle?project=ADIPO">https://montilab.bu.edu/Xposome-API/rds_bundle?project=ADIPO</a></p>
+
+<table class="api-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>project</td>
+    <td>ADIPO or HEPG2 or ...</td>
+    <td>Name of the projects</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<h4>Return</h4>
+
+<p>An zip file that contains six RDS files for a given project. These RDS files are named as "Profile_Annotation.RDS", "Chemical_Annotation.RDS", "Gene_Expression.RDS", "Gene_Set_Enrichment.RDS", "Connectivity.RDS", and "K2Taxonomer.RDS"</p>
+
+<br>
+
+<h4>Example in R</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# url for local testing
+url7 <- paste0("https://montilab.bu.edu/Xposome-API/rds_bundle?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url7, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+</pre>
+'
+)
+
+# url for local testing
+url7 <- paste0("https://montilab.bu.edu/Xposome-API/rds_bundle?project=ADIPO")
+
+# Send GET Request to API
+res <- GET(url = url7, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+
+```
+
+<h4>Output</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  file_dir = file.path(tempdir(), "ADIPO-Dataset")
+  
+  zip_file = paste0(file_dir, ".zip")
+  
+  download.file(url7, zip_file)
+  
+  profile_annotation <- readRDS(unzip(zipfile=zip_file, "Profile_Annotation.RDS", exdir=file_dir))
+  
+  chemical_annotation <- readRDS(unzip(zipfile=zip_file, "Chemical_Annotation.RDS", exdir=file_dir))
+  
+  expression_set <- readRDS(unzip(zipfile=zip_file, "Gene_Expression.RDS", exdir=file_dir))
+  
+  enrichment_set <- readRDS(unzip(zipfile=zip_file, "Gene_Set_Enrichment.RDS", exdir=file_dir))
+  
+  connectivity_set <- readRDS(unzip(zipfile=zip_file, "Connectivity.RDS", exdir=file_dir))
+  
+  k2_taxonomer <- readRDS(unzip(zipfile=zip_file, "K2Taxonomer.RDS", exdir=file_dir))
+  
+  unlink(zip_file); unlink(file_dir);
+
+  print(list.files(file_dir))
+  
+}
+</pre>
+'
+)
+
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  file_dir = file.path(tempdir(), "ADIPO-Dataset")
+  
+  zip_file = paste0(file_dir, ".zip")
+  
+  download.file(url7, zip_file)
+  
+  profile_annotation <- readRDS(unzip(zipfile=zip_file, "Profile_Annotation.RDS", exdir=file_dir))
+  
+  chemical_annotation <- readRDS(unzip(zipfile=zip_file, "Chemical_Annotation.RDS", exdir=file_dir))
+  
+  expression_set <- readRDS(unzip(zipfile=zip_file, "Gene_Expression.RDS", exdir=file_dir))
+  
+  enrichment_set <- readRDS(unzip(zipfile=zip_file, "Gene_Set_Enrichment.RDS", exdir=file_dir))
+  
+  connectivity_set <- readRDS(unzip(zipfile=zip_file, "Connectivity.RDS", exdir=file_dir))
+  
+  k2_taxonomer <- readRDS(unzip(zipfile=zip_file, "K2Taxonomer.RDS", exdir=file_dir))
+  
+  unlink(zip_file); unlink(file_dir);
+
+  cat("<pre class='output'><strong>", paste(list.files(file_dir), sep="\t"), "</strong></pre>")
+
+}
+
+```
+
+<br>
+
+</div>
+<!-- Datasets - rds_bundle: end -->
+
+<!-- Statistics - gene expression: start -->
+### Statistics
+
+<table class="get-table">
+  <tr>
+    <td><button type="button" class="btn btn-default action-button" onclick="ToggleOperation('gene-expression-stat')">GET</button></td>
+    <td>/gene_expression</td>
+    <td>Return  a collection of differential expressed genes that exposed to a known toxin</td>
+  </tr>
+</table>
+
+<br>
+
+<div id="gene-expression-stat-block" style="display: none;">
+
+<h4>Implementation</h4>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome-API/gene_expression?project=ADIPO&chemical_id=EtHex&summarize.func=median&landmark=TRUE&do.markers=TRUE&do.scorecutoff=TRUE">https://montilab.bu.edu/Xposome-API/gene_expression?project=ADIPO&chemical_id=EtHex&summarize.func=median&landmark=TRUE&do.markers=TRUE&do.scorecutoff=TRUE</a></p>
+
+<br>
+
+<table class="api-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>project</td>
+    <td>ADIPO or HEPG2 or ...</td>
+    <td>Name of the projects</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td>chemical_id</td>
+    <td>1,2-Dibromo-3-chloropropane or ...</td>
+    <td>Name of the chemicals or CAS ids of a chemical in a specific project</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td>summarize.func</td>
+    <td>median (default) or mean/min/max/Q1/Q3</td>
+    <td>Name of the summarize functions</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td>landmark</td>
+    <td>TRUE or FALSE (default)</td>
+    <td>Whether to include landmark genes</td>
+    <td>boolean</td>
+  </tr>
+  <tr>
+    <td>do.nmarkers</td>
+    <td>TRUE (default) or FALSE</td>
+    <td>Whether to filter by the number of landmark genes (ranging from 1 to 1000)</td>
+    <td>boolean</td>
+  </tr>
+  <tr>
+    <td>do.scorecutoff</td>
+    <td>TRUE (default) or FALSE</td>
+    <td>Whether to filter by the z-scores (cutoff from -2 to 2)</td>
+    <td>boolean</td>
+  </tr>
+</table>
+
+<br>
+
+<h4>Return</h4>
+
+<p>A data frame object</p>
+
+<br>
+
+<h4>Example in R</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# url for local testing
+url8 <- paste0("https://montilab.bu.edu/Xposome-API/gene_expression?project=ADIPO&chemical_id=EtHex&summarize.func=median&landmark=TRUE&do.markers=TRUE&do.scorecutoff=TRUE")
+
+# Send GET Request to API
+res <- GET(url = url8, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+
+</pre>
+'
+)
+
+# url for local testing
+url8 <- paste0("https://montilab.bu.edu/Xposome-API/gene_expression?project=ADIPO&chemical_id=EtHex&summarize.func=median&landmark=TRUE&do.markers=TRUE&do.scorecutoff=TRUE")
+
+# Send GET Request to API
+res <- GET(url = url8, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+
+```
+
+<h4>Output</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  gene_expression_stat <- fromJSON(fromJSON(rawToChar(res$content)))
+  n_row <- ifelse(nrow(gene_expression_stat) > 10, 10, nrow(gene_expression_stat))
+  n_col <- ifelse(ncol(gene_expression_stat) > 10, 10, ncol(gene_expression_stat))
+  print(gene_expression_stat[1:n_row, 1:n_col])
+
+}
+</pre>
+'
+)
+
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  gene_expression_stat <- fromJSON(fromJSON(rawToChar(res$content)))
+  n_row <- ifelse(nrow(gene_expression_stat) > 10, 10, nrow(gene_expression_stat))
+  n_col <- ifelse(ncol(gene_expression_stat) > 10, 10, ncol(gene_expression_stat))
+  cat("<pre class='output'>", knitr::kable(gene_expression_stat[1:n_row, 1:n_col], format="html"), "</pre>")
+
+}
+
+```
+
+<br>
+
+</div>
+<!-- Statistics - gene expression: end -->
+
+<!-- Statistics - gene set enrichment: start -->
+<table class="get-table">
+  <tr>
+    <td><button type="button" onclick="ToggleOperation('gene-set-enrichment-stat')" class="btn btn-default action-button">GET</button></td>
+    <td>/gs_enrichment</td>
+    <td>Return  a collection of gene set enrichment that was exposed to a given drug</td>
+  </tr>
+</table>
+
+<br>
+
+<div id="gene-set-enrichment-stat-block" style="display: none;">
+
+<h4>Implementation</h4>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome-API/gs_enrichment?project=ADIPO&chemical_id=EtHex&geneset=Hallmark&gsva=gsva&summarize.func=median">https://montilab.bu.edu/Xposome-API/gs_enrichment?project=ADIPO&chemical_id=EtHex&geneset=Hallmark&gsva=gsva&summarize.func=median</a></p>
+
+<br>
+
+<table class="api-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>project</td>
+    <td>ADIPO or HEPG2 or ...</td>
+    <td>Name of the projects</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td>chemical_id</td>
+    <td>1,2-Dibromo-3-chloropropane or ...</td>
+    <td>Name of the chemicals or CAS ids of a chemical in a specific project</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td>geneset</td>
+    <td>Hallmark (default) or C2 or NURSA</td>
+    <td>Collection of the gene set enrichment</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td>gsva</td>
+    <td>gsva (default)</td>
+    <td>Method of the gene set enrichment analysis</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td>summarize.func</td>
+    <td>median (default) or mean/min/max/Q1/Q3</td>
+    <td>Name of the summarize functions</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<h4>Return</h4>
+
+<p>A data frame object</p>
+
+<br>
+
+<h4>Example in R</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# url for local testing
+url9 <- paste0("https://montilab.bu.edu/Xposome-API/gs_enrichment?project=ADIPO&chemical_id=EtHex&geneset=Hallmark&gsva=gsva&summarize.func=median")
+
+# Send GET Request to API
+res <- GET(url = url9, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+</pre>
+'
+)
+
+# url for local testing
+url9 <- paste0("https://montilab.bu.edu/Xposome-API/gs_enrichment?project=ADIPO&chemical_id=EtHex&geneset=Hallmark&gsva=gsva&summarize.func=median")
+
+# Send GET Request to API
+res <- GET(url = url9, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+
+```
+
+<h4>Output</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  gs_enrichment_stat <- fromJSON(fromJSON(rawToChar(res$content)))
+  n_row <- ifelse(nrow(gs_enrichment_stat) > 10, 10, nrow(gs_enrichment_stat))
+  n_col <- ifelse(ncol(gs_enrichment_stat) > 10, 10, ncol(gs_enrichment_stat))
+  print(gs_enrichment_stat[1:n_row, 1:n_col])
+}
+</pre>
+'
+)
+
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  gs_enrichment_stat <- fromJSON(fromJSON(rawToChar(res$content)))
+  n_row <- ifelse(nrow(gs_enrichment_stat) > 10, 10, nrow(gs_enrichment_stat))
+  n_col <- ifelse(ncol(gs_enrichment_stat) > 10, 10, ncol(gs_enrichment_stat))
+  cat("<pre class='output'>", knitr::kable(gs_enrichment_stat[1:n_row, 1:n_col], format="html"), "</pre>")
+  
+}
+
+```
+
+<br>
+
+</div>
+<!-- Statistics - gene set enrichment: end -->
+
+<!-- Statistics - connectivity: start -->
+<table class="get-table">
+  <tr>
+    <td><button type="button" onclick="ToggleOperation('connectivity-stat')" class="btn btn-default action-button">GET</button></td>
+    <td>/connectivity</td>
+    <td>Return  a collection of gene connectivity that are linked to exposure of a known chemical</td>
+  </tr>
+</table>
+
+<br>
+
+<div id="connectivity-stat-block" style="display: none;">
+
+<h4>Implementation</h4>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome-API/connectivity?project=ADIPO&chemical_id=EtHex&connectivity_classes=pcl&summarize.func=median">https://montilab.bu.edu/Xposome-API/connectivity?project=ADIPO&chemical_id=EtHex&connectivity_classes=pcl&summarize.func=median</a></p>
+
+<br>
+
+<table class="api-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>project</td>
+    <td>ADIPO or HEPG2 or ...</td>
+    <td>Name of the projects</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td>chemical_id</td>
+    <td>1,2-Dibromo-3-chloropropane or ...</td>
+    <td>Name of the chemicals or CAS ids of a chemical in a specific project</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td>connectivity_classes</td>
+    <td>pcl (Perturbagen Classes, default) or pert (Perturbagens)</td>
+    <td>Name of the connectivity classes</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td>summarize.func</td>
+    <td>median (default) or mean/min/max/Q1/Q3</td>
+    <td>Name of the summarize functions</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<h4>Return</h4>
+
+<p>A data frame object</p>
+
+<br>
+
+<h4>Example in R</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# url for local testing
+url10 <- paste0("https://montilab.bu.edu/Xposome-API/connectivity?project=ADIPO&chemical_id=EtHex&connectivity_classes=pcl&summarize.func=median")
+
+# Send GET Request to API
+res <- GET(url = url10, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+</pre>
+'
+)
+
+# url for local testing
+url10 <- paste0("https://montilab.bu.edu/Xposome-API/connectivity?project=ADIPO&chemical_id=EtHex&connectivity_classes=pcl&summarize.func=median")
+
+# Send GET Request to API
+res <- GET(url = url10, encode = "json")
+
+# Check the status of GET request
+test_request <- tryCatch({
+
+  stop_for_status(res)
+
+  "pass"
+
+}, error = function(e) {
+
+  "fail"
+
+})
+
+```
+
+<h4>Output</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  connectivity_stat <- fromJSON(fromJSON(rawToChar(res$content)))
+  n_row <- ifelse(nrow(connectivity_stat) > 10, 10, nrow(connectivity_stat))
+  n_col <- ifelse(ncol(connectivity_stat) > 10, 10, ncol(connectivity_stat))
+  print(connectivity_stat[1:n_row, 1:n_col])
+
+}
+</pre>
+'
+)
+
+# If GET request is successful, return the results
+if(test_request == "pass"){
+
+  connectivity_stat <- fromJSON(fromJSON(rawToChar(res$content)))
+  n_row <- ifelse(nrow(connectivity_stat) > 10, 10, nrow(connectivity_stat))
+  n_col <- ifelse(ncol(connectivity_stat) > 10, 10, ncol(connectivity_stat))
+  cat("<pre class='output'>", knitr::kable(connectivity_stat[1:n_row, 1:n_col], format="html"), "</pre>")
+
+}
+
+```
+
+<br>
+
+</div>
+<!-- Statistics - connectivity: end -->
+
+<p>Additionally, we provide direct links to query contents on our website. See <a href="#links-to-application">Links to Application</a>.
+
+<br><br>

@@ -2,27 +2,29 @@
 output: html_document
 ---
 
-<div class="links">
-  <h2>Links</h2>
-  <ul class="list-unstyled">
-    <li>Browse source code at <br><a href="https://github.com/montilab/Xposome"><strong style="color: #1f78b4">https://github.com/montilab/Xposome/</strong></a>
-    </li>
-  </ul>
-</div>
-
-<div class="license">
-  <h2>License</h2>
-  <ul class="list-unstyled">
-    <li><a href="https://www.r-project.org/Licenses/GPL-3"><strong style="color: #1f78b4">GPL-3</strong></a> + file <a  target="_blank" href="LICENSE-text.html"><strong style="color: #1f78b4">LICENSE</strong></a>
-    </li>
-  </ul>
-</div>
-
-<div class="developers">
-  <h2>Developers</h2>
-  <ul class="list-unstyled">
-    <li><a href="mailto:lilychau999@gmail.com">Reina Chau</a><br><small class="roles">Author, maintainer </small></li>
-    <li><a href="mailto:montilab@bu.edu">Stefano Monti</a><br><small class="roles">Author</small></li>
-  </ul>
+<div class="side-links">
+  <div class="links">
+    <h2>Links</h2>
+    <ul class="list-unstyled">
+      <li>Browse source code at <br><a href="https://github.com/montilab/Xposome"><strong style="color: #1f78b4">https://github.com/montilab/Xposome/</strong></a>
+      </li>
+    </ul>
+  </div>
+  
+  <div class="license">
+    <h2>License</h2>
+    <ul class="list-unstyled">
+      <li><a href="https://www.r-project.org/Licenses/GPL-3"><strong style="color: #1f78b4">GPL-3</strong></a> + file <a  target="_blank" href="LICENSE-text.html"><strong style="color: #1f78b4">LICENSE</strong></a>
+      </li>
+    </ul>
+  </div>
+  
+  <div class="developers">
+    <h2>Developers</h2>
+    <ul class="list-unstyled">
+      <li><a href="mailto:lilychau999@gmail.com">Reina Chau</a><br><small class="roles">Author, maintainer </small></li>
+      <li><a href="mailto:montilab@bu.edu">Stefano Monti</a><br><small class="roles">Author</small></li>
+    </ul>
+  </div>
 </div>
 
