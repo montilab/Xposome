@@ -1,81 +1,106 @@
 
-observeEvent(input$portal, {
+## portal page ####
+output$pageStub <- renderUI({
   
-  print(input$portal)
+  req(selected_portal())
+  
+  div(
+    class="portal-page",
+    
+    h4(class="title-1", paste0("Project - ", projectlist$Project[which(projectlist$Portal == selected_portal())])),
+    br(),
+    selectInput(inputId="portal_id", label=NULL, choices=projectlist$Portal, selected=selected_portal()),
+    actionButton(inputId="change_portal", label=strong("Change Project"), style="padding: 5px 5px 5px 5px", class="btn btn-success"),
+    downloadButton(outputId="download_portal", style="padding: 5px 5px 5px 5px", class="my-btn btn btn-primary"),
+    br(), br(),
+    h4(class="title-1", "Description"),
+    HTML(paste0("<p>", projectlist$Description[which(projectlist$Portal == selected_portal())], "</p>")),
+    HTML(paste0("<p><b style='color: #3182bd;'>Cell-Line:</b> ", projectlist$Cell_Line[which(projectlist$Portal == selected_portal())], "</p>")),
+    br(),
+    tabsetPanel(
+      id="main_page", selected=subtab, type="pills",
+      
+      ###Annotation#####
+      tabPanel(
+        title="Annotation", value="annotation",
+        #"Hello World!"
+        source("ui_annotation.R", local=TRUE)$value
+      ),
+      
+      ###Chemical Explorer#####
+      tabPanel(
+        title = "Chemical Explorer", value="chemical_explorer",
+        #"Hello World!"
+        source("ui_chemical.R", local=TRUE)$value
+      ),
+      
+      ###Marker Explorer####
+      tabPanel(
+        title = "Marker Explorer", value="marker_explorer",
+        #"Hello World!"
+        source("ui_marker.R", local=TRUE)$value
+      ),
+      
+      ###Heatmap Explorer####
+      tabPanel(
+        title = "Heatmap Explorer", value="heatmap_explorer",
+        #"Hello World!"
+        source("ui_heatmap.R", local=TRUE)$value
+      ),
+      
+      ###Taxonomic Clustering####
+      navbarMenu(
+        title = "Taxonomic Clustering",
+        
+        tabPanel(
+          title = "K2 Taxonomer Results", value="k2_taxonomer_results",
+          #"Hello World!"
+          source("ui_taxonomic_clustering.R", local=TRUE)$value
+        ),
+        
+        tabPanel(
+          title = "Compare Multiple", value="compare_multiple",
+          #"Hello World!"
+          source("ui_compare_multiple.R", local=TRUE)$value
+        )
+      )
+    )
+  )  
   
 })
 
-## Go back to home page when the logo link is clicked on ####
-observeEvent(input$main_navbar, {
-
-  if(input$main_navbar %in% c("home", "about", "contact", "sign_in")){
-    
-    updateQueryString(paste0("?page=", input$main_navbar), mode="push")
-    
-  }else{
-    
-    if(input$main_page == "chemical_explorer"){
-      if(is.null(input$chem) | input$chem == ""){
-        updateQueryString(paste0("?page=", input$portal_id, "&tab=", input$main_page), mode="push")
-      }else{
-        updateQueryString(paste0("?page=", input$portal_id, "&tab=", input$main_page, "&chemical_id=", input$chem, "&stat=", input$chemical_tab), mode="push")
-      }
-    }else{
-      updateQueryString(paste0("?page=", input$portal_id, "&tab=", input$main_page), mode="push")
-    }
-    
-  }
-  
-})
-
+# Go to the specific tab on the portal page
 observeEvent(input$main_page, {
   
-  if(input$main_navbar %in% c("home", "about", "contact", "sign_in")){
-    
-    updateQueryString(paste0("?page=", input$main_navbar), mode="push")
-    
-  }else{
-    
-    if(input$main_page == "chemical_explorer"){
-      if(is.null(input$chem) | input$chem == ""){
-        updateQueryString(paste0("?page=", input$portal_id, "&tab=", input$main_page), mode="push")
-      }else{
-        updateQueryString(paste0("?page=", input$portal_id, "&tab=", input$main_page, "&chemical_id=", input$chem, "&stat=", input$chemical_tab), mode="push")
-      }
-    }else{
-      updateQueryString(paste0("?page=", input$portal_id, "&tab=", input$main_page), mode="push")
-    }
-    
-    if(input$main_page == "k2_taxanomer_results"){
-      session$sendCustomMessage("ResizeK2Table", "clusteringTable")
-    }
-
-  }
-  
-})
-
-## Go back to home page when the logo link is clicked on ####
-observeEvent(input$portal_id, {
-  
-  if(input$main_navbar %in% c("home", "about", "contact", "sign_in")){
-    
-    updateQueryString(paste0("?page=", input$main_navbar), mode="push")
-    
-  }else{
-    
+  if(input$main_page == "chemical_explorer"){
     if(is.null(input$chem) | input$chem == ""){
       updateQueryString(paste0("?page=", input$portal_id, "&tab=", input$main_page), mode="push")
     }else{
       updateQueryString(paste0("?page=", input$portal_id, "&tab=", input$main_page, "&chemical_id=", input$chem, "&stat=", input$chemical_tab), mode="push")
     }
-    
+  }else{
+    updateQueryString(paste0("?page=", input$portal_id, "&tab=", input$main_page), mode="push")
   }
   
+  if(input$main_page == "k2_taxonomer_results"){
+    session$sendCustomMessage("ResizeK2Table", "clusteringTable")
+  }
+  
+})
+
+## Change the portal id ####
+observeEvent(input$change_portal, {
+    
   portal_id <- input$portal_id
+  
+  updateQueryString(paste0("?page=", input$portal_id, "&tab=annotation"), mode="push")
+  updateTabsetPanel(session, inputId="main_page", selected="annotation")
+  
   selected_portal(portal_id)
   
 }, ignoreInit = FALSE)
 
+# Download the portal data
 output$download_portal <- downloadHandler(
   
   filename = function() {
@@ -169,3 +194,6 @@ output$download_portal <- downloadHandler(
   
   contentType = "application/zip"
 )
+
+
+

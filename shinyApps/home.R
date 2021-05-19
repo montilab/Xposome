@@ -4,64 +4,59 @@
 output$pageStub <- renderUI({
   
   #####<!-- START HOME PAGE -->
-  fluidRow(
-    class="home-page",
-    
-    column(
-      width=12,
-      
-      DT::dataTableOutput(outputId = "main_table")
-    )
-    
-  )#####<!-- END HOME PAGE -->
+  
+  includeHTML("description.html")
+  
+  #####<!-- END HOME PAGE -->
 
 })
 
-## output main table ####
-output$main_table <- DT::renderDataTable({
+output$portal_inputs <- renderUI({
   
-  projectlist <- projectlist; Project <- NULL;
+  req(input$portal_choice, projectlist)
   
-  #print(projectlist)
+  choice <- input$portal_choice
   
-  if(all(!is.na(projectlist$Project))){
-    
-    for(i in 1:nrow(projectlist)){
-      Project <- c(Project, paste0('<a onclick="curlinkFun(&#39;', projectlist$Portal[i], '&#39;)" href="?', projectlist$Portal[i], '" class="portal-link" id="', projectlist$Portal[i], '" value="', projectlist$Portal[i], '">', projectlist$Project[i], '</a>'))
-    }
-    
-    table <- data.frame(
-      Project=Project,
-      Cell_line=projectlist$Cell_Line,
-      Description=projectlist$Description
-    )
-    
+  if(choice == "Project"){
+    choices <- projectlist$Project[!is.na(projectlist$Project)]
   }else{
-    
-    table <- data.frame(
-      Project=paste0("<br>"),
-      Cell_line=paste0("<br>"),
-      Description=paste0("<br>")
-    )
-    
+    choices <- projectlist$Cell_Line[!is.na(projectlist$Cell_Line)]
   }
   
-  colnames(table) <- c("Project", "Cell line", "Description")
+  selectInput(
+    inputId = "portal_input",
+    label = NULL,
+    choices = c("Search by" = "", choices)
+  )
   
-  return(table)
+})
 
-}, escape = FALSE, server = TRUE, rownames=FALSE, selection = "none",
-options = list(
-  columnDefs = list(list(className = 'dt-center', targets = "_all")),
-  deferRender = FALSE,
-  paging = TRUE,
-  searching = TRUE,
-  ordering = TRUE,
-  pageLength = 20,
-  scrollX = TRUE,
-  scrollY = 400,
-  scrollCollapse = TRUE,
-  dom = 'T<"clear">Blfrtip',
-  buttons=c('copy','csv','print')
-))
+output$portal_choices <- renderUI({
+  
+  selectInput(inputId="portal_choice", label=NULL, choices=c("Project", "Cell-Line"), selected="Project", width="100px")
+  
+})
+
+
+output$portal_search <- renderUI({
+
+  choice <- input$portal_choice; input <- input$portal_input;
+  
+  if(length(input)==0){
+    portal_id <- "ADIPO"
+  }else{
+    if(choice == "Project"){
+      portal_id <- projectlist$Portal[which(projectlist$Project == input)]
+    }else{
+      portal_id <- projectlist$Portal[which(projectlist$Cell_Line == input)]
+    }
+  }
+  
+  # Select the portal link
+  selected_portal(portal_id)
+  
+  # Update the url link
+  HTML(paste0('<a onclick="curlinkFun(\'portal\')" href="?page=', portal_id,'" id="portal_submit" style="margin-left: 1px; padding: 5px 5px 5px 5px;" class="btn btn-success">Search</a>'))
+
+})
 

@@ -1,5 +1,55 @@
 
 
+
+#Check a text input####
+TextInputFunction <- function(inputId, label, value, message){
+  HTML(
+    paste0(
+      '<div class="form-group shiny-input-container">',
+        '<label class="control-label" id="', inputId, '-label" for="', inputId, '">', 
+          '<strong>',
+          '<span style="color:red;">*</span>',
+          label,
+          '</strong>',
+        '</label>',
+        '<input id="', inputId, '" type="text" class="form-control" value="', value, '"/>',
+      ' </div>'
+    )
+  )
+}
+
+#Check a text input####
+FileInputFunction <- function(inputId, label, message){
+  HTML(
+    paste0(
+      '<div class="form-group shiny-input-container">',
+        '<label class="control-label" id="', inputId, '-label" for="', inputId, '">',
+          '<strong>',
+            '<span style="color:red;">*</span>',
+            label,
+            '<a id="add_gs_collection_template_gmt" class="shiny-download-link" href="" target="_blank" download>',
+              '<em style="font-size: 11px">template.gmt</em>',
+            '</a>',
+          '</strong>',
+        '</label>',
+        '<div class="input-group">',
+          '<label class="input-group-btn input-group-prepend">',
+            '<span class="btn btn-default btn-file">',
+              'Browse...',
+              '<input id="', inputId, '" name="', inputId, '" type="file" style="position: absolute !important; top: -99999px !important; left: -99999px !important;"/>',
+            '</span>',
+          '</label>',
+          '<input type="text" class="form-control" placeholder="No file selected" readonly="readonly"/>',
+        '</div>',
+        '<div id="', inputId, '_progress" class="progress active shiny-file-input-progress">',
+          '<div class="progress-bar"></div>',
+        '</div>',
+      '</div>'
+    )
+  )
+}
+
+
 #Check a checkbox input####
 CheckBoxInputFunction <- function(inputId, label, value=TRUE, disabled=FALSE){
   HTML(

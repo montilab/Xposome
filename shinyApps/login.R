@@ -1,12 +1,8 @@
 
-
-loginUI <- function(id, title="Sign In", user_title="User Name", pass_title="Password",
-                    login_title="Sign in", error_message="Invalid username or password!") {
-  
-  ns <- shiny::NS(id)
+loginUI <- function(username="", password="") {
   
   fluidRow(
-    class="signin-page", id=ns("panel"),
+    class="signin-page",
     
     column(
       width=4, offset=4, class="login-container",
@@ -18,39 +14,49 @@ loginUI <- function(id, title="Sign In", user_title="User Name", pass_title="Pas
       div(
         class="login-validate-form",
         
-        shiny::textInput(inputId=ns("user_name"), label=shiny::tagList(shiny::icon("user"), user_title), width="auto"),
+        tags$script('document.getElementById("username").focus();'),
         
-        tags$script('document.getElementById("user_name").focus();'),
-        
-        shiny::passwordInput(inputId=ns("password"), label=shiny::tagList(shiny::icon("unlock-alt"), pass_title), width="auto"),
+        HTML(
+          paste0(
+            '<div class="form-group shiny-input-container" style="width:auto;">',
+              '<i class="fa fa-user" role="presentation" aria-label="user icon"></i>',
+              '<label class="control-label" id="username-label" for="username" style="padding-left: 5px;">',
+                'User Name',
+              '</label>',
+              '<input id="username" type="text" onkeypress="loginfunction(event)" class="form-control" value="', username, '"/>',
+            '</div>'
+          )
+        ),
+          
+        HTML(
+          paste0(
+            '<div class="form-group shiny-input-container" style="width:auto;">',
+              '<i class="fa fa-lock" role="presentation" aria-label="unlock-alt icon"> </i>',
+              '<label class="control-label" id="password-label" for="password" style="padding-left: 5px;">',
+                'Password',
+              '</label>',
+              '<input id="password" type="password" onkeypress="loginfunction(event)" class="form-control" value="', password, '"/>',
+            '</div>'
+          )
+        ),
         
         shinyjs::hidden(
-          shiny::div(
-            id = ns("error"),
-            shiny::tags$p(error_message, style = "color: red; font-weight: bold; padding-top: 5px;", class = "text-center")
+          div(
+            id = "error",
+            tags$p("Invalid username or password!", style="color: red; font-weight: bold; padding-top: 5px;", class="text-center")
           )
         ),
         
         br(),
         
-        shiny::div(
+        div(
           style = "text-align: center;",
-          shiny::actionButton(inputId=ns("button"), class="login-btn", label=strong(login_title), onkeypress="loginfunction(event)", width="auto")
-        ),
-        
-        tags$script(
-          paste0(
-            'function loginfunction(e){',
-              'if (e.which === 13) {',
-                'document.getElementById("button").click();',
-              '}',
-            '}'
-          )
+          actionButton(inputId="sign_in_btn", class="login-btn", label=strong("Sign In"), onkeypress="loginfunction(event)", width="auto")
         ),
         
         br(), br(),
-
-        shiny::tags$p(
+        
+        tags$p(
           style="text-align: center",
           actionLink(inputId="ForgetPassword", label=strong("Forgot Password?"), width="auto")
         )
@@ -59,62 +65,41 @@ loginUI <- function(id, title="Sign In", user_title="User Name", pass_title="Pas
   )
 }
 
-login <- function(input, output, session, sodium_hashed=TRUE, log_out=NULL) {
-  
-  credentials <- shiny::reactiveValues(user_auth = FALSE, info = NULL)
-  
-  shiny::observeEvent(log_out(), {
-    credentials$user_auth <- FALSE
-    credentials$info <- NULL
-    shiny::updateTextInput(session, "password", value = "")
-  })
-  
-  shiny::observeEvent(credentials$user_auth, ignoreInit = TRUE, {
-    shinyjs::toggle(id = "panel")
-  })
-  
-  users <- "Username"
-  pwds <- "Password"
+login <- function(username="", password="") {
 
-  shiny::observeEvent(input$button, {
-    
-    ##Read in the data
-    data <- read_csv(paste0("data/User_Login_List.csv"))
-    
-    # ensure all text columns are character class
-    data <- dplyr::mutate_if(data, is.factor, as.character)
-    
-    # check for match of input username to username column in data
-    row_username <- which(dplyr::pull(data, !!users) == input$user_name)
-    
-    if (length(row_username)) {
-      row_password <- dplyr::filter(data,dplyr::row_number() == row_username)
-      row_password <- dplyr::pull(row_password, !!pwds)
-      if (sodium_hashed) {
-        password_match <- sodium::password_verify(row_password, input$password)
-      } else {
-        password_match <- identical(row_password, input$password)
-      }
-    } else {
-      password_match <- FALSE
-    }
-    
-    # if user name row and password name row are same, credentials are valid
-    if (length(row_username) == 1 && password_match) {
-      shinyjs::hide(id = "error")
-      credentials$user_auth <- TRUE
-      credentials$info <- dplyr::filter(data, !!users == input$user_name)
-    } else { # if not valid temporarily show error message to user
-      shinyjs::show(id = "error")
-    }
-    
-  })
+  users <- "Username"; pwds <- "Password";
   
-  # return reactive list containing auth boolean and user information
-  shiny::reactive({
-    shiny::reactiveValuesToList(credentials)
-  })
+  ##Read in the data
+  data <- read_csv(paste0("data/User_Login_List.csv"))
   
+  # ensure all text columns are character class
+  data <- dplyr::mutate_if(data, is.factor, as.character)
+  
+  # check for match of input username to username column in data
+  row_username <- which(dplyr::pull(data, !!users) == trimws(username))
+  
+  if (length(row_username) > 0) {
+    row_password <- dplyr::filter(data,dplyr::row_number() == row_username[1])
+    row_password <- dplyr::pull(row_password, !!pwds)
+    # create a sodium hash for password
+    password_match <- sodium::password_verify(row_password, password)
+  } else {
+    password_match <- FALSE
+  }
+  
+  # if user name row and password name row are same, credentials are valid
+  if (password_match) {
+    shinyjs::hide(id = "error")
+    credentials$user_auth <- TRUE
+    credentials$username <- username
+    credentials$password <- password
+  } else { # if not valid temporarily show error message to user
+    shinyjs::show(id = "error")
+    credentials$user_auth <- FALSE
+    credentials$username <- ""
+    credentials$password <- ""
+  }
+
 }
 
 sendpassword <- function(from_sender="montilab@bu.edu", to_recipient="montilab@bu.edu", recipient_first="Montilab", recipient_last="Montilab", recipient_account="Montilab", tmp_pwd){
@@ -139,7 +124,7 @@ sendpassword <- function(from_sender="montilab@bu.edu", to_recipient="montilab@b
       '<p>Username: <strong>', recipient_account, '</strong></p>',
       '<p>Temporary password: <strong>', tmp_pwd, '</strong></p>',
       '<br>',
-      '<p>Log back in? Follow this link, <strong>http://155.41.202.164/Xposome/?sign_in</strong></p>',
+      '<p>Log back in? Follow this link, <strong>https://montilab.bu.edu/Xposome/?page=sign_in</strong></p>',
       '<br>',
       '<p>Best,</p>',
       '<p>Montilab Team</p>',
@@ -158,3 +143,4 @@ sendpassword <- function(from_sender="montilab@bu.edu", to_recipient="montilab@b
   sendmail(from, to, subject, body, control=list(smtpServer="smtp.bu.edu", smtpPort="25"))
   
 }
+

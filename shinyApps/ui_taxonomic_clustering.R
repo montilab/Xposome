@@ -48,7 +48,7 @@ div(
                 class="header-2",
                 div(class="title", "Taxonomer Results"),
                 div(class="content", 
-                    visNetworkOutput(outputId="dendro", width="auto", height="650px") %>% withSpinner(type=4, color="#0dc5c1")
+                   visNetworkOutput(outputId="dendro", width="auto", height="650px") %>% withSpinner(type=4, color="#0dc5c1")
                 )
               )
             )

@@ -22,11 +22,11 @@ fluidRow(
     width=12, style="padding-top: 20px;",
     
     tabsetPanel(
-      id="chemical_tab", type="pills", selected = "Gene Expression",
+      id="chemical_tab", type="pills", selected=chemical_tab,
       
       #Gene expression tab####
       tabPanel(
-        title="Gene Expression", value = "Gene Expression",
+        title="Gene Expression", value="gene_expression",
         
         bsCollapse(
           id = "de_opt_panel", open = "de_options",
@@ -116,7 +116,7 @@ fluidRow(
       
       #Gene set enrichment tab####
       tabPanel(
-        title="Gene Set Enrichment", value = "Gene Set Enrichment",
+        title="Gene Set Enrichment", value="gene_set_enrichment",
         
         bsCollapse(
           id = "es_opt_panel", open = "es_options",
@@ -181,7 +181,7 @@ fluidRow(
       
       #Connectivity tab####
       tabPanel(
-        title = "Connectivity", value = "Connectivity",
+        title="Connectivity", value="connectivity",
         
         bsCollapse(
           id = "conn_opt_panel", open = "conn_options",
@@ -233,3 +233,7 @@ fluidRow(
     )
   )
 ) 
+
+
+
+

@@ -4,8 +4,7 @@ logoutUI <- function(id, label="Log out", icon=NULL, class="btn-danger", style="
   
   ns <- shiny::NS(id)
   
-  shiny::actionLink(inputId=ns("button"), class="button-link", icon=tags$i(class="fa fa-user-circle"), label="Log out")
-  
+  shiny::actionLink(inputId=ns("button"), class="button-link", icon=tags$i(class="fa fa-user-circle"), label="Sign Out")  
 }
 
 logout <- function(input, output, session, active) {

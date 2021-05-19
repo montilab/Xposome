@@ -1,31 +1,6 @@
 
 ## Observe when add data is clicked ####
-observeEvent({
-  input$Add_Project_Name
-  input$Add_Cell_Line_Name
-  input$Add_Portal_Name
-  input$Add_Description
-}, {
-  
-  ##obtain the input values
-  Project=trimws(input$Add_Project_Name);
-  Cell_Line=trimws(input$Add_Cell_Line_Name);
-  Portal=trimws(input$Add_Portal_Name);
-  Description=trimws(input$Add_Description); 
-  
-  if(Project=="" | Cell_Line=="" | Portal=="" | Description==""){
-    addprojectwarningmsg("Please fill in the required (*) fields.")
-  }else{
-    addprojectwarningmsg("")
-  }
-  
-}, ignoreInit=TRUE)
-
-## Observe when add data is clicked ####
 observeEvent(input$Add_Project_Add_Button, {
-  
-  ##obtain the current project list
-  proj_dat <- read_csv(paste0("data/Project_List.csv"))
   
   ##obtain the input values
   Project=trimws(input$Add_Project_Name);
@@ -38,31 +13,91 @@ observeEvent(input$Add_Project_Add_Button, {
   ## check all the input variables###
   check <- c();
   
+  ##Check Portal name, make sure no white space and starting number###
+  if(Portal != ""){
+    
+    checkspace <- length(grep(" ", Portal, fixed=TRUE)) > 0
+    checknumber <- length(grep("[0-9]", substr(Portal,1,1), perl=TRUE)) > 0
+    
+    if(checkspace){
+      shinyjs::show(id="portal-checkspace")
+      check <- c(check, "No")
+    }else{
+      shinyjs::hide(id="portal-checkspace")
+    }
+    
+    if(checknumber){
+      shinyjs::show(id="portal-checknumber")
+      check <- c(check, "No")
+    }else{
+      shinyjs::hide(id="portal-checknumber")
+    }
+    
+    if(checkspace==FALSE & checknumber==FALSE){
+      addprojectwarningmsg("")
+    }
+
+  }
+  
+  # Check project name, cell-line, portal and description
   if(Project=="" | Cell_Line=="" | Portal=="" | Description==""){
-    addprojectwarningmsg("Please fill in the required (*) fields.")
+    addprojectwarningmsg("Please fill in the required (*) fields above.")
     check <- c(check, "No")
   }else{
     addprojectwarningmsg("")
   }
   
-  GS_Collection=ifelse(input$add_cur_enrichment_option=="Yes", "Default", trimws(input$Add_New_Enrichment_GS));
-
-  if(GS_Collection==""){
-    addenrichmentgswarningmsg("Please enter a valid name.")
-    check <- c(check, "No")
+  # Check gene set collection
+  GS_Collection <- ifelse(input$add_cur_enrichment_option=="Yes", "Default", trimws(input$Add_Num_New_Enrichment_GS))
+  
+  # Check gene set name
+  if(GS_Collection == "Default"){
+    
+    GS_Collection_Name = "Hallmark, C2_Reactome_Pathways, NURSA"
+    GS_Collection_Link = "https://www.gsea-msigdb.org/gsea/msigdb, https://www.gsea-msigdb.org/gsea/msigdb, https://www.nursa.org/"
+    
   }else{
-    addenrichmentgswarningmsg("")
+    
+    check_gs_inputs <- c()
+  
+    if(GS_Collection >= 1){
+      if(is.null(gs_name_1()) | is.null(gs_link_1()) | is.null(gs_collection_file_1())){
+        check_gs_inputs <- c(check_gs_inputs, "No")
+      }
+    }
+    
+    if(GS_Collection >= 2){
+      if(is.null(gs_name_2()) | is.null(gs_link_2()) | is.null(gs_collection_file_2())){
+        check_gs_inputs <- c(check_gs_inputs, "No")
+      }
+    }
+    
+    if(GS_Collection >= 3){
+      if(is.null(gs_name_3()) | is.null(gs_link_3()) | is.null(gs_collection_file_3())){
+        check_gs_inputs <- c(check_gs_inputs, "No")
+      }
+    }
+    
+    if(any(check_gs_inputs %in% "No")){
+      check <- c(check, "No")
+    }else{
+      ##Combine the collection names
+      GS_Collection_Name = unlist(lapply(1:GS_Collection, function(c){
+        gs_name <- paste0("Add_New_Enrichment_GS_", c)
+        gs_collection_name <- input[[gs_name]]
+        return(gs_collection_name) 
+      }))
+      
+      ##Combine gene set links
+      GS_Collection_Link = unlist(lapply(1:GS_Collection, function(c){
+        gs_link <- paste0("Add_New_Enrichment_Link_", c)
+        gs_collection_link <- input[[gs_link]]
+        return(gs_collection_link) 
+      }))
+    }
   }
   
-  GS_Collection_Link=ifelse(input$add_cur_enrichment_option=="Yes", "https://www.gsea-msigdb.org/gsea/msigdb; https://signalingpathways.org/", trimws(input$Add_New_Enrichment_Link));
-  
-  if(GS_Collection_Link==""){
-    addenrichmentlinkwarningmsg("Please enter a valid link.")
-    check <- c(check, "No")
-  }else{
-    addenrichmentlinkwarningmsg("")
-  }
-  
+  # Check exposure variables
   if(!is.null(pro_file())){
     
     Compound=input$add_variable_compound; 
@@ -99,6 +134,7 @@ observeEvent(input$Add_Project_Add_Button, {
     }
   }
   
+  # Check import files
   if(is.null(intro_file()) | is.null(pro_file()) | is.null(chem_file()) | is.null(ge_file())){
     check <- c(check, "No")
   } 
@@ -106,11 +142,8 @@ observeEvent(input$Add_Project_Add_Button, {
   if(input$add_conn_option %in% "Yes" & (is.null(conn_pcl_file()) | is.null(conn_pert_file()))){
     check <- c(check, "No")
   }
-
-  if(input$add_cur_enrichment_option %in% "No" & is.null(gs_collection_file())){
-    check <- c(check, "No")
-  }
   
+  # Make sure all conditions are met, if not output the required messages
   if(any(check %in% "No")) { addinputwarningmsg("Please fill in the required (*) fields."); return(NULL) }
   
   #Validate to see the project exists
@@ -125,6 +158,7 @@ observeEvent(input$Add_Project_Add_Button, {
       Portal %in% !!Portal
     )
   
+  #Check portal and project names
   if(nrow(validate_proj) > 0 | nrow(validate_portal) > 0){
     
     if(nrow(validate_proj) > 0){
@@ -141,10 +175,12 @@ observeEvent(input$Add_Project_Add_Button, {
     
   }else{
     
+    # disable the add and cancel button
     shinyjs::disable(id="Add_Project_Add_Button")
     shinyjs::disable(id="Add_Project_Cancel_Button")
     
-    addprojectwarningmsg(""); addinputwarningmsg(""); #remove all warning messages
+    #remove all warning messages
+    addprojectwarningmsg(""); addinputwarningmsg(""); 
     
     ##Getting introduction data####
     intro_file <- intro_file();
@@ -161,6 +197,7 @@ observeEvent(input$Add_Project_Add_Button, {
       gene_expression <- exprs(ge_file())
     }
     
+    #Create a expression set####
     gene_expression <- as.matrix(gene_expression, nrow=nrow(gene_expression), ncol=ncol(gene_expression), byrow=TRUE, dimnames=list(rownames(gene_expression), colnames(gene_expression)))
     var <- ifelse(all(colnames(gene_expression) %in% pro_ann$Sig_Id), "Sig_Id", "Chemical_Id")
     
@@ -181,8 +218,8 @@ observeEvent(input$Add_Project_Add_Button, {
       }else{
         if(!"Gene" %in% colnames(fData)){
           fData <- data.frame(Gene=rownames(gene_expression), fData, stringsAsFactors = TRUE)
-          rownames(fData) <- fData$Gene
         }
+        rownames(fData) <- fData$Gene
       }
       
     }else{
@@ -192,15 +229,24 @@ observeEvent(input$Add_Project_Add_Button, {
       
     }
     
-    #create feature data
+    if(Add_Landmark){
+      landmark <- readRDS("data/Landmark/landmark_gene.RDS")
+      
+      if("Landmark_Gene" %in% colnames(fData)){
+        fData <- fData %>% select(-Landmark_Gene)
+      }
+      
+      fData <- (fData %>% left_join(landmark, by="Gene")) %>% replace_na(list(Landmark_Gene="Unknown"))
+      rownames(fData) <- fData$Gene
+    }
+    
     featureData <- new("AnnotatedDataFrame", data=fData)
     
     #create expression set
-    orig_expressionSet <- ExpressionSet(assayData=gene_expression, phenoData=phenoData, featureData=featureData)
+    expressionSet <- ExpressionSet(assayData=gene_expression, phenoData=phenoData, featureData=featureData)
     
     ##Getting the variables annotation
-    if(is.null(input$Add_TAS)){ Add_TAS <- FALSE }else{ Add_TAS <- input$Add_TAS }
-    if(is.null(input$Add_Modzscores)){ Add_Modzscores <- FALSE }else{ Add_Modzscores <- input$Add_Modzscores}
+    Add_TAS <- input$Add_TAS; Add_Modzscores <- input$Add_Modzscores;
     
     ##Getting connectivity map####
     add_conn_option <- input$add_conn_option;
@@ -228,14 +274,34 @@ observeEvent(input$Add_Project_Add_Button, {
     
     # Read in the gene set collection for gene set enrichment analysis###
     if(add_cur_enrichment_option=="Yes"){
+      
       gsscores_hallmark <- getGmt(paste0("data/Enrichment Gene Set/h.all.v", Enrichment_Version, ".0.gmt"))
       gsscores_c2_reactome <- getGmt(paste0("data/Enrichment Gene Set/c2.cp.reactome.v", Enrichment_Version, ".0.gmt"))
       gsscores_nursa <- getGmt(paste0("data/Enrichment Gene Set/nursa_consensome_Cbyfdrvalue_0.01.gmt"))
+      
     }else{
-      gs_collection_path <- gs_collection_file() %>% extract2("path")
-      gs_collection <- gs_collection_file() %>% extract2("data")
+      
       ##Save the new gene set file####
-      file.copy(from=gs_collection_path, to=file.path("data/Enrichment Gene Set", paste0(GS_Collection, ".gmt")), overwrite=TRUE)
+      if(GS_Collection >= 1){
+        gs_collection_path_1 <- gs_collection_file_1() %>% extract2("path")
+        gs_collection_1 <- gs_collection_file_1() %>% extract2("data")
+        file.copy(from=gs_collection_path_1, to=file.path("data/Enrichment Gene Set", paste0(gs_name_1(), ".gmt")), overwrite=TRUE)
+      }
+      
+      ##Save the new gene set file####
+      if(GS_Collection >= 2){
+        gs_collection_path_2 <- gs_collection_file_2() %>% extract2("path")
+        gs_collection_2 <- gs_collection_file_2() %>% extract2("data")
+        file.copy(from=gs_collection_path_2, to=file.path("data/Enrichment Gene Set", paste0(gs_name_2(), ".gmt")), overwrite=TRUE)
+      }
+      
+      ##Save the new gene set file####
+      if(GS_Collection >= 3){
+        gs_collection_path_3 <- gs_collection_file_3() %>% extract2("path")
+        gs_collection_3 <- gs_collection_file_3() %>% extract2("data")
+        file.copy(from=gs_collection_path_3, to=file.path("data/Enrichment Gene Set", paste0(gs_name_3(), ".gmt")), overwrite=TRUE)
+      }
+      
     }
     
     ##Taxonomer parameters####
@@ -247,10 +313,12 @@ observeEvent(input$Add_Project_Add_Button, {
         connectivity_var <- TRUE
         connectivity_test <- input$add_connectivity_test 
       }else{
-        connectivity_var <- FALSE 
+        connectivity_var <- FALSE;        
+        connectivity_test <- ""
       }
     }else{
-      connectivity_var <- FALSE 
+      connectivity_var <- FALSE;
+      connectivity_test <- "" 
     }
     
     ##Get the meta-variable test####
@@ -273,6 +341,7 @@ observeEvent(input$Add_Project_Add_Button, {
 
       # Initialize list to hold values for PortalDataset entity
       portalDataset <- list(
+        portal = Portal,
         timestamp = format(Sys.Date(), "%a %b %d %X %Z %Y")
       )
       
@@ -295,18 +364,10 @@ observeEvent(input$Add_Project_Add_Button, {
       #
       ##########################################################################################
       
+      # Increment the progress bar
       progress$inc(2/10, detail = "Saving chemical and profile annotation")
       
-      #Get the gene expression, profile and chemical annotation;
-      # gene_expression <- read.csv(paste0("~/Documents/Internship Project/Exposome app/K2Example/TGGates_Example/Expression_Set.csv"), header=TRUE, row.names=1, check.names=FALSE, stringsAsFactors = TRUE)
-      # chem_ann <- read.csv(paste0("~/Documents/Internship Project/Exposome app/K2Example/TGGates_Example/Chemical_Annotation.csv"), header=TRUE, row.names=1, check.names=FALSE, stringsAsFactors = TRUE)
-      # pro_ann <- read.csv(paste0("~/Documents/Internship Project/Exposome app/K2Example/TGGates_Example/Profile_Annotation.csv"), header=TRUE, row.names=1, check.names=FALSE, stringsAsFactors = TRUE)
-
-      ##########################################################################################
-      #
-      # GET THE UNIQUE ID BY CHEM FOR PRO ANN####
-      #
-      ##########################################################################################
+      # GET THE UNIQUE ID BY CHEM FOR PROFILE ANNOTATION
       pro_ann$unique_ID_by_chem <- lapply(1:nrow(pro_ann), function(r){ paste0(unlist(pro_ann[r,Exposure]), collapse="_") }) %>% unlist()
       
       ##########################################################################################
@@ -314,37 +375,31 @@ observeEvent(input$Add_Project_Add_Button, {
       # CALCULATE MOD Z-SCORES AND REPLICATE CORRELATION (CC) FOR TAS####
       #
       ##########################################################################################
- 
-      if(Add_TAS==TRUE | Add_Modzscores==TRUE){
+      
+      if(Add_TAS==TRUE){
         
         #print(head(pro_ann)); print(dim(pro_ann)); print(head(chem_ann)); print(dim(chem_ann));
         calc_results <- TAS_Modzscores_Calculation(pro_ann=pro_ann, chem_ann=chem_ann, gene_expression=gene_expression)
         
-        if(Add_TAS){
-          # get TAS
-          TAS <- calc_results[["TAS"]]
-          
-          # chemical annotation information
-          chem_ann <- chem_ann %>% left_join(TAS) %>% select(-Number_of_Replicates) 
-          
-          # profile annotation information
-          pro_ann <- pro_ann %>% left_join(TAS)
-
-        }
-
-        # get modzscores
-        if(Add_Modzscores){
-          Modzscores <- calc_results[["Modzscores"]]
-          gene_expression <- Modzscores
-        }
+        # get TAS
+        TAS <- calc_results[["TAS"]]
         
+        # chemical annotation information
+        chem_ann <- chem_ann %>% left_join(TAS) %>% select(-Number_of_Replicates) 
+        
+        # profile annotation information
+        pro_ann <- pro_ann %>% left_join(TAS)
+
       }
       
-      # Upload profile and chemical annotation to WorkFiles,
+      # Upload profile annotation to WorkFiles,
       # and add WorkFile IDs to list of values for portal dataset list
       portalDataset$ProfileAnnotationRDS <- GeneHive::objectId(
         GeneHive::storeObjectAsWorkFile(pro_ann)
       )
+      
+      # Upload chemical annotation to WorkFiles,
+      # and add WorkFile IDs to list of values for portal dataset list
       portalDataset$ChemicalAnnotationRDS <- GeneHive::objectId(
         GeneHive::storeObjectAsWorkFile(chem_ann)
       )
@@ -358,43 +413,13 @@ observeEvent(input$Add_Project_Add_Button, {
       ##########################################################################################
       
       progress$inc(3/10, detail = "Saving expression set")
-      
-      #Create a expression set####
-      gene_expression <- as.matrix(gene_expression, nrow=nrow(gene_expression), ncol=ncol(gene_expression), byrow=TRUE, dimnames=list(rownames(gene_expression), colnames(gene_expression)))
-      var <- ifelse(all(colnames(gene_expression) %in% pro_ann$Sig_Id), "Sig_Id", "Chemical_Id")
-      
-      #create phenotypic data
-      pData <- data.frame(pro_ann[match(colnames(gene_expression), pro_ann[,var]),], stringsAsFactors=TRUE)
-      pData <- pData[!duplicated(pData[,var]),]
-      rownames(pData) <- pData[,var]
-      phenoData <- new("AnnotatedDataFrame", data=pData)
-      
-      #create feature data
-      fData <- fData(orig_expressionSet)
-      
-      if(Add_Landmark){
-        landmark <- readRDS("data/Landmark/landmark_gene.RDS")
-        
-        if("Landmark_Gene" %in% colnames(fData)){
-          fData <- fData %>% select(-Landmark_Gene)
-        }
-        
-        fData <- (fData %>% left_join(landmark, by="Gene")) %>% replace_na(list(Landmark_Gene="Unknown"))
-        rownames(fData) <- fData$Gene
-      }
-      
-      featureData <- new("AnnotatedDataFrame", data=fData)
-      
-      #create expression set
-      expressionSet <- ExpressionSet(assayData=gene_expression, phenoData=phenoData, featureData=featureData)
-      
-      ##Add data to portal object####
-#      saveRDS(orig_expressionSet, paste0("data/", Portal, "/Orig_Expression_Set.RDS"))
+    
       # Upload ExpressionSet to WorkFile,
       # and add WorkFile ID to list of values for portal dataset list
       portalDataset$GeneExpressionRDS <- GeneHive::objectId(
         GeneHive::storeObjectAsWorkFile(expressionSet)
       )
+      
       print("Saving gene expression file")
       
       ##Create morpheus heatmap####
@@ -539,15 +564,15 @@ observeEvent(input$Add_Project_Add_Button, {
       progress$inc(5/10, detail = "Saving gene set enrichment results")
       
       #create gene set enrichment####
-      gsscores <- list(); gsvamethod=ssGSEAalg;
+      gsscores <- list(); gsvamethod = ssGSEAalg;
       
+      # Run gene set enrichment analysis
       if(add_cur_enrichment_option == "No"){
-        genesetcollection=GS_Collection;
-        geneset="gs_collection";
+        genesetcollection=GS_Collection_Name
+        geneset=unlist(lapply(seq_along(GS_Collection_Name), function(c){ paste0("gs_collection_", c) }))
       }else{
-        # Run gene set enrichment analysis for hallmark, C2, and NURSA
         genesetcollection=c(paste0("h.all.v", Enrichment_Version, ".0"), paste0("c2.cp.reactome.v", Enrichment_Version, ".0"), paste0("nursa_consensome_Cbyfdrvalue_0.01"));
-        geneset=c("gsscores_hallmark", "gsscores_c2_reactome", "gsscores_nursa");
+        geneset=c("gsscores_hallmark", "gsscores_c2_reactome", "gsscores_nursa")
       }
 
       # Getting differential expression
@@ -619,97 +644,109 @@ observeEvent(input$Add_Project_Add_Button, {
       
       progress$inc(6/10, detail = "Saving taxonomer results")
       
-      print(cohorts)
+      #Create a expression set####
+      eSet <- expressionSet
       
-      if(!is.null(cohorts)){
+      #Create the info class vector to run the metavariable test
+      infoClassVector <- NULL;
+
+      for(v in seq_along(Exposure_Phenotype)){
+        #v=1;
+        #print(input[[paste0("metavar_", Exposure_Phenotype[v])]])
+        test <- meta_variable_test$method[which(meta_variable_test$statistical_test %in% methods[v])]
         
-        #Create the info class vector to run the metavariable test
-        infoClassVector <- NULL;
-        
-        #Create a expression set####
-        eSet <- orig_expressionSet
-        #print(eSet)
-        
-        for(v in seq_along(Exposure_Phenotype)){
-          #v=1;
-          #print(input[[paste0("metavar_", Exposure_Phenotype[v])]])
-          test <- meta_variable_test$method[which(meta_variable_test$statistical_test %in% methods[v])]
-          
-          if(test %in% "factor1" & all(toupper(c("No", "Yes")) %in% toupper(pData(eSet)[,Exposure_Phenotype[v]]))){
-            pData(eSet)[,Exposure_Phenotype[v]] <- factor(pData(eSet)[,Exposure_Phenotype[v]], levels = c("No", "Yes"))
-          }
-          
-          infoClassVector <- c(infoClassVector, test)
+        if(test %in% "factor1" & all(toupper(c("No", "Yes")) %in% toupper(pData(eSet)[,Exposure_Phenotype[v]]))){
+          pData(eSet)[,Exposure_Phenotype[v]] <- factor(pData(eSet)[,Exposure_Phenotype[v]], levels = c("No", "Yes"))
         }
         
-        names(infoClassVector) <- Exposure_Phenotype; #print(infoClassVector);
-        
-        # fname <- "MCF10A"; connectivity_test <- TRUE; infoClassVector <- NULL; Exposure_Phenotype <- NULL;
-        # eset <- readRDS(paste0("data/", fname, "/Expression_Set.RDS"))
-        # conn_pcl <- exprs(readRDS(paste0("data/", fname, "/Connectivity.RDS"))[["pcl"]])
-        # conn_pert <- exprs(readRDS(paste0("data/", fname, "/Connectivity.RDS"))[["pert"]])
-        
-        ##Add connectivity test##### 
-        if(connectivity_var){
-          pData <- pData(eset)
-          conn_pcl_transpose <- t(conn_pcl) %>% as.data.frame()
-          conn_pert_transpose <- t(conn_pert) %>% as.data.frame() 
-          pData <- (pData %>% cbind(conn_pcl_transpose[match(rownames(pData), rownames(conn_pcl_transpose)),])) %>% cbind(conn_pert_transpose[match(rownames(pData), rownames(conn_pert_transpose)),])
-          infoClassVector <- c(infoClassVector, rep(connectivity_test, ncol(conn_pcl_transpose)), rep(connectivity_test, ncol(conn_pert_transpose)))
-          names(infoClassVector) <- c(Exposure_Phenotype, colnames(conn_pcl_transpose), colnames(conn_pert_transpose))
-        }
-        
-        ##Hyperenrichment analysis####
-        if(add_cur_enrichment_option == "Yes"){
-          
-          hallmark_genelist <- lapply(seq_along(gsscores_hallmark), function(g){ gsscores_hallmark[[g]]@geneIds })
-          names(hallmark_genelist) <- names(gsscores_hallmark)
-          
-          c2_reactome_genelist <- lapply(seq_along(gsscores_c2_reactome), function(g){ gsscores_c2_reactome[[g]]@geneIds })
-          names(c2_reactome_genelist) <- names(gsscores_c2_reactome)
-          
-          nursa_genelist <- lapply(seq_along(gsscores_nursa), function(g){ gsscores_nursa[[g]]@geneIds })
-          names(nursa_genelist) <- names(gsscores_nursa)
-          
-          # Combine gene set enrichment for hallmark, C2, and NURSA
-          geneSetList <- do.call(c, list(hallmark_genelist, c2_reactome_genelist, nursa_genelist))
-          
-        }else{
-          
-          collection_genelist <- lapply(seq_along(gs_collection), function(g){ gs_collection[[g]]@geneIds })
-          names(collection_genelist) <- names(gs_collection)
-          
-          geneSetList <- collection_genelist
-          
-        }  
-        
-        # Run K2Taxonomer
-        
-        # Set seed
-        RNGkind("L'Ecuyer-CMRG")
-        set.seed(12345678)
-        
-        K2res <- runK2Taxonomer(
-          eSet = eSet,
-          cohorts = cohorts,
-          featMetric = featMetric,
-          infoClass = infoClassVector,
-          genesets = geneSetList,
-          ssGSEAalg = ssGSEAalg,
-          ssGSEAcores = 1,
-          stabThresh = 0.67
-        )
-        
-        #print(head(K2res))
-        
-        # Upload K2Taxonomer results to WorkFile,
-        # and add WorkFile ID to list of values for portal dataset list
-        portalDataset$K2TaxonomerResultsRDS <- GeneHive::objectId(
-          GeneHive::storeObjectAsWorkFile(K2res)
-        )
+        infoClassVector <- c(infoClassVector, test)
       }
       
+      names(infoClassVector) <- Exposure_Phenotype; 
+      
+      ##Add connectivity test##### 
+      if(connectivity_var){
+        pData <- pData(eset)
+        conn_pcl_transpose <- t(conn_pcl) %>% as.data.frame()
+        conn_pert_transpose <- t(conn_pert) %>% as.data.frame() 
+        pData <- (pData %>% cbind(conn_pcl_transpose[match(rownames(pData), rownames(conn_pcl_transpose)),])) %>% cbind(conn_pert_transpose[match(rownames(pData), rownames(conn_pert_transpose)),])
+        infoClassVector <- c(infoClassVector, rep(connectivity_test, ncol(conn_pcl_transpose)), rep(connectivity_test, ncol(conn_pert_transpose)))
+        names(infoClassVector) <- c(Exposure_Phenotype, colnames(conn_pcl_transpose), colnames(conn_pert_transpose))
+      }
+      
+      ##Hyperenrichment analysis####
+      if(add_cur_enrichment_option == "Yes"){
+        
+        hallmark_genelist <- lapply(seq_along(gsscores_hallmark), function(g){ gsscores_hallmark[[g]]@geneIds })
+        names(hallmark_genelist) <- names(gsscores_hallmark)
+        
+        c2_reactome_genelist <- lapply(seq_along(gsscores_c2_reactome), function(g){ gsscores_c2_reactome[[g]]@geneIds })
+        names(c2_reactome_genelist) <- names(gsscores_c2_reactome)
+        
+        nursa_genelist <- lapply(seq_along(gsscores_nursa), function(g){ gsscores_nursa[[g]]@geneIds })
+        names(nursa_genelist) <- names(gsscores_nursa)
+        
+        # Combine gene set enrichment for hallmark, C2, and NURSA
+        geneSetList <- do.call(c, list(hallmark_genelist, c2_reactome_genelist, nursa_genelist))
+        
+      }else{
+        
+        if(GS_Collection >= 1){
+          collection_genelist_1 <- lapply(seq_along(gs_collection_1), function(g){ gs_collection_1[[g]]@geneIds })
+          names(collection_genelist_1) <- names(gs_collection_1)
+        }
+        
+        if(GS_Collection >= 2){
+          collection_genelist_2 <- lapply(seq_along(gs_collection_2), function(g){ gs_collection_2[[g]]@geneIds })
+          names(collection_genelist_2) <- names(gs_collection_2)
+        }
+        
+        if(GS_Collection >= 3){
+          collection_genelist_3 <- lapply(seq_along(gs_collection_3), function(g){ gs_collection_3[[g]]@geneIds })
+          names(collection_genelist_3) <- names(gs_collection_3)
+        }
+        
+        # Combine gene set enrichment
+        if(GS_Collection == 1){
+          geneSetList <- do.call(c, list(collection_genelist_1))
+        }else if(GS_Collection == 2){
+          geneSetList <- do.call(c, list(collection_genelist_1, collection_genelist_2))
+        }else if(GS_Collection == 3){
+          geneSetList <- do.call(c, list(collection_genelist_1, collection_genelist_2, collection_genelist_3))
+        }
+
+      }  
+      
+      # Run K2Taxonomer
+      # Set seed
+      RNGkind("L'Ecuyer-CMRG")
+      set.seed(12345678)
+      
+      K2res <- runK2Taxonomer(
+        eSet = eSet,
+        cohorts = cohorts,
+        featMetric = featMetric,
+        infoClass = infoClassVector,
+        genesets = geneSetList,
+        ssGSEAalg = ssGSEAalg,
+        ssGSEAcores = 1,
+        stabThresh = 0.67
+      )
+      
+      # Upload K2Taxonomer results to WorkFile,
+      # and add WorkFile ID to list of values for portal dataset list
+      portalDataset$K2TaxonomerResultsRDS <- GeneHive::objectId(
+        GeneHive::storeObjectAsWorkFile(K2res)
+      )
+      
       print("Saving K2Taxonomer results")
+      
+      # Add PortalDataset entity to GeneHive
+      do.call(
+        GeneHive::addEntity, args=c(.class="PortalDataset", portalDataset)
+      )
+      
+      print("Add PortalDataset entity to GeneHive")
       
     })
     
@@ -718,7 +755,6 @@ observeEvent(input$Add_Project_Add_Button, {
       fut,
       function(e){
         print(e$message)
-        #showNotification(e$message)
       })
     
     ## When done with analysis, remove progress bar
@@ -737,8 +773,8 @@ observeEvent(input$Add_Project_Add_Button, {
         Portal=Portal,
         GS_Collection=GS_Collection,
         GS_Collection_Link=GS_Collection_Link,
+        Enrichment_Version = Enrichment_Version,
         Landmark_Gene=Landmark_Gene,
-        Description=Description,
         stringsAsFactors = TRUE
       )
       
@@ -752,29 +788,28 @@ observeEvent(input$Add_Project_Add_Button, {
       
       new_proj <- cbind(
         new_proj, 
-        TAS_Modzscores=paste0(c(Add_TAS, Add_Modzscores), collapse=", "), 
+        TAS=Add_TAS, 
+        Modzscores=Add_Modzscores, 
         Exposure_Levels=paste0(exposure_categorical, collapse=", "), 
         Exposure_Phenotype=paste0(exposure_phenotype_categorical, collapse=", "), 
         Exposure_Phenotype_Test=paste0(methods, collapse=", "), 
         Connectivity_Test=paste0(c(connectivity_var, connectivity_test), collapse=", "),
-        Feature_Filtering=featMetric
+        Feature_Filtering=featMetric,
+        Description=Description
       )
       
       new_proj <- new_proj[,colnames(proj_dat)]
       
-      if(all(is.na(proj_dat))){
+      if(all(proj_dat$Portal %in% c("NA", ""))){
         newproject <- new_proj
       }else{
         newproject <- proj_dat %>% rbind(new_proj)
       }
+      
       projectdata(newproject)
-
-      # Add PortalDataset entity to GeneHive
-      do.call(
-        GeneHive::addEntity, args=c(.class="PortalDataset", portalDataset)
-      )
       
       project_table_message(paste0(Portal, ' portal has been added. Click "Save" to keep this results.'))
+      
       removeModal()
       
       shinyjs::enable(id="Add_Project_Add_Button")

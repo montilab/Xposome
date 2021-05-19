@@ -1,5 +1,5 @@
-# Get the xposme image from docker hub
-FROM montibot/xposome:latest
+# Get shiny+tidyverse packages from rocker image
+FROM rocker/shiny-verse:3.6.2
 
 # Set up the maintainer information
 MAINTAINER Reina Chau (lilychau999@gmail.com)
@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y \
     libudunits2-dev \
     libv8-dev \
     libsodium-dev 
-
+  
 # Install the required R packages to run the app
 RUN R -e "install.packages('data.table', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('ggdendro', dependencies=TRUE, repos='http://cran.rstudio.com/')"
@@ -48,6 +48,17 @@ RUN R -e "install.packages('RcolorBrewer', dependencies=TRUE, repos='http://cran
 RUN R -e "install.packages('promises', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('future', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
+# Install K2taxonomer and its dependencies
+RUN R -e "install.packages('plotly', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "BiocManager::install('limma')"
+RUN R -e "install.packages('flexdashboard', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('heatmaply', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('visNetwork', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('robustbase', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('conclust', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "BiocManager::install('Rhtslib')"
+RUN R -e "devtools::install_github('montilab/K2Taxonomer')"
+
 # Install uuidtools and GeneHive and its dependencies
 RUN R -e "BiocManager::install('S4Vectors')"
 RUN R -e "install.packages('filenamer', dependencies=TRUE, repos='http://cran.rstudio.com/')"
@@ -55,10 +66,6 @@ RUN R -e "install.packages('io', dependencies=TRUE, repos='http://cran.rstudio.c
 RUN R -e "install.packages('rjson', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "devtools::install_github('agower/uuidtools')"
 RUN R -e "devtools::install_github('agower/GeneHive')"
-
-# Install plumber for api calls
-RUN R -e "install.packages('plumber', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('unix', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
 # Make the ShinyApp available at port 3838
 EXPOSE 3838

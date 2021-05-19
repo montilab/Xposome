@@ -130,7 +130,7 @@ output$dendro <- renderVisNetwork({
     }else{
       vNetOut <- .[["vNetOut_qvalues"]]
     }
-    
+
     vNetOut %>%
       visOptions(
         autoResize = T,

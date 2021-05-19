@@ -12,9 +12,39 @@ observeEvent(chemical_dat(), {
       `BUID`=sort(unique(dat$BUID[which(!dat$BUID %in% c(NA, "") & !dat$Chemical_Name %in% c(NA, ""))])),
       `CAS`=sort(unique(dat$CAS[which(!dat$CAS %in% c(NA, "") & !dat$Chemical_Name %in% c(NA, ""))]))
     )
+  
+    updateSelectInput(session, inputId="chem", choices=c("Please select an option below"="", chemicals), selected=chemical_id)
     
-    updateSelectInput(session, inputId = "chem", choices = c("Please select an option below" = "", chemicals))
-    
+  }
+  
+})
+
+## Go back to home page when the logo link is clicked on ####
+observeEvent({
+  input$chem
+}, {
+  
+  if(input$main_page == "chemical_explorer"){
+    if(is.null(input$chem) | input$chem == ""){
+      updateQueryString(paste0("?page=", fname, "&tab=", input$main_page), mode="push") 
+    }else{
+      updateQueryString(paste0("?page=", fname, "&tab=", input$main_page, "&chemical_id=", input$chem, "&stat=", input$chemical_tab), mode="push") 
+    }
+  }
+  
+})
+
+## Go back to home page when the logo link is clicked on ####
+observeEvent({
+  input$chemical_tab
+}, {
+  
+  if(input$main_page == "chemical_explorer"){
+    if(is.null(input$chem) | input$chem == ""){
+      updateQueryString(paste0("?page=", fname, "&tab=", input$main_page), mode="push") 
+    }else{
+      updateQueryString(paste0("?page=", fname, "&tab=", input$main_page, "&chemical_id=", input$chem, "&stat=", input$chemical_tab), mode="push") 
+    }
   }
   
 })
