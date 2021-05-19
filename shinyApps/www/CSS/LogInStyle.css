@@ -1,0 +1,123 @@
+
+
+/*//////////////////////////////////////////////////////////////////
+[ login ]*/ 
+
+.signin-page {
+    margin: 0 0 0 0;
+	padding: 20px 20px 20px 20px;
+}
+
+.login-container {
+  padding: 0 0 0 0;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;
+  border: 1px solid lightgray;
+}
+
+/*==================================================================
+[ Title form ]*/
+
+.login-form {
+  width: 100%;
+  display: table;
+  table-layout: fixed; 
+  background-color: #08306b;
+  padding: 70px 15px 70px 15px;
+  border-top-right-radius: 10px;
+  border-top-left-radius: 10px;
+  border-bottom-right-radius: 1.5px;
+  border-bottom-left-radius: 1.5px;
+}
+
+.login-form-title {
+  float: none;
+  display: table-cell;
+  font-family: Arial;
+  font-size: 30px;
+  color: #fff;
+  text-transform: uppercase;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/*==================================================================
+[ Form ]*/
+
+.login-validate-form {
+  width: 100%;
+  margin: 30px 20px 50px 20px;
+}
+
+
+/*------------------------------------------------------------------
+[ Input ]*/
+
+.wrap-input {
+  width: 100%;
+  display: table;
+  table-layout: fixed; 
+  border-bottom: 1px solid #b2b2b2;
+  margin-bottom: 20px;
+}
+
+/*---------------------------------------------*/
+
+.logininput {
+  width: 100%;
+  float: none;
+  display: table-cell;
+  vertical-align: center;
+  font-family: Arial;
+  font-size: 15px;
+  color: #555555;
+  background: transparent;
+  height: 50px;
+  outline: none;
+  border: none;
+}
+
+.login-error-message{
+	color: red;
+	font-weight: bold;
+	text-align: center;
+	padding: 30px 0 30px 0;
+}
+
+/*------------------------------------------------------------------
+[ Button ]*/
+
+.login-form-btn-container {
+  width: 100%;
+  display: table;
+  table-layout: fixed;
+}
+
+.login-btn {
+  min-width: 160px;
+  height: 50px;
+  background-color: rgba(54,84,99,0.7);
+  border-radius: 25px;
+
+  font-family: Arial;
+  font-size: 16px;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.login-btn:hover {
+  background-color: #08306b;
+  color: white;
+}
+
+.login-btn:focus {
+  background-color: #08306b;
+  color: white;
+}

@@ -1,0 +1,137 @@
+
+
+/*------------------------------
+    Sidebar and Main page CSS
+------------------------------*/
+
+.moderator-page{
+	padding: 0 0 0 0;
+	margin: 0 0 0 0;
+}
+
+/*----------------------------------------*/
+/*   Header Top CSS
+/*----------------------------------------*/
+.moderator-top-banner {
+  width: 100%;
+  display: table;
+  table-layout: fixed;
+	background: #08519c;
+	padding: 0 0 0 0;
+	margin: 0 0 0 0;
+}
+
+.moderator-top-banner > [class*="col-"] {
+    float: none;
+    display: table-cell;
+    vertical-align: center;
+	padding: 20px 20px 20px 20px;
+	margin: 0 0 0 0;
+    width: 100%;
+}
+
+/*----------------------------------------*/
+/*   Header Body CSS
+/*----------------------------------------*/
+.moderator-body {
+    width: 100%;
+    display: table;
+    table-layout: fixed;
+    margin: 0 0 0 0;
+	margin: 0 0 0 0;
+}
+
+.moderator-body > [class*="col-"] {
+    float: none;
+    display: table-cell;
+    vertical-align: center;
+	padding: 20px 20px 20px 20px;
+	margin: 0 0 0 0;
+    width: 100%;
+}
+
+/*----------------------------------------*/
+/*   Button-link CSS
+/*----------------------------------------*/
+
+.button-link {
+	display: inline-block;
+	text-transform: uppercase;
+	font-size: 18px;
+	min-width: 50px;
+	min-height: 20px;
+	text-align: center;
+	padding: 10px 0 10px 0;
+	color: white;
+	font-weight: 700;
+	background: none;
+	border: none;
+}
+
+#LogOut{
+	text-decoration: none;
+	background: none;
+	border: none;
+	outline: none;
+}
+
+.button-link:hover{
+	background: none;
+	border: none;
+	outline: none;
+}
+
+#LogOut:hover{
+	background: none;
+	border: none;
+	outline: none;
+	color: white;
+}
+
+.button-link:focus {
+	background: none;
+	border: none;
+	outline: none;
+	color: white;
+}
+
+#LogOut:focus{
+	background: none;
+	border: none;
+	outline: none;
+	color: white;
+}
+
+.Button{
+	background-color: rgba(54,84,99,0.7);
+	color: white;
+	border-radius: 25px;
+	font-weight: bold;
+}
+
+.Button:hover {
+  background-color: #08306b;
+  color: white;
+}
+
+.Button:focus {
+  background-color: #08306b;
+  color: white;
+}
+
+#LoginMessage {
+	color: red; 
+	font-weight: bold;
+}
+
+/*---------------------
+	file input style
+-----------------------*/
+
+.fileInputMsg {
+  width: 100%;
+  text-align: left;
+  color: red;
+}
+
+
