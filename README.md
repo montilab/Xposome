@@ -2,4 +2,4 @@
 
 Chemical Screening using high-throughput transcriptomics assays
 
-Visit our Github repo at https://montilab.github.io/Xposome/
+Check out our documentation at https://montilab.github.io/Xposome/
