@@ -1,4 +1,5 @@
-# Xposome Portal 
+# The Xposome Portal
 
-Requires data directory: contact maintainer for access
+Chemical Screening using high-throughput transcriptomics assays
 
+Visit our Github repo at https://montilab.github.io/Xposome/
