@@ -1,12 +1,15 @@
 
 
 #about page
-output$pageStub <- renderUI({
+output$about_page <- renderUI({
+  
+  req(input$portal_tab == "about")
   
   #####<!-- START ABOUT PAGE -->
-  
-  includeHTML("about.html")
-  
+  div(
+    class="about-page",
+    includeHTML("about.html")
+  )
   #####<!-- END ABOUT PAGE -->
   
 })

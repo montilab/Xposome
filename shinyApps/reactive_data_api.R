@@ -2,9 +2,9 @@
 # Read in the profile data ####
 profile_dat <- reactive({
   
-  req(selected_portal())
+  req(input$portal_id)
   
-  fname <- selected_portal()
+  fname <- input$portal_id
   
   # url for local testing
   url1 <- paste0("https://montilab.bu.edu/Xposome-API/profile_annotation?project=", fname)
@@ -48,9 +48,9 @@ profile_dat <- reactive({
 # Read in the chemical data ####
 chemical_dat <- reactive({
   
-  req(selected_portal())
+  req(input$portal_id)
   
-  fname <- selected_portal()
+  fname <- input$portal_id
   
   # url for local testing
   url2 <- paste0("https://montilab.bu.edu/Xposome-API/chemical_annotation?project=", fname)
@@ -91,9 +91,9 @@ chemical_dat <- reactive({
 # Read in the expression data ####
 expression_dat <- reactive({
   
-  req(selected_portal())
+  req(input$portal_id)
   
-  fname <- selected_portal();
+  fname <- input$portal_id;
   
   # url for local testing
   url3 <- paste0("https://montilab.bu.edu/Xposome-API/expression_set?project=", fname)
@@ -139,9 +139,9 @@ expression_dat <- reactive({
 # Read in the connectivity data ####
 connectivity_dat <- reactive({
   
-  req(selected_portal())
+  req(input$portal_id)
   
-  fname <- selected_portal()
+  fname <- input$portal_id
   
   # url for local testing
   url5 <- paste0("https://montilab.bu.edu/Xposome-API/connectivity_set?project=", fname)
@@ -187,9 +187,9 @@ connectivity_dat <- reactive({
 # Read in the gs enrichment data ####
 gs_enrichment_dat <- reactive({
   
-  req(selected_portal())
+  req(input$portal_id)
   
-  fname <- selected_portal()
+  fname <- input$portal_id
   
   # url for local testing
   url4 <- paste0("https://montilab.bu.edu/Xposome-API/enrichment_set?project=", fname)
@@ -220,6 +220,8 @@ gs_enrichment_dat <- reactive({
       enrichment_set <- readRDS(temp)
       unlink(temp)
       
+      #print(head(enrichment_set))
+      
       return(enrichment_set)
       
     }else{
@@ -235,9 +237,9 @@ gs_enrichment_dat <- reactive({
 ## Read in K2 Taxonomer data ####
 taxonomer_results <- reactive({
   
-  req(selected_portal())
+  req(input$portal_id)
   
-  fname <- selected_portal()
+  fname <- input$portal_id
   
   # url for local testing
   url6 <- paste0("https://montilab.bu.edu/Xposome-API/k2_taxonomer?project=", fname)

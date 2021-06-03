@@ -10,13 +10,13 @@ output$marker_hm_option <- renderUI({
       selectInput(
         inputId = "marker_hm", 
         label = "Select a marker set:",   
-        choices = if(landmark %in% TRUE){ c("Please select an option below" = "", "Genes (Landmark)", "Gene Sets") }else{  c("Please select an option below" = "", "Genes", "Gene Sets") }
+        choices = if(landmark() %in% TRUE){ c("Please select an option below" = "", "Genes (Landmark)", "Gene Sets") }else{  c("Please select an option below" = "", "Genes", "Gene Sets") }
       )
     }else{
       selectInput(
         inputId = "marker_hm", 
         label = "Select a marker set:",   
-        choices = if(landmark %in% TRUE){ c("Please select an option below" = "", "Genes (Landmark)", "Gene Sets", "CMap Connectivity") }else{  c("Please select an option below" = "", "Genes", "Gene Sets", "CMap Connectivity") }
+        choices = if(landmark() %in% TRUE){ c("Please select an option below" = "", "Genes (Landmark)", "Gene Sets", "CMap Connectivity") }else{  c("Please select an option below" = "", "Genes", "Gene Sets", "CMap Connectivity") }
       ) 
     }
     
@@ -27,6 +27,8 @@ output$marker_hm_option <- renderUI({
 output$hm_de_button <- renderUI({
   
   req(input$marker_hm)
+  
+  fname <- input$portal_id;
   
   if(input$marker_hm == "Genes"){
     htmlfile <- paste0("JSON/", fname, "/gene_expression.html")
@@ -43,6 +45,8 @@ output$hm_es_button <- renderUI({
   
   req(input$marker_gsname_hm, input$marker_gsmethod_hm)
   
+  fname <- input$portal_id; dsmap <- dsmap();
+  
   htmlfile <- paste0("JSON/", fname, "/", dsmap[[input$marker_gsname_hm]], "_", input$marker_gsmethod_hm, ".html")
   a(onclick="heatmapFun('hm_es_generate');", class="mybuttons", href=htmlfile, target="_blank", alt="heatmap", width = "100%", height="auto", span(icon("fas fa-arrow-circle-right"), "Generate heatmap"))
   
@@ -52,6 +56,8 @@ output$hm_es_button <- renderUI({
 output$hm_conn_button <- renderUI({
   
   req(input$marker_conn_name_hm)
+  
+  fname <- input$portal_id; 
   
   htmlfile <- paste0("JSON/", fname, "/", input$marker_conn_name_hm, "_connectivity.html")
   a(onclick="heatmapFun('hm_conn_generate');", class="mybuttons", href=htmlfile, target="_blank", alt="heatmap", width = "100%", height="auto", span(icon("fas fa-arrow-circle-right"), "Generate heatmap"))

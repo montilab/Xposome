@@ -5,12 +5,7 @@ fluidRow(
   
   column(
     width=4, offset = 4,
-    selectInput(
-      inputId = "chem",
-      label = "Select a Chemical Name/BUID/CAS:",
-      choices = c("Please select an option below" = ""),
-      width = "100%"
-    )
+    uiOutput("chemical_options")
   ),
   
   column(
@@ -37,7 +32,7 @@ fluidRow(
             fluidRow(
               column(
                 width=2,
-                if(landmark == FALSE){
+                if(landmark() == FALSE){
                   shinyjs::disabled(
                     checkboxInput(inputId = "landmark_de", label = "Landmark only", value=FALSE)
                   )
@@ -53,7 +48,7 @@ fluidRow(
               
               column(
                 width=2,
-                if(landmark == FALSE){
+                if(landmark() == FALSE){
                   div(
                     checkboxGroupInput(inputId = "filterbyinput_de", label = "Filter by", choices=c("score" = "score"), selected = "score"),
                     shinyjs::disabled(
@@ -72,7 +67,7 @@ fluidRow(
               
               column(
                 width=2,
-                if(landmark == FALSE){
+                if(landmark() == FALSE){
                   shinyjs::disabled(
                     sliderInput(inputId = "numberthresleft_de", label = "Num +", min = 0, max = 1000, value = defaults[["numberthresleft_de"]], ticks = FALSE, step = 10)
                   )
@@ -83,7 +78,7 @@ fluidRow(
               
               column(
                 width=2,
-                if(landmark == FALSE){
+                if(landmark() == FALSE){
                   shinyjs::disabled(
                     sliderInput(inputId = "numberthresright_de", label = "Num -", min = 0, max = 1000, value = defaults[["numberthresright_de"]], ticks = FALSE, step = 10)
                   )
@@ -131,8 +126,8 @@ fluidRow(
                   inputId = "gsname",
                   label = "Gene set name",
                   bId= "Bgsname",
-                  helptext = helptext_geneset,
-                  choices = names(dsmap)
+                  helptext = helptext_geneset(),
+                  choices = names(dsmap())
                 )
               ),
               

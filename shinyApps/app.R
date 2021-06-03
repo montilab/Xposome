@@ -50,26 +50,26 @@ ui <- bootstrapPage(
   
   tagList(
     tags$head(
-      ###<!-- favicon -->####
+      ##<!-- favicon -->####
       tags$link(href="IMAGES/github_logo.png", rel="shortcut icon"),
-      
-      # ####<!-- overall style -->####
+
+      ##<!-- overall style -->####
       tags$link(href="CSS/style.css", rel="stylesheet"),
       tags$link(href="CSS/main_style.css", rel="stylesheet"),
       tags$link(href="CSS/LogInStyle.css", rel="stylesheet"),
       tags$link(href="CSS/ModeratorStyle.css", rel="stylesheet"),
-
-      ##<!-- javascript -->####
-      tags$script(src="JS/Javascript.js", type="text/javascript"),
-      shinyjs::useShinyjs()
       
-      # ###<!-- jitter javascript -->####
-      # tags$script(HTML(
-      #   "((window.gitter = {}).chat = {}).options = {
-      #         room: 'xposome/webapp'
-      #    };"
-      # )),
-      # tags$script(type="text/javascript", src="https://sidecar.gitter.im/dist/sidecar.v1.js")
+      ##<!-- load all styles for font-awesome icons -->####
+      tags$link(href="CSS/all.css", rel="stylesheet"),
+        
+      ##<!-- javascript for bootstrap tooltip -->####
+      tags$script(src="JS/popper.min.js", type="text/javascript"),
+      
+      ##<!-- javascript for xposome application -->####
+      tags$script(src="JS/Javascript.js", type="text/javascript"),
+      
+      ##<!-- javascript for shinyjs package -->####
+      shinyjs::useShinyjs()
     )
   ),
   
@@ -81,60 +81,50 @@ ui <- bootstrapPage(
   ###the header#####
   fluidRow(
     column(
-      width=12,
+      width=12, class="header-container",
       
       HTML(
       '
-      <nav class="navbar navbar-default navbar-static-top" role="navigation">
+      <nav class="navbar navbar-default navbar-fixed-top">
         <div class="container-fluid">
           <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-3838">
-              <span class="sr-only">Toggle navigation</span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-            </button>
             <span class="navbar-brand">
-              <a href="?page=home" class="logo-link" onclick="curlinkFun(&#39;home&#39;)">
+              <button class="logo-link" onclick="curlinkFun(\'home\')">
                 <span>
-                  <img src="IMAGES/github_logo.png" width="50" height="40"/>
+                  <img src="IMAGES/github_logo.png" width="40" height="30"/>
                   <span>Xposome</span>
                 </span>
-              </a>
+              </button>
             </span>
           </div>
-          <div class="navbar-collapse collapse" id="navbar-collapse-3838">
-            <div class="nav navbar-nav shiny-tab-input" id="main_navbar">
-              <a onclick="curlinkFun(\'home\')" href="?page=home" id="home">Home</a>
-              <a onclick="curlinkFun(\'portal\')" href="?page=portal" id="portal">Portal</a>
-              <a onclick="curlinkFun(\'about\')" href="?page=about" id="about">About</a>
-              <a onclick="curlinkFun(\'contact\')" href="?page=contact" id="contact">Contact</a>
-              <a onclick="curlinkFun(\'sign_in\')" href="?page=sign_in" id="sign_in">Sign In</a>
-            </div>
+          
+          <div class="navbar-link">
+            <ul class="main_navbar">
+              <li onclick="curlinkFun(\'home\')" id="home">Home</li>
+              <li onclick="curlinkFun(\'about\')" id="about">Overview</li>
+              <li onclick="curlinkFun(\'portal\')" id="portal">Portal</li>
+              <a href="mailto:montilab@bu.edu" id="contact"><i class="far fa-envelope"></i>Contact</a>
+              <button onclick="curlinkFun(\'sign_in\')" id="sign_in" class="btn btn-warning">Sign In</button>
+            </ul>
           </div>
         </div>
       </nav>
       '
       )
-    )
-  ),
-
-  ###The main body#####
-  fluidRow(
-    class="body-container", style="position: relative; z-index: 0; overflow: scroll; height: 900px; padding: 0 0 0 0; margin: 0 0 0 0;",
+    ),
+    
+    ###The main body#####
+    column(
+      width=12, class="body-container", 
+      uiOutput("home_page") %>% withSpinner(id="loading-page", type=4, color="#0dc5c1"),
+      uiOutput("portal_page") %>% withSpinner(id="loading-page", type=4, color="#0dc5c1"),
+      uiOutput("about_page") %>% withSpinner(id="loading-page", type=4, color="#0dc5c1"),
+      uiOutput("contact_page") %>% withSpinner(id="loading-page", type=4, color="#0dc5c1"),
+      uiOutput("sign_in_page") %>% withSpinner(id="loading-page", type=4, color="#0dc5c1"),
+    ),
     
     column(
-      width=12, 
-      uiOutput("pageStub") %>% withSpinner(id="loading-page", type=4, color="#0dc5c1")
-    )
-  ),
-  
-  ###the footer/copyright#####
-  fluidRow(
-    style="position: relative;", 
-    
-    column(
-      width=12, 
+      width=12, class="footer-container",
       includeHTML("footer.html")
     )
   )
@@ -145,28 +135,36 @@ server <- function(input, output, session) {
   
   cat("Session started.\n")
 
-  # this prints when a session starts
+  ## Print this when a session starts
   onSessionEnded(function() { cat("Session ended.\n\n"); })  # this prints when a session ends
 
-  ##Create a queue object----
+  ## Create a queue object----
   queue <- shinyQueue();
 
-  ##Execute signals every 100 milliseconds----
+  ## Execute signals every 100 milliseconds----
   queue$consumer$start(100);
 
-  ##To signal STOP to the future-----
+  ## To signal STOP to the future-----
   interruptor <- AsyncInterruptor$new();
 
-  # Update the clock every 5s to prevent app from being inactive and grey out####
+  ## Update the clock every 5s to prevent app from being inactive and grey out####
   output$clock <- renderText({
     invalidateLater(5000)
     Sys.time()
+  })
+  
+  ## Add reactive timer to prevent app from being inactive and grey out####
+  autoInvalidate <- reactiveTimer(10000)
+  
+  observe({
+    autoInvalidate()
+    cat(".")
   })
 
   ## Read in the project list ####
   projectlist <- tryCatch({
 
-    read_csv(paste0("data/Project_List.csv"))
+    read_csv(paste0("data/Project_List.csv")) %>% dplyr::arrange(Portal)
 
   }, error=function(err){
 
@@ -264,7 +262,7 @@ server <- function(input, output, session) {
   source("ui_input.R", local=TRUE)
   source("login.R", local=TRUE)
   
-  # Preproccessing data #####
+  # Preproccessing data functions #####
   source("carcinogenome_startup.R", local=TRUE)
   source("taxonomer_startup.R", local=TRUE)
   
@@ -274,12 +272,19 @@ server <- function(input, output, session) {
   # TAS, Modzscores calculation ####
   source("tas_modzscores_calculation.R", local=TRUE)
   
-  ## keep track of selected portal####
-  selected_portal <- reactiveVal("ADIPO");
-
+  ## create reactive values for portal options ####
+  dsmap <- reactiveVal(); 
+  helptext_geneset <- reactiveVal(); 
+  landmark <- reactiveVal();
+  gs_collection <- reactiveVal();
+  gs_collection_link <- reactiveVal();
+  exposure_phenotype_test <- reactiveVal();
+  exposure_phenotype <- reactiveVal();
+  exposure_phenotype <- reactiveVal();
+  
   ###load server code for page specified by the URL link
   url_search = isolate({ session$clientData$url_search })
-  print(url_search)
+  #print(url_search)
   
   if(nchar(url_search)==0 | length(url_search)==0) {
     
@@ -317,109 +322,75 @@ server <- function(input, output, session) {
   ## Get the R files for the selected page ####
   print(tab_name); print(fname); print(subtab); print(chemical_id); print(chemical_tab);
   
-  if(toupper(tab_name) %in% toupper(c("home", "about", "contact"))){
-    
-    ## load and run server code for this page ####
-    updateQueryString(paste0("?page=", tolower(tab_name)), mode="push")
-    source(paste0("", tolower(tab_name), ".R"), local=TRUE)
-    
-  }else if(toupper(tab_name) %in% toupper("sign_in")){
-    
-    ## load and run server code for this page ####
-    updateQueryString(paste0("?page=", tolower(tab_name)), mode="push")
-    source(paste0("", tolower(tab_name), ".R"), local=TRUE)
-    source("add_project_import_files.R", local=TRUE)
-    source("add_project.R", local=TRUE)
-    source("edit_project_import_files.R", local=TRUE)
-    source("edit_project.R", local=TRUE)
-    
-  }else if(toupper(tab_name) %in% toupper("portal")){
-    
-    ## load and run server code for this page ####
-    updateQueryString(paste0("?page=", fname), mode="push")
-    
-    # Make sure the subtab is named correctly
-    if(!subtab %in% c("annotation", "chemical_explorer", "marker_explorer", "heatmap_explorer", "k2_taxanomer_results", "compare_multiple")){
-      subtab = "annotation"
-    }
-    
-    # Make sure the statistical tab is named correctly
-    if(!chemical_tab %in% c("gene_expression", "gene_set_enrichment", "connectivity")){
-      chemical_tab = "gene_expression"
-    }
-    
-    # Get the correct file name###
-    fname = projectlist$Portal[which(toupper(projectlist$Portal) %in% toupper(fname))]
-    
-    # Highlight the portal link
-    session$sendCustomMessage("HighLightPortalTab", "portal")
-    
-    # Select the search portal name####
-    selected_portal(fname)
-    
-    ## Read in data from GeneHive
-    source("reactive_data_api.R", local=TRUE)
-    
-    #get input options####
-    gs_collection <- projectlist$GS_Collection[which(projectlist$Portal == fname)]
-    gs_collection_link <- projectlist$GS_Collection_Link[which(projectlist$Portal == fname)]
-    landmark <- projectlist$Landmark_Gene[which(projectlist$Portal == fname)]
-    exposure_phenotype_test <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype_Test[which(projectlist$Portal == fname)]), ",", fixed=TRUE)) %>% trimws()
-    exposure_phenotype <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype[which(projectlist$Portal == fname)]), ",", fixed=TRUE)) %>% trimws()
-    exposure_phenotype <- exposure_phenotype[which(exposure_phenotype_test %in% c("1-sided Fisher test", "2-sided Fisher test"))]
-    
-    ##Getting the helpext for different gene set enrichment
-    if(gs_collection %in% "Default"){
-      
-      ##the default gs enrichment version####
-      gs_enrichment_version <- 7
-      
-      ##Getting the gene set scores for diffrent gsva methods
-      dsmap <- list(
-        Hallmark=paste0("gsscores_h.all.v", gs_enrichment_version, ".0"),
-        C2=paste0("gsscores_c2.cp.reactome.v", gs_enrichment_version, ".0"),
-        NURSA=paste0("gsscores_nursa_consensome_Cbyfdrvalue_0.01")
-      )
-      
-      ##Getting the helptext####
-      helptext_geneset <- paste0(
-        "<a href=\"https://www.gsea-msigdb.org/gsea/msigdb\">MSigDB Hallmark Pathways (v", gs_enrichment_version, ")</a><br>",
-        "<a href=\"https://www.gsea-msigdb.org/gsea/msigdb\">MSigDB C2 reactome Pathways (v", gs_enrichment_version, ")</a><br>",
-        "<a href=\"https://signalingpathways.org\">NURSA: Nuclear Receptor Signaling Atlas, consensome data for human</a><br>"
-      )
-      
-    }else{
-      
-      ##Getting the gene set scores for diffrent gsva methods
-      dsmap <- paste0("gsscores_", gs_collection)
-      names(dsmap) <- paste0("gsscores_", gs_collection)
-      
-      ##Getting the helptext####
-      helptext_geneset <- paste0("<a href=\"", gs_collection_link, "\">", gs_collection, "</a><br>")
-      
-    }
-    
-    # Run the main app###
-    source("portal.R", local=TRUE)
-    
-    # Server logic ####
-    source("server_annotation.R", local=TRUE)
-    source("server_chemical.R", local=TRUE)
-    source("server_marker.R", local=TRUE)
-    source("server_heatmap.R", local=TRUE)
-    source("server_taxonomic_clustering.R", local=TRUE)
-    source("server_compare_multiple.R", local=TRUE)
-     
-  }else{
-    
-    ## load and run server code for this page ####
-    output$pageStub <- renderUI({
-      shinyjs::hide(id="header-container")
-      shinyjs::hide(id="copyright-container")
-      includeHTML("404.html")
-    })
-    
+  fname = projectlist$Portal[which(toupper(projectlist$Portal) %in% toupper(fname))]
+  
+  # Make sure the subtab is named correctly
+  if(!subtab %in% c("annotation", "chemical_explorer", "marker_explorer", "heatmap_explorer", "k2_taxonomer_results", "compare_multiple")){
+    subtab = "annotation"
   }
+  
+  # Make sure the statistical tab is named correctly
+  if(!chemical_tab %in% c("gene_expression", "gene_set_enrichment", "connectivity")){
+    chemical_tab = "gene_expression"
+  }
+  
+  ## load and run server code for this page ####
+  session$sendCustomMessage("SelectPortalTab", tab_name)
+  session$sendCustomMessage("SelectedPortal", fname)
+  session$sendCustomMessage("SelectedSubTab", subtab)
+  session$sendCustomMessage("SelectedChemicalTab", chemical_tab)
+  session$sendCustomMessage("SelectedChemicalId", chemical_id)
+  session$sendCustomMessage("ResizeK2Table", "clusteringTable")
+  
+  ## load and run server code for this page ####
+  source("home.R", local=TRUE)
+  source("about.R", local=TRUE)
+  source("contact.R", local=TRUE)
+  source("sign_in.R", local=TRUE)
+  source("add_project_import_files.R", local=TRUE)
+  source("add_project.R", local=TRUE)
+  source("edit_project_import_files.R", local=TRUE)
+  source("edit_project.R", local=TRUE)
+  
+  ## Read in data from GeneHive
+  source("reactive_data.R", local=TRUE)
+  
+  # Run the main app###
+  source("portal.R", local=TRUE)
+  source("portal_main_page.R", local=TRUE)
+  
+  # Server logic ####
+  source("server_annotation.R", local=TRUE)
+  source("server_chemical.R", local=TRUE)
+  source("server_marker.R", local=TRUE)
+  source("server_heatmap.R", local=TRUE)
+  source("server_taxonomic_clustering.R", local=TRUE)
+  source("server_compare_multiple.R", local=TRUE)
+  
+  ## Observe the portal tab selected ####
+  observeEvent({
+    input$portal_tab
+    input$portal_id
+    input$main_page
+    input$chemical_tab
+    input$chem
+  }, {
+  
+    if(toupper(input$portal_tab) %in% toupper(c("home", "about", "contact", "sign_in"))){
+      updateQueryString(paste0("?page=", tolower(input$portal_tab)), mode="push")
+    }else{
+      if(input$main_page == "chemical_explorer"){
+        updateQueryString(paste0("?page=", input$portal_id, "&tab=", input$main_page, "&chemical_id=", input$chem, "&stat=", input$chemical_tab), mode="push")
+      }else{
+        updateQueryString(paste0("?page=", input$portal_id, "&tab=", input$main_page), mode="push")
+      }
+    }
+    
+  })
+  
+  ## Reconnecting to new sessions after grey out
+  session$allowReconnect("force")
+
 }
 
 shinyApp(ui=ui, server=server)

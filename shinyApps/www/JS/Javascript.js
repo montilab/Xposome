@@ -5,11 +5,79 @@ var dimension = [0, 0];
 // initiate all links 
 var alllinks = ["home", "portal", "about", "contact", "sign_in"];
 
+// keep track of url history
+var url_history = 0;
+var url_history_link = [];
+
+window.onpopstate = function(event) {
+  
+  if(url_history > 1){
+    
+    url_history = url_history - 1;
+  
+    var site = url_history_link[url_history];
+    
+    //alert(site);
+    
+    for (var i=0, len=alllinks.length|0; i<len; i=i+1|0) {
+        
+      var content = alllinks[i];
+        
+      if(content !== site) {
+        document.getElementById(content).style.color="#40424a";
+        document.getElementById(content).style.fontWeight="normal";      
+      }else{
+        document.getElementById(content).style.color="#3182bd";
+        document.getElementById(content).style.fontWeight="700";      
+      }
+        
+    }
+    
+    //alert(url_history);
+
+    url_history_link = url_history_link.slice(0,url_history+1);
+    
+    //alert(url_history_link);
+    
+    Shiny.setInputValue("portal_tab", site);
+  
+    //alert(url_history); alert(url_history_link);
+    
+  }else if(url_history === 0 || url_history === 1){
+    
+    var site = "home";
+    
+    for (var i=0, len=alllinks.length|0; i<len; i=i+1|0) {
+        
+      var content = alllinks[i];
+        
+      if(content !== site) {
+        document.getElementById(content).style.color="#40424a";
+        document.getElementById(content).style.fontWeight="normal";      
+      }else{
+        document.getElementById(content).style.color="#3182bd";
+        document.getElementById(content).style.fontWeight="700";      
+      }
+        
+    }
+    
+    const state = {'page': 'home'};
+    const title = '';
+    const url = '?page=home';
+    
+    history.pushState(state, title, url);
+
+    Shiny.setInputValue("portal_tab", "home");
+    
+  }
+
+};
+
 // initiate URL link 
 shinyjs.init = function() {
   window.onload = function (event) {
     
-    var link = document.location.search.substring(1); var site;
+    var link = window.location.search.substring(1); var site;
     
     if(String(link) === ""){ 
       
@@ -39,10 +107,9 @@ shinyjs.init = function() {
       
       if(content !== site) {
         document.getElementById(content).style.color="#40424a";
-        document.getElementById(content).style.textDecoration="none";      
+        document.getElementById(content).style.fontWeight="normal";      
       }else{
         document.getElementById(content).style.color="#3182bd";
-        document.getElementById(content).style.textDecoration="underline";
         document.getElementById(content).style.fontWeight="700";      
       }
       
@@ -55,7 +122,9 @@ shinyjs.init = function() {
     Shiny.setInputValue("hm_de_generate", 0);
     Shiny.setInputValue("hm_es_generate", 0);
     Shiny.setInputValue("hm_conn_generate", 0);
-  
+    
+    url_history_link.push(site);
+
   };
 };
 
@@ -80,13 +149,17 @@ function curlinkFun(link){
     
     if(content !== site) {
       document.getElementById(content).style.color="#40424a";
-      document.getElementById(content).style.textDecoration="none";      
+      document.getElementById(content).style.fontWeight="normal";      
     }else{
       document.getElementById(content).style.color="#3182bd";
-      document.getElementById(content).style.textDecoration="underline";
-      document.getElementById(content).style.fontWeight="700";      
+      document.getElementById(content).style.fontWeight="700";  
     }
   }
+  
+  url_history = url_history + 1; //alert(url_history);
+  url_history_link.push(site); //alert(url_history_link);
+    
+  Shiny.setInputValue("portal_tab", site);
   
 }
 
@@ -192,29 +265,48 @@ function resizableGrid(table) {
 var counter = 0;
 
 function heatmapFun(id){
-  
     var Id = String(id);
     counter = counter + 1;
     Shiny.setInputValue(Id, counter);
-
 }
 
 Shiny.addCustomMessageHandler("ResizeK2Table", function(id){
-
     var Id = String(id);
     var table = document.getElementById(Id);
     resizableGrid(table);
-
 });
 
-Shiny.addCustomMessageHandler("HighLightPortalTab", function(id){
+// select the portal tab
+Shiny.addCustomMessageHandler("SelectPortalTab", function(id){
     var link = String(id);
     curlinkFun(link);
 });
 
-
-Shiny.addCustomMessageHandler("SelectPortalTab", function(){
-    alert("hello");
-    document.getElementById('portal').click();
+// select the portal tab
+Shiny.addCustomMessageHandler("SelectedPortal", function(id){
+    var link = String(id);
+    Shiny.setInputValue("portal_id", link);
 });
 
+// select the portal subtab
+Shiny.addCustomMessageHandler("SelectedSubTab", function(id){
+    var link = String(id);
+    Shiny.setInputValue("main_page", link);
+});
+
+// select the chemical tab
+Shiny.addCustomMessageHandler("SelectedChemicalTab", function(id){
+    var link = String(id);
+    Shiny.setInputValue("chemical_tab", link);
+});
+
+// select the chemical id 
+Shiny.addCustomMessageHandler("SelectedChemicalId", function(id){
+    var link = String(id);
+    Shiny.setInputValue("chem", link);
+});
+
+// activate tooltip for bootstrap
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+})

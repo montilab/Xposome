@@ -37,19 +37,7 @@ fluidRow(
           fluidRow(
             column(
               width=4,
-              shinyjs::hidden(
-                selectInput(inputId = "marker_gene", label = "Select a gene:", choices = c("Please select an option below" = ""))
-              )
-            )
-          ),
-          
-          fluidRow(
-            column(
-              width=12,
-              br(),
-              shinyjs::hidden(
-                actionButton(inputId = "de_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
-              )
+              uiOutput(outputId = "marker_gene_options") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="80px")
             )
           )
         ),
@@ -64,8 +52,8 @@ fluidRow(
                 inputId = "marker_gsname",
                 label = "Gene set name", 
                 bId= "Bgsname_marker",
-                helptext = helptext_geneset,
-                choices = names(dsmap)
+                helptext = helptext_geneset(),
+                choices = names(dsmap())
               )
             ),
             
@@ -82,17 +70,14 @@ fluidRow(
             
             column(
               width=4,
-              selectInput(inputId="marker_gs", label="Select a gene set:", choices = c("Please select an option below" = ""))
+              uiOutput(outputId = "marker_geneset_options") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="80px")
             )
           ),
           
           fluidRow(
             column(
               width=12,
-              br(),
-              shinyjs::hidden(
-                actionButton(inputId = "gs_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
-              )
+              uiOutput(outputId = "marker_geneset_btn")
             )
           )
         ),
@@ -112,17 +97,14 @@ fluidRow(
             
             column(
               width=4,
-              selectInput(inputId = "marker_conn", label = "Select a gene set:", choices = c("Please select an option below" = ""))
+              uiOutput(outputId = "marker_conn_options") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="80px")
             )
           ),
           
           fluidRow(
             column(
               width=12,
-              br(),
-              shinyjs::hidden(
-                actionButton(inputId = "conn_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
-              )
+              uiOutput(outputId = "marker_conn_btn")
             )
           )
         )

@@ -25,13 +25,13 @@ output$marker_option <- renderUI({
     conn_dat <- .
     
     if(is.null(conn_dat)){
-      selectInput(
+      selectizeInput(
         inputId = "marker",
         label = "Select a marker set:",
         choices = c("Please select an option below" = "", "Genes", "Gene Sets")
       )
     }else{
-      selectInput(
+      selectizeInput(
         inputId = "marker",
         label = "Select a marker set:",
         choices = c("Please select an option below" = "", "Genes", "Gene Sets", "CMap Connectivity")
@@ -42,44 +42,51 @@ output$marker_option <- renderUI({
   
 })
 
-# Output the gene selection ####
-observeEvent(input$marker, {
-  
-  req(input$marker %in% "Genes")
+output$marker_gene_options <- renderUI({
   
   ##Getting the gene list####
   expression_dat() %...>% {
     eset <- .
     genelist <- sort(rownames(eset))
-    updateSelectInput(session, inputId="marker_gene", choices=genelist)
-    shinyjs::show(id="marker_gene")
-    shinyjs::show(id="de_generate")
-    shinyjs::show(id="cancel_de_generate")
-  }
-  
-}, ignoreInit = TRUE)
+    
+    div(
+      selectizeInput(inputId = "marker_gene", label = "Select a gene:", choices = genelist),
+      actionButton(inputId = "de_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
+    )
+  } 
 
+})
  
 # Output the gene set selection ###
-observeEvent(input$marker_gsname, {
+output$marker_geneset_options <- renderUI({
+  
+  req(input$marker_gsname, input$marker_gsmethod)
   
   ## Get gene set list
-  gsname=input$marker_gsname; gsmethod=input$marker_gsmethod;
+  dsmap=dsmap(); gsname=input$marker_gsname; gsmethod=input$marker_gsmethod;
   
   ##Getting the gene list####
   gs_enrichment_dat() %...>% {
     eset <- .[[paste0(dsmap[[gsname]], "_", gsmethod)]]
     genesetlist <- sort(rownames(eset))
-    updateSelectInput(session, inputId="marker_gs", choices=genesetlist)
-    shinyjs::show(id="gs_generate")
-    shinyjs::show(id="cancel_gs_generate")
+    selectizeInput(inputId="marker_gs", label="Select a gene set:", choices = genesetlist)
   }
   
-}, ignoreInit = TRUE)
+})
 
+# Output the gene set selection ###
+output$marker_geneset_btn <- renderUI({
+  
+  req(input$marker_gs)
+  
+  actionButton(inputId = "gs_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
+  
+})
 
-observeEvent(input$marker_conn_name, {
+output$marker_conn_options <- renderUI({
 
+  req(input$marker_conn_name)
+  
   ## Get gene set list
   conn_name=input$marker_conn_name; 
   
@@ -87,19 +94,25 @@ observeEvent(input$marker_conn_name, {
   connectivity_dat() %...>% {
     eset <- .[[conn_name]]
     genesetlist <- sort(rownames(eset))
-    updateSelectInput(session, inputId="marker_conn", choices=genesetlist)
-    shinyjs::show(id="conn_generate")
-    shinyjs::show(id="cancel_conn_generate")
+    selectizeInput(inputId = "marker_conn", label = "Select a gene set:", choices = genesetlist)
   }
   
-}, ignoreInit = TRUE)
+})
+
+output$marker_conn_btn <- renderUI({
+  
+  req(input$marker_conn)
+  
+  actionButton(inputId = "conn_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
+  
+})
 
 ##Output the exposure phenotype plots####
 output$exposure_phenotype_plot <- renderUI({
   
-  req(exposure_phenotype)
+  req(exposure_phenotype())
   
-  TablePlot <- NULL;
+  exposure_phenotype <- exposure_phenotype(); TablePlot <- NULL;
   
   for(s in seq_along(exposure_phenotype)){
     TablePlot <- c(TablePlot, UIMarkerplot(outputId=s+1))
@@ -128,6 +141,7 @@ observeEvent(input$de_generate, {
   marker_header("Mod-Zscores")
 
   #Get input values
+  exposure_phenotype <- exposure_phenotype(); 
   marker_id <- input$marker_gene;
   header <- marker_header();
   tas <- input$marker_tas;
@@ -240,6 +254,8 @@ observeEvent(input$gs_generate, {
   marker_header("Gene Set Scores")
   
   #Get input values
+  dsmap <- dsmap();
+  exposure_phenotype <- exposure_phenotype(); 
   marker_id <- input$marker_gs;
   gsname <- input$marker_gsname; 
   gsmethod <- input$marker_gsmethod;
@@ -355,6 +371,7 @@ observeEvent(input$conn_generate, {
   marker_header("Connectivity Score (Percentile)")
   
   #Get input values
+  exposure_phenotype <- exposure_phenotype(); 
   marker_id <- input$marker_conn;
   conn_name <- input$marker_conn_name; 
   header <- marker_header();
@@ -487,6 +504,8 @@ output$marker_plot_1 <- renderPlotly({
 observeEvent(create_marker_plot(), {
 
   req(create_marker_plot())
+  
+  exposure_phenotype <- exposure_phenotype(); 
 
   for(i in seq_along(exposure_phenotype)){
     local({

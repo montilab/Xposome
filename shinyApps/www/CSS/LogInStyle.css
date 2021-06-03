@@ -2,13 +2,16 @@
 
 /*//////////////////////////////////////////////////////////////////
 [ login ]*/ 
-
-.signin-page {
-    margin: 0 0 0 0;
-	padding: 20px 20px 20px 20px;
+.sign-in-page {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+	/*border: 1px solid red;*/
 }
 
 .login-container {
+  width: 500px;
   padding: 0 0 0 0;
   display: -webkit-box;
   display: -webkit-flex;
@@ -16,10 +19,16 @@
   display: -ms-flexbox;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   border-radius: 10px;
   border: 1px solid lightgray;
+}
+
+/* Responsive layout */
+@media (max-width: 850px) {
+  
+  
 }
 
 /*==================================================================
@@ -56,6 +65,9 @@
   margin: 30px 20px 50px 20px;
 }
 
+.login-label{
+  padding-left: 5px;
+}
 
 /*------------------------------------------------------------------
 [ Input ]*/

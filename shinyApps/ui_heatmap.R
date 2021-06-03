@@ -37,8 +37,8 @@ fluidRow(
                 inputId = "marker_gsname_hm",
                 label = "Gene set name", 
                 bId= "Bgsname_marker_hm",
-                helptext = helptext_geneset,
-                choices = names(dsmap)
+                helptext = helptext_geneset(),
+                choices = names(dsmap())
               )
             ),
             
@@ -85,7 +85,7 @@ fluidRow(
         fluidRow(
           column(
             width=12,
-            helpText(em("Note: heatmap is generated using the interactive tools in Morpheus, https://software.broadinstitute.org/morpheus"))
+            helpText(HTML("<em>Note: heatmap is generated using <a href='https://software.broadinstitute.org/morpheus'><b>Morpheus</b></a> interactive tool</em>"))
           )
         )
       )

@@ -62,21 +62,18 @@ edituserwarningmsg <- reactiveVal(NULL)
 credentials <- reactiveValues(user_auth = FALSE, username="", password="")
 
 #sign in page
-output$pageStub <- renderUI({
+output$sign_in_page <- renderUI({
+  
+  req(input$portal_tab == "sign_in")
   
   #####<!-- START SIGN IN PAGE -->
-  if(credentials$user_auth == FALSE){
-    
-    uiOutput(outputId="uiLogin")
-    
-  }else{
-    
-    div(
-      style="padding: 20px 20px 20px 20px",
+  fluidRow(
+    column(
+      width=12, class="sign-in-page",
+      uiOutput(outputId="uiLogin"),
       uiOutput(outputId="uiMain")
     )
-    
-  }
+  )
   #####<!-- END SIGN IN PAGE -->
   
 })
@@ -84,8 +81,67 @@ output$pageStub <- renderUI({
 ##IF USER LOG IS FALSE, THEN SHOW THE LOGIN PANNEL####
 output$uiLogin <- renderUI({
   
-  loginUI(username=credentials$username, password=credentials$password)
-  
+  req(credentials$user_auth == FALSE)
+    
+  div(
+    class="login-container",
+    
+    div(class="login-form", 
+        div(class="login-form-title", strong('Sign In'))
+    ),
+    
+    div(
+      class="login-validate-form",
+      
+      tags$script('document.getElementById("username").focus();'),
+      
+      HTML(
+        paste0(
+          '<div class="form-group shiny-input-container" style="width:auto;">',
+          '<i class="fa fa-user" role="presentation" aria-label="user icon"></i>',
+          '<label class="control-label login-label" id="username-label" for="username">',
+          'User Name',
+          '</label>',
+          '<input id="username" type="text" onkeypress="loginfunction(event)" class="form-control" value="', credentials$username, '"/>',
+          '</div>'
+        )
+      ),
+      
+      HTML(
+        paste0(
+          '<div class="form-group shiny-input-container" style="width:auto;">',
+          '<i class="fa fa-lock" role="presentation" aria-label="unlock-alt icon"> </i>',
+          '<label class="control-label login-label" id="password-label" for="password">',
+          'Password',
+          '</label>',
+          '<input id="password" type="password" onkeypress="loginfunction(event)" class="form-control" value="', credentials$password, '"/>',
+          '</div>'
+        )
+      ),
+      
+      shinyjs::hidden(
+        div(
+          id = "error",
+          tags$p("Invalid username or password!", style="color: red; font-weight: bold; padding-top: 5px;", class="text-center")
+        )
+      ),
+      
+      br(),
+      
+      div(
+        style = "text-align: center;",
+        actionButton(inputId="sign_in_btn", class="login-btn", label=strong("Sign In"), onkeypress="loginfunction(event)", width="auto")
+      ),
+      
+      br(), br(),
+      
+      tags$p(
+        style="text-align: center",
+        actionLink(inputId="ForgetPassword", label=strong("Forgot Password?"), width="auto")
+      )
+    )
+  )
+
 })
 
 ##Observe when sign in button is clicked####
@@ -197,33 +253,34 @@ output$FG_Message <- renderUI({
 ###THE MODERATOR PAGE#####
 output$uiMain <- renderUI({
   
+  req(credentials$user_auth == TRUE)
+  
   ###<!-- Header top area start -->
   div(
     class="moderator-page", 
     
-    ###the header#####
     fluidRow(
       class="moderator-top-banner",
       
       column(
         width=6,
         
-        div(class="text-md-left",
-            div(class="button-link", h3("Moderator Page"))
+        div(class="mod-text-md-left",
+            h3(class="moderator-title", "Moderator Page")
         )
       ),
       
       column(
         width=6,
         
-        div(class="text-md-right",
-            actionLink(inputId="sign_out_btn", class="button-link", icon=icon("user-circle", class="fa"), label="Sign Out")  
+        div(class="mod-text-md-right",
+            actionLink(inputId="sign_out_btn", class="button-link", icon=icon("user-circle", class="fa"), label="Sign Out")
         )
       )
     ),
     
     fluidRow(
-      class="moderator-body", style="border-bottom: 1px solid gray;",
+      class="moderator-body",
       
       column(
         width=12,
@@ -243,7 +300,7 @@ output$uiMain <- renderUI({
     ),
     
     fluidRow(
-      class="moderator-body", style="border: 1px solid gray;",
+      class="moderator-body", 
       
       column(
         width=6,
@@ -266,7 +323,7 @@ output$uiMain <- renderUI({
     ),
     
     fluidRow(
-      class="moderator-body", style="border: 1px solid gray;",
+      class="moderator-body",
       
       column(
         width=6, style="vertical-align: top;",
@@ -297,7 +354,7 @@ output$uiMain <- renderUI({
     ),
     
     fluidRow(
-      class="moderator-body", style="border-top: 1px solid gray;",
+      class="moderator-body", 
       
       column(
         width=12,
@@ -415,6 +472,8 @@ observeEvent(input$sign_out_btn, {
   credentials$user_auth <- FALSE
   credentials$username <- ""
   credentials$password <- ""
+  shinyjs::hide(id = "sign_out")
+  shinyjs::show(id = "sign_in") 
   
 })
 
