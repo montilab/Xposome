@@ -6,15 +6,8 @@ profile_dat <- reactive({
   
   fname <- isolate({ input$portal_id })
   
-  # Retrieve list of all PortalDataset entities in hive matching portal name
-  datasets <- listEntities("PortalDataset", portal=fname)
-  
-  # Sort by timestamp and extract most recent dataset to convenience object
-  datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
-  dataset <- datasets[[length(datasets)]]
-  
   future({
-    getWorkFileAsObject(hiveWorkFileID(dataset@ProfileAnnotationRDS))
+    readRDS(paste0("data/", fname, "/Profile_Annotation.RDS"))
   }) %...!% { return(NULL) }
   
 })
@@ -26,15 +19,8 @@ chemical_dat <- reactive({
   
   fname <- isolate({ input$portal_id })
   
-  # Retrieve list of all PortalDataset entities in hive matching portal name
-  datasets <- listEntities("PortalDataset", portal=fname)
-  
-  # Sort by timestamp and extract most recent dataset to convenience object
-  datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
-  dataset <- datasets[[length(datasets)]]
-  
   future({
-    getWorkFileAsObject(hiveWorkFileID(dataset@ChemicalAnnotationRDS))
+    readRDS(paste0("data/", fname, "/Chemical_Annotation.RDS"))
   }) %...!% { return(NULL) }
   
 })
@@ -46,15 +32,8 @@ expression_dat <- reactive({
   
   fname <- isolate({ input$portal_id })
   
-  # Retrieve list of all PortalDataset entities in hive matching portal name
-  datasets <- listEntities("PortalDataset", portal=fname)
-  
-  # Sort by timestamp and extract most recent dataset to convenience object
-  datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
-  dataset <- datasets[[length(datasets)]]
-  
   future({
-    getWorkFileAsObject(hiveWorkFileID(dataset@GeneExpressionRDS))
+    readRDS(paste0("data/", fname, "/Gene_Expression.RDS"))
   }) %...!% { return(NULL) }
   
 })
@@ -66,15 +45,8 @@ connectivity_dat <- reactive({
   
   fname <- isolate({ input$portal_id })
   
-  # Retrieve list of all PortalDataset entities in hive matching portal name
-  datasets <- listEntities("PortalDataset", portal=fname)
-  
-  # Sort by timestamp and extract most recent dataset to convenience object
-  datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
-  dataset <- datasets[[length(datasets)]]
-  
   future({
-    getWorkFileAsObject(hiveWorkFileID(dataset@ConnectivityRDS))
+    readRDS(paste0("data/", fname, "/Connectivity.RDS"))
   }) %...!% { return(NULL) }
   
 })
@@ -86,15 +58,8 @@ gs_enrichment_dat <- reactive({
   
   fname <- isolate({ input$portal_id })
   
-  # Retrieve list of all PortalDataset entities in hive matching portal name
-  datasets <- listEntities("PortalDataset", portal=fname)
-  
-  # Sort by timestamp and extract most recent dataset to convenience object
-  datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
-  dataset <- datasets[[length(datasets)]]
-  
   future({
-    getWorkFileAsObject(hiveWorkFileID(dataset@GeneSetEnrichmentRDS))
+    readRDS(paste0("data/", fname, "/Gene_Set_Enrichment.RDS"))
   }) %...!% { return(NULL) }
   
 })
@@ -106,13 +71,6 @@ taxonomer_results <- reactive({
   
   fname <- isolate({ input$portal_id })
   
-  # Retrieve list of all PortalDataset entities in hive matching portal name
-  datasets <- listEntities("PortalDataset", portal=fname)
-  
-  # Sort by timestamp and extract most recent dataset to convenience object
-  datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
-  dataset <- datasets[[length(datasets)]]
-  
   future({
     
     ##Shiny Packages####
@@ -122,9 +80,7 @@ taxonomer_results <- reactive({
     require(BiocGenerics)
 
     # Read in K2 Taxonomer data ####
-    K2summary <- getWorkFileAsObject(
-      hiveWorkFileID(dataset@K2TaxonomerResultsRDS)
-    )
+    K2summary <- readRDS(paste0("data/", fname, "/K2Taxonomer.RDS"))
     
     # Parse results
     info <- K2info(K2summary)  # Profile information

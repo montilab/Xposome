@@ -106,6 +106,9 @@ ui <- bootstrapPage(
               <button onclick="curlinkFun(\'sign_in\')" id="sign_in" class="btn btn-warning">Sign In</button>
             </ul>
           </div>
+          
+          <p style="font-weight: 500; width: 100%; color:red; text-align: center;">You are temporarily viewing the local version of the Xposome Portal as it is currently offline and under maintenance.</p>
+
         </div>
       </nav>
       '
@@ -121,6 +124,7 @@ ui <- bootstrapPage(
       ),
       div(
         id="portal-ui",
+        br(),
         uiOutput("home_page") %>% withSpinner(id="loading-page", type=4, color="#0dc5c1"),
         uiOutput("portal_page") %>% withSpinner(id="loading-page", type=4, color="#0dc5c1"),
         uiOutput("about_page") %>% withSpinner(id="loading-page", type=4, color="#0dc5c1"),
@@ -213,8 +217,8 @@ server <- function(input, output, session) {
   })
 
   ##Create a list of wanted folders and files####
-  wanted_files <- c("Connectivity Map", "Enrichment Gene Set", "Landmark", "Project_List.csv", "Template", "User_Login_List.csv")
-
+  wanted_files <- c(projectlist$Portal, "Connectivity Map", "Enrichment Gene Set", "Landmark", "Project_List.csv", "Template", "User_Login_List.csv", "Zebra Fish") 
+  
   ##Get all files in the data folder###
   data_files <- list.files("data/")
 
