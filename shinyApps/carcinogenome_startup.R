@@ -323,16 +323,16 @@ get_connectivity <- function(
 }
 
 #plot wrapper###
-plot_wrapper <- function(df, view = "Density", ...){
+plot_wrapper <- function(df, fill_name, view = "Density", ...){
   
   if(view %in% "Density") {
     
-    res <- ggplot(data=df, aes_string(x = "x", fill = "cols")) + 
+    res <- ggplot(data=df, aes_string(x = "x", fill = fill_name)) + 
       geom_density(position = "identity", alpha = 0.5)
     
   }else if(view %in% "Boxplot"){
     
-    res <- ggplot(data=df, aes_string(x = "cols", y= "x", fill = "cols")) + 
+    res <- ggplot(data=df, aes_string(x = fill_name, y = "x", fill = fill_name)) + 
       geom_boxplot(
         position = "identity", 
         width = 0.2,
@@ -396,7 +396,8 @@ get_marker_plot <- function(
   marker_id,
   col_id = "Carcinogenicity",
   col_names = c("N/A", "-", "+"), 
-  col_colors = c("grey", "green", "orange"), 
+  col_colors = c("grey", "green", "orange"),
+  fill_name = "Genes",
   header = "Mod Z-scores",
   tas = NULL,
   view = "Density"){
@@ -408,49 +409,77 @@ get_marker_plot <- function(
   }
   
   if(is.na(col_id)){
-    profile_ann <- profile_ann %>% transmute(Id=(!!!syms(annot_var)), cols="query") %>% distinct(Id, .keep_all=TRUE)
+    profile_ann <- profile_ann %>% transmute(Id=(!!!syms(annot_var)), carcinogencity=marker_id) %>% distinct(Id, .keep_all=TRUE)
   }else{
-    profile_ann <- profile_ann %>% transmute(Id=(!!!syms(annot_var)), cols=(!!!syms(col_id))) %>% distinct(Id, .keep_all=TRUE)
+    profile_ann <- profile_ann %>% transmute(Id=(!!!syms(annot_var)), carcinogencity=(!!!syms(col_id))) %>% distinct(Id, .keep_all=TRUE)
   }
   
   rowid <- which(rownames(expression_dat) %in% marker_id)
   eset <- exprs(expression_dat)[rowid,]
-  query <- profile_ann %>% mutate(Id=as.character(Id)) %>% left_join(data.frame(Id=as.character(names(eset)), x=as.numeric(eset))) %>% select(x, cols)
+  query <- profile_ann %>% mutate(Id=as.character(Id)) %>% left_join(data.frame(Id=as.character(names(eset)), x=as.numeric(eset))) %>% select(x, carcinogencity)
   
   if(is.na(col_id)){
     
-    background <- data.frame(x=as.numeric(exprs(expression_dat)), cols="background")
+    background <- data.frame(x=as.numeric(exprs(expression_dat)), carcinogencity="All")
     df <- query %>% rbind(background)
-    df$cols <- factor(df$cols, levels = c("background", "query"), ordered=is.ordered(c("background", "query")))
+    df$carcinogencity <- factor(df$carcinogencity, levels = c("All", marker_id), ordered=is.ordered(c("All", marker_id)))
     cols_match <- c("grey", "red")
-    names(cols_match) <- c("background", "query")
-    p.title <- paste("Distribution of ", header, " Across Profiles\n for ", marker_id, " (Overall)\n", sep = "")
+    names(cols_match) <- c("All", marker_id)
+    p.title <- paste("Distribution of ", header, " Across Profiles for ", marker_id, "\n", sep = "")
+
+    df <- df %>% rename(!!paste0(fill_name) := carcinogencity)
+    
+    p <- plot_wrapper(df=df, fill_name=fill_name, view=view) +
+      scale_fill_manual(
+        name = NULL, 
+        values = cols_match,
+        breaks = names(cols_match),
+        labels = names(cols_match)
+      ) +
+      xlab(header) + 
+      ylab("Density") + 
+      ggtitle(p.title) +
+      theme_bw() +
+      theme(
+        plot.margin = margin(5, 5, 0, 0),
+        plot.title = element_text(hjust = 0.5)
+      ) +
+      theme(
+        legend.direction = "vertical", 
+        legend.box = "vertical"
+      )
     
   }else{
     
     df <- query
     cols_match <- col_colors
     names(cols_match) <- col_names
-    df$cols <- factor(df$cols, levels = col_names, ordered=is.ordered(col_names))
-    p.title <- paste("Distribution of ", header, " across profiles\n for ", marker_id, " (by ", col_id, ")\n", sep = "")
+    df$carcinogencity <- factor(df$carcinogencity, levels = col_names, ordered=is.ordered(col_names))
+    p.title <- paste("Distribution of ", header, " across profiles for ", marker_id, " (by ", col_id, ")\n", sep = "")
+    
+    df <- df %>% rename(!!paste0(fill_name) := carcinogencity)
+    
+    p <- plot_wrapper(df=df, fill_name=fill_name, view=view) +
+      scale_fill_manual(
+        name = NULL, 
+        values = cols_match,
+        breaks = names(cols_match),
+        labels = names(cols_match)
+      ) +
+      xlab(header) + 
+      ylab("Density") + 
+      ggtitle(p.title) +
+      theme_bw() +
+      theme(
+        plot.margin = margin(5, 5, 0, 0),
+        plot.title = element_text(hjust = 0.5)
+      ) +
+      theme(
+        legend.direction = "vertical", 
+        legend.box = "vertical"
+      )
     
   }
-  
-  p <- plot_wrapper(df=df, view=view) +
-    scale_fill_manual(
-      name = NULL, 
-      values = cols_match,
-      breaks = names(cols_match),
-      labels = names(cols_match)
-    ) +
-    xlab(header) + 
-    ylab("Density") + 
-    ggtitle(p.title) +
-    theme_bw() +
-    theme(
-      plot.margin = margin(5, 5, 0, 0),
-      plot.title = element_text(hjust = 0.5)
-    )
   
   return(p)
   

@@ -1025,7 +1025,7 @@ output$HE <- DT::renderDataTable({
             text = 'Help',
             action = DT::JS(
               "function ( e, dt, node, config ) {",
-              "Shiny.setInputValue('hyperHelp', true, {priority: 'event'});",
+                "Shiny.setInputValue('hyperHelp', true, {priority: 'event'});",
               "}"
             )
           ),
@@ -1034,7 +1034,7 @@ output$HE <- DT::renderDataTable({
             text = 'Download All Results',
             action = DT::JS(
               "function ( e, dt, node, config ) {",
-              "Shiny.setInputValue('hyperDL', true, {priority: 'event'});",
+                "Shiny.setInputValue('hyperDL', true, {priority: 'event'});",
               "}"
             )
           )

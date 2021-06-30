@@ -3,50 +3,80 @@
 var dimension = [0, 0];
 
 // initiate all links 
-var alllinks = ["home", "portal", "about", "contact", "sign_in"];
+var alllinks = ["home", "overview", "portal", "contact", "sign_in"];
+
+// keep track of url history
+var url_history_link = [];
+
+// keep track of selected variable
+var subtab = "annotation"; 
+var chemical_tab = "gene_expression"; 
+var chemical_id = "none";
+
+window.onpopstate = function(event) {
+  
+	var url_history = url_history_link.length;
+  
+  if(url_history > 1){
+    
+    pos = url_history - 1;
+  
+    var site = url_history_link[pos-1];
+    
+    for (var i=0, len=alllinks.length|0; i<len; i=i+1|0) {
+      var content = alllinks[i];
+      if(content !== site) {
+        document.getElementById(content).style.color="#40424a";
+        document.getElementById(content).style.fontWeight="normal";      
+      }else{
+        document.getElementById(content).style.color="#3182bd";
+        document.getElementById(content).style.fontWeight="700";      
+      }
+    }
+    
+    url_history_link = url_history_link.slice(0, pos);
+    
+    Shiny.setInputValue("portal_tab", site);
+    Shiny.setInputValue("selected_subtab", subtab);
+    Shiny.setInputValue("selected_chemical_tab", chemical_tab);
+    Shiny.setInputValue("selected_chemical_id", chemical_id);
+  
+  }else if(url_history === 0 || url_history === 1){
+    
+    pos = 1; var site = url_history_link[pos-1];
+	    
+    for (var i=0, len=alllinks.length|0; i<len; i=i+1|0) {
+        
+      var content = alllinks[i];
+        
+      if(content !== site) {
+        document.getElementById(content).style.color="#40424a";
+        document.getElementById(content).style.fontWeight="normal";      
+      }else{
+        document.getElementById(content).style.color="#3182bd";
+        document.getElementById(content).style.fontWeight="700";      
+      }
+        
+    }
+    
+    const state = {'page': site};
+    const title = '';
+    const url = '?page=' + site;
+    
+    history.pushState(state, title, url);
+
+    Shiny.setInputValue("portal_tab", site);
+    Shiny.setInputValue("selected_subtab", subtab);
+    Shiny.setInputValue("selected_chemical_tab", chemical_tab);
+    Shiny.setInputValue("selected_chemical_id", chemical_id);
+    
+  }
+
+};
 
 // initiate URL link 
 shinyjs.init = function() {
   window.onload = function (event) {
-    
-    var link = document.location.search.substring(1); var site;
-    
-    if(String(link) === ""){ 
-      
-      site = "home"; 
-      
-    }else{ 
-      
-      site_link = String(link); 
-      site_link = site_link.split("page=");
-      
-      for (var i=0, len=site_link.length|0; i<len; i=i+1|0) {
-        
-        var url_site = site_link[i];
-        
-        if(url_site !== "" || url_site !== null) {
-          site = url_site; 
-        }else{
-          site = "home"; 
-        }
-        
-      }
-    }
-    
-    for (var i=0, len=alllinks.length|0; i<len; i=i+1|0) {
-      
-      var content = alllinks[i];
-      
-      if(content !== site) {
-        document.getElementById(content).style.color="#40424a";
-        document.getElementById(content).style.textDecoration="none";      
-      }else{
-        document.getElementById(content).style.color="#3182bd";
-        document.getElementById(content).style.textDecoration="underline";
-        document.getElementById(content).style.fontWeight="700";      
-      }
-      
-    }
     
     dimension[0] = window.innerWidth;
     dimension[1] = window.innerHeight;
@@ -55,7 +85,7 @@ shinyjs.init = function() {
     Shiny.setInputValue("hm_de_generate", 0);
     Shiny.setInputValue("hm_es_generate", 0);
     Shiny.setInputValue("hm_conn_generate", 0);
-  
+    
   };
 };
 
@@ -80,13 +110,21 @@ function curlinkFun(link){
     
     if(content !== site) {
       document.getElementById(content).style.color="#40424a";
-      document.getElementById(content).style.textDecoration="none";      
+      document.getElementById(content).style.fontWeight="normal";      
     }else{
       document.getElementById(content).style.color="#3182bd";
-      document.getElementById(content).style.textDecoration="underline";
-      document.getElementById(content).style.fontWeight="700";      
+      document.getElementById(content).style.fontWeight="700";  
     }
   }
+  
+  url_history_link.push(site); //alert(url_history_link);
+  
+  //alert(subtab); alert(chemical_tab); alert(chemical_id);
+  
+  Shiny.setInputValue("selected_subtab", subtab);
+  Shiny.setInputValue("selected_chemical_tab", chemical_tab);
+  Shiny.setInputValue("selected_chemical_id", chemical_id);
+  Shiny.setInputValue("portal_tab", site);
   
 }
 
@@ -192,29 +230,69 @@ function resizableGrid(table) {
 var counter = 0;
 
 function heatmapFun(id){
-  
     var Id = String(id);
     counter = counter + 1;
     Shiny.setInputValue(Id, counter);
-
 }
 
 Shiny.addCustomMessageHandler("ResizeK2Table", function(id){
-
     var Id = String(id);
     var table = document.getElementById(Id);
     resizableGrid(table);
-
 });
 
-Shiny.addCustomMessageHandler("HighLightPortalTab", function(id){
+// select the portal tab
+Shiny.addCustomMessageHandler("SelectPortalTab", function(id){
     var link = String(id);
     curlinkFun(link);
 });
 
-
-Shiny.addCustomMessageHandler("SelectPortalTab", function(){
-    alert("hello");
-    document.getElementById('portal').click();
+// select the portal tab
+Shiny.addCustomMessageHandler("SelectedPortal", function(id){
+    var link = String(id);
+    Shiny.setInputValue("selected_portal", link);
 });
 
+// select the portal tab
+Shiny.addCustomMessageHandler("SelectedSubtab", function(id){
+    var link = String(id);
+    subtab = link;
+    Shiny.setInputValue("selected_subtab", link);
+});
+
+// select the chemical tab
+Shiny.addCustomMessageHandler("SelectedChemicalTab", function(id){
+    var link = String(id);
+    chemical_tab = link;
+    Shiny.setInputValue("selected_chemical_tab", link);
+});
+
+// select the chemical id
+Shiny.addCustomMessageHandler("SelectedChemicalId", function(id){
+    var link = String(id);
+    chemical_id = link;
+    Shiny.setInputValue("selected_chemical_id", link);
+});
+
+// change the portal tab
+Shiny.addCustomMessageHandler("ChangedSubtab", function(id){
+    var link = String(id);
+    subtab = link;
+});
+
+// select the chemical tab
+Shiny.addCustomMessageHandler("ChangedChemicalTab", function(id){
+    var link = String(id);
+    chemical_tab = link;
+});
+
+// select the chemical tab
+Shiny.addCustomMessageHandler("ChangedChemicalId", function(id){
+    var link = String(id);
+    chemical_id = link;
+});
+
+// activate tooltip for bootstrap
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+})

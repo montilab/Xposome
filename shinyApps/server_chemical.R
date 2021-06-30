@@ -1,67 +1,40 @@
 
-
 # Output the chemical selection ####
-observeEvent(chemical_dat(), {
+output$chemical_options <- renderUI({
   
-  chemical_dat() %...>% {
+  req(input$selected_chemical_id)
+  
+  chemical_id <- isolate({ input$selected_chemical_id })
+  
+  chemical_list() %...>% {
     
-    dat <- .
+    chemicals <- .
     
-    chemicals <- list(
-      `Chemical Name`=sort(unique(dat$Chemical_Name[which(!dat$Chemical_Name %in% c(NA, ""))])),
-      `BUID`=sort(unique(dat$BUID[which(!dat$BUID %in% c(NA, "") & !dat$Chemical_Name %in% c(NA, ""))])),
-      `CAS`=sort(unique(dat$CAS[which(!dat$CAS %in% c(NA, "") & !dat$Chemical_Name %in% c(NA, ""))]))
+    selectInput(
+      inputId = "chem",
+      label = "Select a Chemical Name/BUID/CAS:",
+      choices = c("Please select an option below" = "", chemicals),
+      selected = chemical_id,
+      width = "100%"
     )
-  
-    updateSelectInput(session, inputId="chem", choices=c("Please select an option below"="", chemicals), selected=chemical_id)
     
-  }
-  
-})
-
-## Go back to home page when the logo link is clicked on ####
-observeEvent({
-  input$chem
-}, {
-  
-  if(input$main_page == "chemical_explorer"){
-    if(is.null(input$chem) | input$chem == ""){
-      updateQueryString(paste0("?page=", fname, "&tab=", input$main_page), mode="push") 
-    }else{
-      updateQueryString(paste0("?page=", fname, "&tab=", input$main_page, "&chemical_id=", input$chem, "&stat=", input$chemical_tab), mode="push") 
-    }
-  }
-  
-})
-
-## Go back to home page when the logo link is clicked on ####
-observeEvent({
-  input$chemical_tab
-}, {
-  
-  if(input$main_page == "chemical_explorer"){
-    if(is.null(input$chem) | input$chem == ""){
-      updateQueryString(paste0("?page=", fname, "&tab=", input$main_page), mode="push") 
-    }else{
-      updateQueryString(paste0("?page=", fname, "&tab=", input$main_page, "&chemical_id=", input$chem, "&stat=", input$chemical_tab), mode="push") 
-    }
   }
   
 })
 
 ##output chemical table####
 output$chemical_table <- DT::renderDataTable({
-  
+
   req(input$chem)
-  
+
   chem=input$chem
-  
+
   chemical_dat() %...>% {
     chemical_dat <- .
     pos <- get_chem_description(chemical_dat=chemical_dat, chem=chem, chemical_id=FALSE)
     table <- chemical_dat[pos,] %>% data.table.round()
   }
-  
+
 }, escape = FALSE, extensions = 'Buttons', server = TRUE, rownames=FALSE, selection = "none",
 options = list(
   columnDefs = list(list(className = 'dt-left', targets = "_all")),
@@ -75,9 +48,9 @@ options = list(
 
 ##Get the gene expression table####
 expression_table <- reactive({
-  
+
   req(annot_var(), input$chem, input$summarizefunc_de, input$filterbyinput_de, input$range_de, input$numberthresleft_de, input$numberthresright_de)
-  
+
   chem=input$chem
   landmark_de=input$landmark_de
   summarizefunc_de=input$summarizefunc_de
@@ -85,7 +58,7 @@ expression_table <- reactive({
   range_de=input$range_de
   numberthresleft_de=input$numberthresleft_de
   numberthresright_de=input$numberthresright_de
-  
+
   promise_all(annot_var=annot_var(), profile_dat=profile_dat(), chemical_dat=chemical_dat(), expression_dat=expression_dat()) %...>% with({
     get_de(
       chem=chem,
@@ -101,9 +74,9 @@ expression_table <- reactive({
       do.scorecutoff = "score" %in% filterbyinput_de,
       scorecutoff = c(range_de[1], range_de[2])
     ) %>% data.table.round()
-    
+
   }) %...!% { return(NULL) }
-  
+
 })
 
 ##Output the gene expression table####
@@ -130,16 +103,17 @@ options = list(
 
 #Get the gene set enrichment table####
 gs_enrichment_table <- reactive({
-  
+
   req(annot_var(), input$chem, input$gsname, input$gsmethod, input$summarize_gs)
-  
+
+  dsmap=dsmap()
   chem=input$chem
   gsname=input$gsname
   gsmethod=input$gsmethod
   summarize_gs=input$summarize_gs
-  
+
   promise_all(annot_var=annot_var(), profile_dat=profile_dat(), chemical_dat=chemical_dat(), gs_enrichment_dat=gs_enrichment_dat()) %...>% with({
-    
+
     get_gsenrichment(
       chem=chem,
       annot_var=annot_var,
@@ -150,9 +124,9 @@ gs_enrichment_table <- reactive({
       header="GS Score",
       summarize.func=summarize_gs
     ) %>% data.table.round()
-    
+
   }) %...!% { return(NULL) }
-  
+
 })
 
 #Output the gene set enrichment table####
@@ -179,15 +153,15 @@ options = list(
 
 #Get connectivity table####
 connectivity_table <- reactive({
-  
+
   req(annot_var(), input$chem, input$conn_name, input$summarizefunc_conn)
-  
+
   chem=input$chem
   conn_name=input$conn_name
   summarizefunc_conn=input$summarizefunc_conn
 
   promise_all(annot_var=annot_var(), profile_dat=profile_dat(), chemical_dat=chemical_dat(), connectivity_dat=connectivity_dat()) %...>% with({
-    
+
     get_connectivity(
       chem=chem,
       annot_var=annot_var,
@@ -197,21 +171,21 @@ connectivity_table <- reactive({
       header="Connectivity Score",
       summarize.func=summarizefunc_conn
     ) %>% data.table.round()
-    
+
   }) %...!% { return(data.frame(Connectivity_Id="NO CONNECTIVITY MAP")) }
-  
+
 })
 
 
 #Output connectivity table####
 output$connectivity_table <- DT::renderDataTable({
-  
+
   req(connectivity_table()) %...>% {
-    
+
     conn_table <- .
-    
+
     if(all(!conn_table$Connectivity_Id %in% "NO CONNECTIVITY MAP")){
-      
+
       conn_table %>% datatable(
         rownames = FALSE,
         escape = FALSE,
@@ -234,9 +208,9 @@ output$connectivity_table <- DT::renderDataTable({
           buttons=c('copy','csv','print')
         )
       )
-      
+
     }else{
-      
+
       conn_table <- data.frame(WARNING="There is no connectivity map for this portal.");
 
       conn_table %>% datatable(
@@ -252,10 +226,10 @@ output$connectivity_table <- DT::renderDataTable({
           dom = 'T'
         )
       )
-      
+
     }
-    
-  }  
+
+  }
 })
 
 ###################################################

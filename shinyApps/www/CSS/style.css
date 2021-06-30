@@ -3,9 +3,17 @@
 /* MAIN TEMPLATE CSS
 /*----------------------------------------*/
 
-html, body{
-  padding: 0 0 0 0;
+body, html { 
+  overflow: scroll;
+  font-family: 'Roboto', sans-serif;
   margin: 0 0 0 0;
+  padding: 0 0 0 0;
+}
+
+/* change the shiny gray background */
+body.disconnected {
+  background-color: inherit;
+  opacity: 1;
 }
 
 h1,
@@ -14,10 +22,8 @@ h3,
 h4,
 h5,
 h6 {
-	color: #40424a;
 	font-weight: 600;
 }
-
 
 h2 {
 	font-size: 48px;
@@ -32,14 +38,11 @@ h4 {
 	font-size: 20px;
 }
 
-
 p {
-	font-size: 14px;
-	color: #808181;
-	line-height: 1.8;
+  font-size: 14px;
+  font-weight: 300;
 }
 
- 
 img {
 	max-width: 100%;
 }
@@ -133,25 +136,35 @@ textarea {
    style select-input 
 -----------------------*/
 
-.selectize-input.input-active .selectize-input.input-active:hover .selectize-control.multi .selectize-input.focus {
+.selectize-input.input-active, .selectize-input.input-active:hover, .selectize-control.multi, .selectize-input.focus {
 	text-align: left; 
 	border-color: #00008B !important;
 	z-index: 99999;
 }
 
-.selectize-dropdown .active {text-align: left; background: #FFE4C4 !important; 	z-index: 99999;}
+.selectize-dropdown .active {
+  text-align: left; 
+  background: #FFE4C4 !important; 	
+  z-index: 99999;
+}
 
-.selectize-input{text-align: left; margin-right: 20px; 	z-index: 99999;}
+.selectize-input{
+  text-align: left; 
+  margin-right: 20px;
+  z-index: 99999;
+}
 
-.selectize-dropdown {text-align: left; 	z-index: 99999;}
-
+.selectize-dropdown {
+  text-align: left; 	
+  z-index: 99999;
+}
 
 /*---------------------
 	tooltip style
 -----------------------*/
 
 .tooltip-inner {
-    text-align: left;
+  text-align: left;
 }
   
 /*---------------------
@@ -160,11 +173,14 @@ textarea {
 
 @media (min-width: 50px) {
   .text-md-left {
-    text-align: left !important; }
+    text-align: left !important; 
+  }
   .text-md-right {
-    text-align: right !important; }
+    text-align: right !important;
+  }
   .text-md-center {
-    text-align: center !important; } 
+    text-align: center !important; 
+  } 
 }
 
 /*---------------------
@@ -200,22 +216,21 @@ textarea {
 }
 
 .body-container {
-    width: 100%;
-    background: white;
-}
-
-.home-page, .about-page, .contact-page {
   width: 100%;
-	margin: 0 0 0 0;
+  overflow: hidden;
+  background: white;
   padding: 0 0 0 0;
+  margin: 0 0 0 0;
+  /*border: 2px solid black;*/
 }
 
-.home-page > [class*="col-"], .about-page > [class*="col-"], .contact-page > [class*="col-"] {
+.footer-container {
   width: 100%;
-	margin: 0 0 0 0;
-	padding: 20px 20px 20px 20px;
+  background: white;
+  padding: 0 0 0 0;
+  margin: 0 0 0 0;
+  /*border: 2px solid black;*/
 }
-
 
 .portal-about, .portal-annotation, .portal-chemical, .portal-marker, .portal-heatmap, .portal-taxonomer, .portal-compare-multiple {
   width: 100%;
@@ -232,6 +247,52 @@ textarea {
 .main-page{ 
   margin: 0 0 0 0;
   padding: 0 0 0 0;  
+}
+
+.portal-page{
+  padding: 20px 20px 20px 20px;
+  margin: 50px 0 0 0;
+}
+
+.highlight-title{
+  width: 100%;
+  background-color: #CCCCFF;
+  padding: 10px 10px 10px 10px;
+}
+        
+.about-page{
+  padding: 20px 20px 20px 20px;
+  margin: 50px 0 0 0;
+}
+  
+.contact-page{
+  padding: 20px 20px 20px 20px;
+  margin: 50px 0 0 0;
+}
+
+.sign-in-page{
+  padding: 20px 20px 20px 20px;
+  margin: 50px 0 0 0;
+}
+
+/* Responsive layout */
+@media (max-width: 850px) {
+  .portal-page {
+    margin: 80px 0 0 0;
+  }
+  
+  .about-page {
+    margin: 80px 0 0 0;
+  }
+  
+  .contact-page {
+    margin: 80px 0 0 0;
+  }  
+
+  .sign-in-page {
+    margin: 80px 0 0 0;
+  }
+  
 }
 
 /*--------------------
@@ -363,77 +424,80 @@ a.portal-link[class=active]{
 /* Clustering Table */
 
 #clusteringTable table {
-    width: 100%;
-    border-collapse: collapse;
+  width: 100%;
+  border-collapse: collapse;
 } 
 
 #clusteringTable td, th{
-    background: white;
-    text-align: left;
-    vertical-align: center;
+  background: white;
+  text-align: left;
+  vertical-align: center;
 	border: 1px solid lightgray; 
 	padding: 0 0 0 0;
-    margin: 0 0 0 0;
+  margin: 0 0 0 0;
 }
 
 #clusteringTable td:nth-child(1) {
-    width: 50%; 
-    vertical-align: top;
+  width: 50%; 
+  vertical-align: top;
 }
 
 #clusteringTable td:nth-child(2) {
-    width: 50%; 
-    vertical-align: top;    
+  width: 50%; 
+  vertical-align: top;    
 }
 
 /* Project Table */
 #projecttable table {
-    width: 100%;
-    border: 1px solid black; 
+  width: 100%;
+  border: 1px solid black; 
 } 
 
 #projecttable td, th {
-    background: white;
-    text-align: center;
-    vertical-align: center;
+  background: white;
+  text-align: center;
+  vertical-align: center;
 	border: 1px solid lightgray; 
-    border-collapse: collapse;
-    padding: 5px 5px 5px 5px;
+  border-collapse: collapse;
+  padding: 5px 5px 5px 5px;
 }
 
 #projecttable td:last-child {
-    text-align: left;
-    width: 40%;
+  text-align: left;
+  width: 40%;
 }
 
 /* Login Table */
 #logintable table {
-    width: 100%;
-    border: 1px solid black; 
+  width: 100%;
+  border: 1px solid black; 
 } 
 
 #logintable td, th {
-    background: white;
-    text-align: center;
-    vertical-align: center;
-	  border: 1px solid lightgray; 
-    border-collapse: collapse;
-    padding: 5px 5px 5px 5px;
+  background: white;
+  text-align: center;
+  vertical-align: center;
+	border: 1px solid lightgray; 
+  border-collapse: collapse;
+  padding: 5px 5px 5px 5px;
 }
 
 /*  Annotation Table */
 
+#annotation_table {
+} 
+
 #annotation_table table {
-    width: 100%;
-    border: 1px solid black; 
+  width: 100%;
+  border: 1px solid black; 
 } 
 
 #annotation_table th, td {
-    background: white;
-    vertical-align: center;
-    border: 1px solid lightgray;
+  background: white;
+  vertical-align: center;
+  border: 1px solid lightgray;
 	border-collapse: collapse;
-    padding: 5px 5px 5px 5px;
+  padding: 5px 5px 5px 5px;
 }
 
 /*  Chemical Table */
@@ -453,6 +517,9 @@ a.portal-link[class=active]{
 
 /* Gene Expression Table */
 
+#gene_expression_table {
+} 
+
 #gene_expression_table table {
     width: 100%;
     border: 1px solid black;    
@@ -467,6 +534,9 @@ a.portal-link[class=active]{
 }
 
 /*  Gene Set Enrichment Table */
+
+#gene_set_enrichment_table {
+} 
 
 #gene_set_enrichment_table table {
     width: 100%;
@@ -483,6 +553,9 @@ a.portal-link[class=active]{
 
 /* Connectivity Table */
 
+#connectivity_table {
+}
+
 #connectivity_table table {
     width: 100%;
     border: 1px solid black;
@@ -498,6 +571,9 @@ a.portal-link[class=active]{
 
 /* Marker Table */
 
+#marker_table {
+}
+
 #marker_table table {
     width: 100%;
     border: 1px solid black;
@@ -510,8 +586,6 @@ a.portal-link[class=active]{
     border-collapse: collapse;
     padding: 5px 5px 5px 5px;
 }
-
-
 
 /*  Info Table */
 
