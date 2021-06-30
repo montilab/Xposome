@@ -117,22 +117,14 @@ fluidRow(
       fluidRow(
         column(
           width=12,
-          div(
-            class="header-3",
-            div(class="content",
-                plotlyOutput(outputId = "marker_plot_1", width="auto") %>% withSpinner(type=4, color="#0dc5c1")
-            )
-          )
-        )
-      ),
-      
-      br(),
-      
-      uiOutput(outputId = "exposure_phenotype_plot"),
-      
-      br(),
-      
-      fluidRow(
+          plotlyOutput(outputId = "marker_plot", width="auto") %>% withSpinner(type=4, color="#0dc5c1")
+        ),
+        
+        column(
+          width=12,
+          plotlyOutput(outputId = "exposure_phenotype_plot", width="auto", height="auto") %>% withSpinner(type=4, color="#0dc5c1")
+        ),
+        
         column(
           width=12,
           uiOutput(outputId = "marker_table_header"),

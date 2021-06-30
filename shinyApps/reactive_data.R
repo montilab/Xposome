@@ -4,7 +4,7 @@ profile_dat <- reactive({
   
   req(input$portal_id)
   
-  fname <- input$portal_id
+  fname <- isolate({ input$portal_id })
   
   # Retrieve list of all PortalDataset entities in hive matching portal name
   datasets <- listEntities("PortalDataset", portal=fname)
@@ -24,7 +24,7 @@ chemical_dat <- reactive({
   
   req(input$portal_id)
   
-  fname <- input$portal_id
+  fname <- isolate({ input$portal_id })
   
   # Retrieve list of all PortalDataset entities in hive matching portal name
   datasets <- listEntities("PortalDataset", portal=fname)
@@ -44,7 +44,7 @@ expression_dat <- reactive({
   
   req(input$portal_id)
   
-  fname <- input$portal_id;
+  fname <- isolate({ input$portal_id })
   
   # Retrieve list of all PortalDataset entities in hive matching portal name
   datasets <- listEntities("PortalDataset", portal=fname)
@@ -64,7 +64,7 @@ connectivity_dat <- reactive({
   
   req(input$portal_id)
   
-  fname <- input$portal_id
+  fname <- isolate({ input$portal_id })
   
   # Retrieve list of all PortalDataset entities in hive matching portal name
   datasets <- listEntities("PortalDataset", portal=fname)
@@ -84,7 +84,7 @@ gs_enrichment_dat <- reactive({
   
   req(input$portal_id)
   
-  fname <- input$portal_id
+  fname <- isolate({ input$portal_id })
   
   # Retrieve list of all PortalDataset entities in hive matching portal name
   datasets <- listEntities("PortalDataset", portal=fname)
@@ -104,7 +104,7 @@ taxonomer_results <- reactive({
   
   req(input$portal_id)
   
-  fname <- input$portal_id
+  fname <- isolate({ input$portal_id })
   
   # Retrieve list of all PortalDataset entities in hive matching portal name
   datasets <- listEntities("PortalDataset", portal=fname)
@@ -344,6 +344,7 @@ taxonomer_results <- reactive({
 
 ## Create reactive values####
 annot_var <- reactive({
+  
   promise_all(pro_ann=profile_dat(), eset=expression_dat()) %...>% with({
     if(all(colnames(eset) %in% pro_ann$Sig_Id)){
       return("Sig_Id")
@@ -351,7 +352,24 @@ annot_var <- reactive({
       return("Chemical_Id")
     }
   })
+  
 })
 
+## Create reactive values####
+chemical_list <- reactive({
+  
+  promise_all(dat=chemical_dat()) %...>% with({
+    
+    chemicals <- list(
+      `Chemical Name`=sort(unique(dat$Chemical_Name[which(!dat$Chemical_Name %in% c(NA, ""))])),
+      `BUID`=sort(unique(dat$BUID[which(!dat$BUID %in% c(NA, "") & !dat$Chemical_Name %in% c(NA, ""))])),
+      `CAS`=sort(unique(dat$CAS[which(!dat$CAS %in% c(NA, "") & !dat$Chemical_Name %in% c(NA, ""))]))
+    )
+    
+    return(chemicals)
+    
+  }) %...!% { return(NULL) }
+  
+})
 
 

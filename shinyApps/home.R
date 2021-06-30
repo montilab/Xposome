@@ -53,8 +53,10 @@ output$portal_search <- renderUI({
       }else{
         portal_id <- projectlist$Portal[which(projectlist$Cell_Line == input)]
       }
+      
       # Update the url link
       HTML(paste0('<a href="?page=', portal_id, '&tab=annotation" id="portal_submit" style="margin-left: 1px; padding: 5px 5px 5px 5px;" class="btn btn-success">Search</a>'))
+      
     }
   }
   

@@ -1,24 +1,19 @@
 
-
 # Output the chemical selection ####
 output$chemical_options <- renderUI({
   
-  chemical_id <- input$chem
+  req(input$selected_chemical_id)
   
-  chemical_dat() %...>% {
+  chemical_id <- isolate({ input$selected_chemical_id })
+  
+  chemical_list() %...>% {
     
-    dat <- .
-    
-    chemicals <- list(
-      `Chemical Name`=sort(unique(dat$Chemical_Name[which(!dat$Chemical_Name %in% c(NA, ""))])),
-      `BUID`=sort(unique(dat$BUID[which(!dat$BUID %in% c(NA, "") & !dat$Chemical_Name %in% c(NA, ""))])),
-      `CAS`=sort(unique(dat$CAS[which(!dat$CAS %in% c(NA, "") & !dat$Chemical_Name %in% c(NA, ""))]))
-    )
+    chemicals <- .
     
     selectInput(
       inputId = "chem",
       label = "Select a Chemical Name/BUID/CAS:",
-      choices = chemicals,
+      choices = c("Please select an option below" = "", chemicals),
       selected = chemical_id,
       width = "100%"
     )

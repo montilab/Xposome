@@ -176,13 +176,13 @@ body, html {
 
 /* style the five features of the portal */
 
-.portal-features{
+.portal-features {
   padding: 15px 10px 15px 10px;
   box-shadow: 0 15px 35px rgba(50,50,93,.1),0 5px 15px rgba(0,0,0,.07);
   /*border: 1px solid blue;*/
 }
 
-.portal-features .info:hover .icon i, .portal-features .info:hover a, .portal-features .info:hover p{
+.portal-features .info:hover .icon i, .portal-features .info:hover a, .portal-features .info:hover p {
   color:#fff!important;
   font-weight: 350;
 }
@@ -197,46 +197,53 @@ body, html {
   font-weight: bold;
 }
 
-.portal-info{
+.portal-info {
   text-align: center;
 }
 
-.features-info{
+.features-info {
   text-align: left;
   background-color: #d9d9d9;
 }
 
-.features-info-1{
+.features-info-1 {
   height: 120px;
   margin: 0 0 5px 0;
 }
 
-.features-info-2{
-  height: 175px;
+.features-info-2 {
+  height: 160px;
   margin: 0 0 5px 0;
 }
 
-.features-info-3{
-  height: 150px;
+.features-info-3 {
+  height: 140px;
 }
 
 /* Responsive layout */
 @media (max-width: 1200px) {
-  .features-info-2{
-    height: 220px;
+  
+  .features-info-1 {
+    height: 120px;
   }
   
-  .features-info-3{
-    height: 180px;
+  .features-info-2 {
+    height: 200px;
   }
+  
+  .features-info-3 {
+    height: 160px;
+  }
+  
 }
 
 @media (max-width: 1000px) {
-  .features-info-1{
+  
+  .features-info-1 {
     height: auto;
   }
   
-  .features-info-2{
+  .features-info-2 {
     height: auto;
   }
   
@@ -245,7 +252,7 @@ body, html {
   }
 }
 
-.info{
+.info {
   padding: 8px 10px 8px 10px;
   border-radius:.25rem;
   -webkit-transition:all .5s;
@@ -255,36 +262,36 @@ body, html {
   /*border: 1px solid red;*/
 }
 
-.info-horizontal .icon{
+.info-horizontal .icon {
   float:left;
 }
 
-.info-horizontal .description{
+.info-horizontal .description {
   overflow:hidden;
 }
 
-.info.info-hover-primary:hover{
+.info.info-hover-primary:hover {
   background-color: #172b4d;
   -webkit-box-shadow:13px 13px 50px -24px #5e72e4;
   -moz-box-shadow:13px 13px 50px -24px #5e72e4;
   box-shadow:13px 13px 50px -24px #5e72e4
 }
 
-.info .icon{
+.info .icon {
   transition:transform .4s,
   box-shadow .4s
 }
 
-.icon{
+.icon {
    width:3rem;
    height:3rem;
  }
  
-.icon i, .icon svg{
+.icon i, .icon svg {
    font-size:2.25rem;
  }
 
-.icon-shape{
+.icon-shape {
    padding:12px;
    text-align:center;
    display:inline-flex;
@@ -293,7 +300,7 @@ body, html {
    border-radius:50%
  }
  
-.icon-shape i, .icon-shape svg{
+.icon-shape i, .icon-shape svg {
   font-size:1.25rem;
 }
 

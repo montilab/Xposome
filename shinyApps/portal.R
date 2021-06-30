@@ -2,18 +2,18 @@
 ## portal page ####
 output$portal_page <- renderUI({
 
-  req(input$portal_tab == "portal", input$portal_id)
+  req(input$portal_tab == "portal")
+  
+  selected_portal <- isolate({ input$selected_portal });
   
   div(
     class="portal-page",
-    
-    h4(class="highlight-title", HTML(paste0("<b style='color: #3182bd;'>Project</b> - ", projectlist$Project[which(projectlist$Portal == input$portal_id)], ", <b style='color: #3182bd;'>Cell-Line</b> - ", projectlist$Cell_Line[which(projectlist$Portal == input$portal_id)]))),
+    uiOutput("portal_title"),
     br(),
-    
     fluidRow(
       column(
         width=2,
-        selectInput(inputId="portal_id", label=NULL, choices=projectlist$Portal, selected=input$portal_id, width="auto")
+        selectInput(inputId="portal_id", label=NULL, choices=projectlist$Portal, selected=selected_portal, width="auto")
       ),
       column(
         width=8,
@@ -21,10 +21,30 @@ output$portal_page <- renderUI({
       )
     ),
     h4(class="highlight-title", "Description"),
-    HTML(paste0("<p>", projectlist$Description[which(projectlist$Portal == input$portal_id)], "</p>")),
+    uiOutput(outputId = "portal_description"),
     br(),
-    uiOutput(outputId="portal_main_page")
+    uiOutput(outputId="portal_main_page") %>% withSpinner(id="loading-page", type=4, color="#0dc5c1")
   )  
+  
+})
+
+output$portal_title <- renderUI({
+  
+  req(input$portal_id)
+  
+  selected_portal <- isolate({ input$portal_id })
+  
+  h4(class="highlight-title", HTML(paste0("<b style='color: #3182bd;'>Project</b> - ", projectlist$Project[which(projectlist$Portal == selected_portal)], ", <b style='color: #3182bd;'>Cell-Line</b> - ", projectlist$Cell_Line[which(projectlist$Portal == selected_portal)])))
+
+})
+
+output$portal_description <- renderUI({
+  
+  req(input$portal_id)
+  
+  selected_portal <- isolate({ input$portal_id })
+  
+  HTML(paste0("<p>", projectlist$Description[which(projectlist$Portal == selected_portal)], "</p>"))
   
 })
 
@@ -121,6 +141,7 @@ output$download_portal <- downloadHandler(
   },
 
   contentType = "application/zip"
+  
 )
 
 

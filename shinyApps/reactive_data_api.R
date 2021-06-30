@@ -4,7 +4,7 @@ profile_dat <- reactive({
   
   req(input$portal_id)
   
-  fname <- input$portal_id
+  fname <- isolate({ input$portal_id })
   
   # url for local testing
   url1 <- paste0("https://montilab.bu.edu/Xposome-API/profile_annotation?project=", fname)
@@ -50,7 +50,7 @@ chemical_dat <- reactive({
   
   req(input$portal_id)
   
-  fname <- input$portal_id
+  fname <- isolate({ input$portal_id })
   
   # url for local testing
   url2 <- paste0("https://montilab.bu.edu/Xposome-API/chemical_annotation?project=", fname)
@@ -93,7 +93,7 @@ expression_dat <- reactive({
   
   req(input$portal_id)
   
-  fname <- input$portal_id;
+  fname <- isolate({ input$portal_id })
   
   # url for local testing
   url3 <- paste0("https://montilab.bu.edu/Xposome-API/expression_set?project=", fname)
@@ -141,7 +141,7 @@ connectivity_dat <- reactive({
   
   req(input$portal_id)
   
-  fname <- input$portal_id
+  fname <- isolate({ input$portal_id })
   
   # url for local testing
   url5 <- paste0("https://montilab.bu.edu/Xposome-API/connectivity_set?project=", fname)
@@ -189,7 +189,7 @@ gs_enrichment_dat <- reactive({
   
   req(input$portal_id)
   
-  fname <- input$portal_id
+  fname <- isolate({ input$portal_id })
   
   # url for local testing
   url4 <- paste0("https://montilab.bu.edu/Xposome-API/enrichment_set?project=", fname)
@@ -239,7 +239,7 @@ taxonomer_results <- reactive({
   
   req(input$portal_id)
   
-  fname <- input$portal_id
+  fname <- isolate({ input$portal_id })
   
   # url for local testing
   url6 <- paste0("https://montilab.bu.edu/Xposome-API/k2_taxonomer?project=", fname)
@@ -508,3 +508,22 @@ annot_var <- reactive({
     }
   })
 })
+
+## Create reactive values####
+chemical_list <- reactive({
+  
+  promise_all(dat=chemical_dat()) %...>% with({
+    
+    chemicals <- list(
+      `Chemical Name`=sort(unique(dat$Chemical_Name[which(!dat$Chemical_Name %in% c(NA, ""))])),
+      `BUID`=sort(unique(dat$BUID[which(!dat$BUID %in% c(NA, "") & !dat$Chemical_Name %in% c(NA, ""))])),
+      `CAS`=sort(unique(dat$CAS[which(!dat$CAS %in% c(NA, "") & !dat$Chemical_Name %in% c(NA, ""))]))
+    )
+    
+    return(chemicals)
+    
+  }) %...!% { return(NULL) }
+  
+})
+
+

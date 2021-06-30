@@ -472,9 +472,7 @@ observeEvent(input$sign_out_btn, {
   credentials$user_auth <- FALSE
   credentials$username <- ""
   credentials$password <- ""
-  shinyjs::hide(id = "sign_out")
-  shinyjs::show(id = "sign_in") 
-  
+
 })
 
 
