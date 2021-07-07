@@ -1,5 +1,5 @@
 # Get shiny+tidyverse packages from rocker image
-FROM rocker/shiny-verse:latest
+FROM montilab/xposome-genehive:latest
 
 # Set up the maintainer information
 MAINTAINER Reina Chau (lilychau999@gmail.com)
@@ -22,9 +22,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update --allow-releaseinfo-change && apt-get install -y \
     liblapack-dev \
     libpq-dev \
-	git-core \
- 	libssl-dev \
- 	libcurl4-gnutls-dev
+    git-core \
+    libssl-dev \
+    libcurl4-gnutls-dev
 
 # Install R packages
 RUN install2.r plumber
@@ -32,22 +32,15 @@ RUN install2.r plumber
 RUN R -e "install.packages(c('tidyr', 'dplyr', 'magrittr', 'httr', 'jsonlite'), \
 dependencies=TRUE, repos = 'http://cran.us.r-project.org')"
 
-# Install uuidtools and GeneHive and its dependencies
-RUN R -e "BiocManager::install('S4Vectors')"
-RUN R -e "install.packages('filenamer', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('io', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('rjson', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-RUN R -e "devtools::install_github('agower/uuidtools')"
-RUN R -e "devtools::install_github('agower/GeneHive')"
 
 # Make the API available at port 3838
 EXPOSE 3838
 
 # Copy configuration files to Docker image
-COPY api.sh /usr/bin/api.sh
+COPY shiny-server.sh /usr/bin/shiny-server.sh
 
 # Allow permission
-RUN ["chmod", "+rx", "/srv/api-server/"]
-RUN ["chmod", "+x", "/usr/bin/api-server.sh"]
+RUN ["chmod", "+rwx", "/srv/shiny-server/"]
+RUN ["chmod", "+x", "/usr/bin/shiny-server.sh"]
 
-CMD ["/usr/bin/api.sh"]
+CMD ["/usr/bin/shiny-server.sh"]

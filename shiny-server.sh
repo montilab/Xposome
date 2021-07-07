@@ -1,4 +1,13 @@
 #!/bin/sh
 
+# Make sure the directory for individual app logs exists
+mkdir -p /var/log/api-server
+
+if [ "$APPLICATION_LOGS_TO_STDOUT" != "false" ];
+then
+    # push the "real" application logs to stdout with xtail in detached mode
+    exec xtail /var/log/api-server/ &
+fi
+
 # start shiny server
-exec Rscript /srv/api-server/run_api_server.R 2>&1
+exec Rscript /srv/shiny-server/run_xposome_server.R 2>&1
