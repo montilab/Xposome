@@ -3,119 +3,269 @@ output: html_document
 ---
 
 <!-- introduction: start -->
-<p><div style="float: right; padding: 10px 0 15px 15px;"><img width="100px" height="120px" src="www/shiny.svg"><img width="100px" height="120px" src="www/rmarkdown.svg"><img width="100px" height="120px" src="www/ggplot2.svg"><img width="100px" height="120px" src="www/plumber.svg">
-</div>
+<h2>Introduction</h2>
 
-<h3>Introduction</h3>
+<p><span style="color: #377eb8; font-size: 16px;"><strong><a href="https://montilab.bu.edu/Xposome/" target="blank">Xposome</a></strong></span> is a shiny application that aims to build a repository of gene expression datasets that profile the transcriptomic responses to exposure of known toxins.</p>
 
-<span style="color: #377eb8; font-size: 16px;"><strong><a href="https://montilab.bu.edu/Xposome/">Xposome</a></strong></span> is a shiny application that aims to build a repository of gene expression datasets that profile the transcriptomic response to exposure of known toxins.</p>
-
-<p>There are two types of Xposome applications that you can install on your local machine:</p>
+<p>There are two types of the Xposome applications that you can install on your local machine:</p>
 <ul>
   <li>Xposome with GeneHive database incorporated</li>
-  <li>Xposome without GeneHive</li>
+  <li>Xposome without GeneHive database</li>
 </ul>
 
-<p>In this post, I will only go over instructions of how to install Xposome without GeneHive on your local machine. If you are interested in incorporating GeneHive as a database, please contact us for further implementation.</p>
+<p>In this post, I will go over instructions on how to install the Xposome application without relying on GeneHive database on your local machine. If you are interested in incorporating GeneHive as a database, please contact us at <a href="mailto:montilab@bu.edu">montilab@bu.edu</a> for further implementation.</p>
 <!-- introduction: end -->
 
 <!-- local installation: start -->
-### Local Installation
+<h3>Local Installation</h3>
 
 <p>Must have R and Rstudio installed before proceeding:</p>
 <ul>
-  <li>Download <a href="https://www.r-project.org/">R</a></li>
-  <li>Download <a href="https://rstudio.com/products/rstudio/download/">RStudio</a></li>
+  <li>Download <a target="blank" href="https://www.r-project.org/">R</a></li>
+  <li>Download <a target="blank" href="https://rstudio.com/products/rstudio/download/">RStudio</a></li>
 </ul>
 
-<p>To run Xposome application locally:</p> 
+<p>To run the Xposome application:</p> 
 <ul>
-  <li>Download the source code from <a href="https://github.com/montilab/Xposome">GitHub</a> repo</li>
-  <li>Unzip the file and navigate to <span class="highlight-text">shinyApps</span> folder</li>
-  <li>Open <span class="highlight-text">app.R</span> within that folder</li>
-  <li>Click <span class="highlight-text">Run App</span> button to launch the application in Rstudio</li>
+  <li>Download the zipped codebase from our <a target="blank" href="https://github.com/montilab/Xposome/tree/local">GitHub</a> repo</li>
+  <li>Unzip the file and navigate to the <span class="highlight-text">shinyApps</span> folder</li>
+  <li>Within the shinyApps folder, open the <span class="highlight-text">app.R</span> file with Rstudio</li>
+  <li>After the file is opened in Rstudio, click on the <span class="highlight-text">"Run App"</span> button located on the top right corner of the program to launch the application</li>
 </ul>
 <!-- local installation: end -->
 
-<!-- dockerize application: start -->
-### <div id="dockerize">Dockerize Xposome Application</div>
+<!-- folder structure: start -->
+<h3>Folder Structure</h3>
 
-<p>Not familiar with Docker? You can download it <a href="https://www.docker.com/products/docker-desktop">here</a> and check out the <a href="https://ropenscilabs.github.io/r-docker-tutorial/">R Docker tutorials</a>.</p>
-
-<p>To dockerize the Xposome application:</p>
-
+<p>Xposome-local</p>
 <ul>
-  <li>Download the source code from <a href="https://github.com/montilab/Xposome">GitHub</a> repo</li>
-  <li>Unzip the file and open the terminal. Use the <span class="highlight-text">cd</span> command to navigate to where the <span class="highlight-text">dockerfile</span> is stored. The dockerfile is a text file that contains all of the dependencies and instructions on how to run the Xposome app.</li>
-  <li>Run the following command to build the docker image for the Xposome application
-  <div class="code">docker build xposome .</div>
-  To check if the image is built succesfully,<br>
-  <div class="code">docker images </div>   
-  </li>
-  <li>Create a docker container that contains the Xposome image and publish the application on the host machine.
-  <div class="code">docker run -d -p 3838:3838 \ <br>
-  &emsp; -v shinyApps/:/srv/shiny-server/ \ <br>
-  &emsp; -v shinyApps-log/:/var/log/shiny-server/ \ <br>
-  &emsp; xposome:latest
-  </div>
-  -d is to run the container in detached mode <br>
-  -v is to mount the code base or data files from the host directory onto the container directory <span class="highlight-text">&lt;host_dir&gt;:&lt;container_dir&gt;</span> <br>
-  -p is to link the container port onto the host port and publish the application on the host domain <span class="highlight-text">&lt;host_port&gt;:&lt;container_port&gt;</span><br>
-  For more information about the syntax usage, see <a href="https://docs.docker.com/engine/reference/builder/">docker documentation</a><br><br>
-  To check if the container is built and running sucessfully,<br>
-  <div class="code">docker container ps</div>
-  </li>
-  <li>Once the app is up and running, you can visit the local host on your machine, i.e. <span class="highlight-text">http://localhost:3838</span> to vertify if the application is indeed hosted there.</li>
+  <li>shinyApps</li>
+    <ul>
+      <li>data</li>
+        User_Login_List.csv <br>
+        Project_List.csv <br>
+      <li>www</li>
+        <ul>
+          <li>CSS</li>
+            style.css <br>
+            main_style.css <br>
+            LoginStyle.css <br>
+            ModeratorStyle.css <br>
+          <li>JS</li>
+            Javascript.js <br>
+          <li>IMAGES</li>
+            github_logo.png
+          <li>HTML</li>
+            publications.html <br>
+        </ul>
+      app.R <br>
+      home.R <br>
+      overview.R <br>
+      portal.R <br>
+      sign_in.R <br>
+      other *.R files <br>
+    </ul>
+  <li>shinyApps-log</li>
+  <li>dockerfile</li>
+  <li>shiny-server.sh</li>
 </ul>
+<!-- folder structure: end -->
 
-<p>The docker image for Xposome is also available at <a href="">Docker Hub</a>. To pull the image, just type the following command in the terminal:</p>
+<!-- dockerize application: start -->
+<div id="dockerize"><h3>Dockerize The Xposome Application</h3></div>
 
-<div class="code">docker pull montilab/xposome</div>
+<p>Not familiar with Docker? You can download it <a target="blank" href="https://www.docker.com/products/docker-desktop">here</a> and then check out the <a target="blank" href="https://ropenscilabs.github.io/r-docker-tutorial/">R Docker tutorials</a>.</p>
+
+<p>To check if docker is installed.</p>
+
+<div class="code">
+    docker --version
+</div>
+
+<br>
+
+<p>To dockerize the Xposome application with GitHub:</p>
+
+<ol>
+  <li>Download the zipped codebase from our <a target="blank" href="https://github.com/montilab/Xposome/tree/local">GitHub</a> repo</li>
+  <li>Unzip the file and open the terminal</li> 
+  <li>cd to where the <span class="highlight-text">dockerfile</span> is stored. <em>Note: the dockerfile is a text file that contains all of the dependencies and instructions on how to run the Xposome application.</em></li>
+  <li>To build a docker image for the Xposome application, run the following command
+  <div class="code">
+    docker build -t xposome:latest .
+  </div>
+  -t is used to add a tag to an image such as the version of the app, i.e. xposome:2.0.1 or xposome:latest <br>
+  
+  <em>Note: the build will take some time as it depends on a number of system dependencies and R packages</em>
+  
+  <br><br>
+  
+  After the build is completed, you can check if the image is built successfully.
+  <div class="code">
+    docker images
+  </div>  
+  </li>
+  <br><br>
+
+  <li>Next, create a docker container that utilizes the Xposome image and publishes the application on the host machine.
+  <div class="code">
+    docker run -d -p 3838:3838 \ <br>
+    &emsp; -v shinyApps/:/srv/shiny-server/ \ <br>
+    &emsp; -v shinyApps-log/:/var/log/shiny-server/ \ <br>
+    &emsp; xposome:latest
+  </div>
+  -d is used to run the container in detached mode <br>
+  -v is used to mount the code base or data files from the host directory to the container directory <span class="highlight-text">&lt;host_dir&gt;:&lt;container_dir&gt;</span> <br>
+  -p is used to link the container port to the host port and publish the application thru the host port <span class="highlight-text">&lt;host_port&gt;:&lt;container_port&gt;</span> <br>
+  <br>
+  For more information about the syntax usage, see <a target="blank" href="https://docs.docker.com/engine/reference/builder/">docker documentation</a><br><br>
+  To check if the container is built and running sucessfully,<br>
+  <div class="code">
+    docker container ps
+  </div>
+  </li>
+  <br>
+  <li>Lastly, you can visit the local host on your machine, i.e. <span class="highlight-text">http://localhost:3838</span>, to check if the application is indeed hosted there.</li>
+</ol>
+
+<br>
+
+<p>To dockerize the Xposome application with Docker Hub:</p>
+<ol>
+<li>The docker image for the Xposome application is available on <a href="">Docker Hub</a>. To pull the image, just type the following command in the terminal:
+<div class="code">
+    docker pull montilab/xposome
+</div>
+
+To check if the image is built successfully.
+<div class="code">
+    docker images
+</div>  
+</li>
+<li>Follow the step 4 and 5 of <span class="highlight-text">"Dockerize the Xposome application with GitHub"</span> to build the docker container for the Xposome applicaton</li>
+</ol>
 <!-- dockerize application: end -->
 
+<br>
 
-<p>Additionally, check out how you can configure your web applications with HTTPS traffics with <a href="#nginx-and-docker-compose">NGINX and Docker-Compose</a></p>
-
+<p>Additionally, check out our documentation on how to create an encrypt HTTPS traffic to the Xposome application with <a href="#nginx-and-docker-compose">NGINX and Docker-Compose</a></p>
 
 <!-- data access: start -->
-### Data Access
+<h3>Data Access</h3>
 
-<p>The Xposome application requires several structural datasets in order for it to run smoothly. We provide API access to our data, see <a href="#api-calls">API Explorer</a>.</p>
+<p>The Xposome application requires several structural datasets in order for it to run smoothly. We do provide API access to our data, see our <a href="#api-calls">API Explorer</a>.</p>
 <!-- data access: end -->
 
-
 <!-- app usage: start -->
-### Application Usage
+<h3>Application Usage</h3>
 
-<p>There are two main parts of the Xposome application:</p>
-<ul>
-  <li>Project Page</li>
-  <li>Moderator Page</li>
+<p>The Xposome shiny application contains four pages:</p>
+<ul class="nav">
+  <li class="nav-item">
+    <a class="nav-link" onclick="clickSlides(index='1')">Home</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" onclick="clickSlides(index='2')">Overview</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" onclick="clickSlides(index='3')">Portal</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" onclick="clickSlides(index='4')">Sign In</a>
+  </li>
 </ul>
 
+<br></br>
 
-### <div id="project-page">The Project Page</div>
+<div class="slideshow-container">
 
-<p>Contains a list of projects or chemical screenings that were exposed to high-throughput transcriptomics assays. Each screen provides annotation about the chemicals and cell-line samples that were used in the experiment. A detailed analysis was also done to explore gene expression set, gene set enrichment, and gene connectivity that was exposed to a panel of known carcinogens.</p>
+  <div class="mySlides">
+    <h3>The Home Page</h3>
+    <p>Gives a general description about the Xposome Portal and its usage</p>
+    <img src="www/home-page.png" style="width:100%">
+    <div class="numbertext">1 / 4</div>
+  </div>
+  
+  <div class="mySlides">
+    <h3>The Overview Page</h3>
+    <p>Provides information about the datasets that are currently available on the Xposome Portal</p>
+    <img src="www/overview-page.png" style="width:100%">
+    <div class="numbertext">2 / 4</div>
+  </div>
+  
+  <div class="mySlides">
+    <h3>The Portal Page</h3>
+    <p>Enables interactive exploration of expression profiles of a list of projects currently existed on the Xposome Portal that were exposed to a panel of known carcinogens. Below is the portal page of the Adipogenicity Project which associated with 3T3-L1 cell line.</p>
+    <img src="www/portal-page.png" style="width:100%">
+    <div class="numbertext">3 / 4</div>
+  </div>
+  
+  <div class="mySlides">
+    <h3>The Sign-In Page</h3>
+    <p>Allows only authorized users to log into the Xposome database and make changes to the existed screens or to upload new screens onto the portal</p>
+    <p>The default login credentials:</p>
+    &emsp; Username: Xposome<br>
+    &emsp; Password: Xposome<br>
+    <br>
+    <em>Note that the password is encrypted using a sodium R package. See details <a href="" target="blank">here</a></em>
+    <br><br>
+    <p>Lastly, check out our documentation on how to reset password if users forgot their login credentials using <a href="#send-emails-with-postfix">Send Emails with Postfix</a>.</p>
+    <img src="www/sign-in-page.png" style="width:100%">
+    <br><br>
+    <div class="numbertext">4 / 4</div>
+  </div>
 
-<p>Below is a screenshot of our <a href="https://montilab.bu.edu/Xposome/">home page</a> and a snapshot of the <strong>Adipogenicity</strong> project:</p>
+</div>
 
-<a href="www/project-page.png" target="blank"><img src="www/project-page.png"></a>
-
-<a href="www/project-page-2.png" target="blank"><img class="img-box" src="www/project-page-2.png"></a>
-
-
-### <div id="moderator-page">The Moderator Page</div>
-
-<p>Requires access from authorized users. This restricted page only allows certain users to make changes to the existed screens or to upload new screens onto the Project Page.</p>
-<p>The default login credentials are set as:</p>
-&emsp; Username: Xposome<br>
-&emsp; Password: Xposome<br>
 <br>
-<p>Lastly, check out the documentation of how to reset password if users forgot their login credentials using <a href="#send-emails-with-postfix">Send Emails with Postfix</a>.</p>
 
-<a href="www/moderator-page.png" target="blank"><img class="img-box" src="www/moderator-page.png"></a>
+<div style="text-align:center">
+  <span class="dot" onclick="clickSlides(index='1')"></span> 
+  <span class="dot" onclick="clickSlides(index='2')"></span> 
+  <span class="dot" onclick="clickSlides(index='3')"></span>
+  <span class="dot" onclick="clickSlides(index='4')"></span> 
+</div>
 
 <br><br>
+
+<script type="text/javascript">
+  
+  showSlides();
+
+  function showSlides() {
+    var i;
+    var links = document.getElementsByClassName("nav-link");
+    var slides = document.getElementsByClassName("mySlides");
+    var dots = document.getElementsByClassName("dot");
+    for (i = 0; i < slides.length; i++) {
+      slides[i].style.display = "none";
+      links[i].style.textDecoration = "none";
+      dots[i].style.backgroundColor = "#bbb";
+    }
+    var slideIndex = 0;
+    slides[slideIndex].style.display = "block";  
+    links[slideIndex].style.textDecoration = "underline";
+    dots[slideIndex].style.backgroundColor = "#717171";
+  }
+  
+  function clickSlides(index) {
+    var i;
+    var index = Number(index);
+    var links = document.getElementsByClassName("nav-link");
+    var slides = document.getElementsByClassName("mySlides");
+    var dots = document.getElementsByClassName("dot");
+    for (i = 0; i < slides.length; i++) {
+      slides[i].style.display = "none";
+      links[i].style.textDecoration = "none";
+      dots[i].style.backgroundColor = "#bbb";
+    }
+    var slideIndex = index;
+    slides[slideIndex-1].style.display = "block";  
+    links[slideIndex-1].style.textDecoration = "underline";
+    dots[slideIndex-1].style.backgroundColor = "#717171";
+  }
+
+</script>
+
 <!-- app usage: end --> 
 

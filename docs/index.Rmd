@@ -2,11 +2,11 @@
 output:
   flexdashboard::flex_dashboard:
     theme: cosmo
-    source_code: "https://github.com/montilab/Xposome/"
     orientation: rows
     vertical_layout: fill
     css:
     - www/style.css
+    - www/home-style.css
     - www/docsearch.css
     - www/bootstrap-toc.css
 ---
@@ -15,7 +15,6 @@ output:
 
 library(flexdashboard)
 library(rmarkdown)
-library(badger)
 library(knitr)
 library(shiny)
 library(shinyjs)
@@ -27,6 +26,7 @@ my_title <- paste0("<span><a class='navbar-link' href='#home'><strong>Xposome</s
 ```
 
 <script type="text/javascript">
+
   document.querySelector(".navbar-header > span.navbar-brand").innerHTML = "`r my_title`";
 
   $(document).ready(function() {
@@ -41,6 +41,7 @@ my_title <- paste0("<span><a class='navbar-link' href='#home'><strong>Xposome</s
       x.style.display = "none";
     }
   }
+
 </script>
 
 Home {data-icon="fa-home"}
@@ -71,7 +72,7 @@ NGINX and Docker-Compose {data-icon="fa-plug"}
 ```{r docker-compose}
 
 fluidRow(
-    column(
+  column(
     width=8,
     includeMarkdown("docker-compose/docker-compose.Rmd")
   ),
@@ -118,6 +119,7 @@ fluidRow(
   column(
     width=8,
     HTML(markdown::markdownToHTML(knit('api/api-calls.Rmd', quiet = TRUE)))
+    #"hello"
   ),
   column(
     width=3, offset=1, id="pkgdown-sidebar",

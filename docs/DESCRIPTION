@@ -1,0 +1,87 @@
+Package: Xposome
+Type: Package
+Title: Creating Chemical Screenings using high-throughput transcriptomics assays
+Version: 1.0.5
+Date: 2021-02-17
+Authors@R: person("Reina", "Chau", email="rchau88@bu.edu",
+                  role=c("aut", "cre"))
+Description: Xposome is a shiny application that aims to build a repository of gene expression datasets that profile the transcriptomic response to exposure of known toxins.
+License: GPL-3 + file LICENSE
+VignetteBuilder: knitr
+biocViews: StatisticalMethod, Clustering
+Imports:
+  BiocManager,
+  data.table,
+  ggdendro,
+  password,
+  sodium,
+  sendmailR,
+  tidyverse,
+  magrittr,
+  ipc,
+  uuidtools,
+  GeneHive,
+  K2Taxonomer,
+  visNetwork,
+  Biobase,
+  GSVA,
+  GSEABase,
+  limma,
+  dendextend,
+  shiny,
+  shinyjs,
+  shinyBS,
+  shinycssloaders,
+  DT,
+  ggplot2,
+  plotly,
+  heatmaply,
+  promises,
+  future 
+Suggests:
+    unix,
+    jsonlite,
+    httr,
+    plumber,
+    knitr,
+    rmarkdown,
+    flexdashboard
+Depends:
+  R (>= 4.0)
+BugReports: https://github.com/montilab/K2Taxonomer
+RoxygenNote: 7.1.1
+RdMacros: Rdpack
+Collate:
+    'data.R'
+    'AllClasses.R'
+    'AllGenerics.R'
+    'K2tax.R'
+    'K2dashboard.R'
+    'K2dendro.R'
+    'K2visNetwork.R'
+    'getGenePathways.R'
+    'hclustWrapper.R'
+    'cKmeansWrapper.R'
+    'cKmeansWrapperSubsample.R'
+    'K2preproc.R'
+    'runTestsMods.R'
+    'runDGEmods.R'
+    'runGSEmods.R'
+    'runGSVAmods.R'
+    'runDSSEmods.R'
+    'runK2Taxonomer.R'
+    'runFisher1sided.R'
+    'runFisher2sided.R'
+    'runWilcox.R'
+    'runTtest.R'
+    'signatureWrapper.R'
+    'fixFDR.R'
+    'dgeWrapper.R'
+    'doSplit.R'
+    'isK2.R'
+    'formatCov.R'
+    'checkK2.R'
+    'getEnrichmentTable.R'
+    'aggregateGSVAscores.R'
+    'getDGETable.R'
+    'getTestsModTable.R'

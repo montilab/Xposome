@@ -4,56 +4,18 @@ output: html_document
 
 ## Links to Application
 
-We provide a direct link to a specific page on our <a target="blank" href="https://montilab.bu.edu/Xposome-API/">Xposome interface</a>. This feature allows users to connect information from their web application to our website.
+We also provide direct links to our <a target="blank" href="https://montilab.bu.edu/Xposome/">Xposome Portal</a>. This feature allows users to connect information from their web application to our web page.
 
-There are two types of queries that users can request from our web page through a web browser:
+There are three types of information that users can link to our pages:
 <ul>
-  <li>Query the Information Page (e.g. home page, about page, contact page, and sign-in page) </li>
-  <li>Query the Project Page (e.g. a list of project portals or chemical screenings that are available in our GeneHive database)</li>
+  <li><span class="highlight-text">Information Page</span> - gives an overview description about the Xposome portal and how to use it, etc.</li>
+  <li><span class="highlight-text">Portal Page</span> - enables interactive exploration of expression profiles that were exposed to a panel of known carcinogens based on a given portal</li>
+  <li><span class="highlight-text">Moderator Page</span> - allows authorized users to log into the Xposome database (GeneHive) and make changes to the existed screens or to upload new screens onto the portal</li>
 </ul>
 
-Hera are four URL tags that can be used to search our web page:
+<h3 id="info">Link to Information Page</h3>
 
-<table class="tag-table">
-  <tr>
-    <td><strong>Tag</strong></td>
-    <td><strong>Description</strong></td>
-  </tr>
-  <tr>
-    <td>?page</td>
-    <td>a url tag that searches for a specific page on the Xposome interface (e.g. an Information Page or a Project Page)</td>
-  </tr>
-  <tr>
-    <td>&tab</td>
-    <td>an additional tag that navigates to a specific tab on the project page</td>
-  </tr>
-  <tr>
-    <td>&chemical_id</td>
-    <td>an additional tag that navigates to a specific chemical id/CAS id/chemical name on the project page</a></td>
-  </tr>
-  <tr>
-    <td>&stat</td>
-    <td>an additional tag that navigates to a statistical tab on the project page</a></td>
-  </tr>
-</table>
-
-<br>
-
-<p>Below is a snapshot of how the URL tags are defined on our web page:</p>
-
-<a href="www/page-link.png" target="blank"><img src="www/page-link.png"></a>
-
-<a href="www/project-link.png" target="blank"><img class="img-box" src="www/project-link.png"></a>
-
-<br>
-
-### Link to Information Page
-
-<!-- Projects: start -->
-<p><strong>URL: </strong><a href="https://montilab.bu.edu/Xposome/?page=home">https://montilab.bu.edu/Xposome/?page=home</a></p>
-
-<br>
-
+<!-- home page: start -->
 <table class="link-table">
   <tr>
     <td><strong>Parameter</strong></td>
@@ -64,24 +26,54 @@ Hera are four URL tags that can be used to search our web page:
   <tr>
     <td>page</td>
     <td><em>
-      - home (default) <br>
-      - about <br> 
-      - contact <br>
-      - sign_in
+      - home <br>
+      - overview <br> 
+      </em>
     </td>
-    <td>a page that contains an overview about the Xposome project and how to contact us</td>
+    <td>gives an overview description about the Xposome portal and how to use it, etc.</td>
     <td>string</td>
   </tr>
 </table>
 
 <br>
 
-<!-- Projects: start -->
-### Link to Project Page
+<div class="slideshow-container">
 
-<p><strong>URL: </strong><a target="blank" href="https://montilab.bu.edu/Xposome/?page=ADIPO&tab=chemical_explorer&chemical_id=2-ethylhexanol&stat=gene_expression">https://montilab.bu.edu/Xposome/?page=ADIPO&tab=chemical_explorer&chemical_id=2-ethylhexanol&stat=gene_expression</a></p>
+  <div class="myPages">
+    <p><strong>Implementation:</strong></p>
+    <p><a target="blank" href="https://montilab.bu.edu/Xposome/?page=home">https://montilab.bu.edu/Xposome/?page=home</a></p>
+    <br>
+    <p><strong>Output:</strong></p>
+    <p>This query links to <strong>The Home Page</strong> of the Xposome Portal. The page gives a general description about the portal and its usage</p>
+    <br>
+    <img src="www/home-page.png" style="width:100%">
+    <div class="numbertext">1 / 2</div>
+  </div>
+  
+  <div class="myPages">
+    <p><strong>Implementation:</strong></p>
+    <p><a target="blank" href="https://montilab.bu.edu/Xposome/?page=overview">https://montilab.bu.edu/Xposome/?page=overview</a></p>
+    <br>
+    <p><strong>Output:</strong></p>
+    <p>This query links to the <strong>The Overview Page</strong> of the Xposome Portal. The page provides information about the datasets that are currently available on the GeneHive database</p>
+    <br>
+    <img src="www/overview-page.png" style="width:100%">
+    <div class="numbertext">2 / 2</div>
+  </div>
+
+</div>
 
 <br>
+
+<div style="text-align:center">
+  <span class="informationDot" onclick="clickPages(index='1', id='myPages', dot='informationDot')"></span> 
+  <span class="informationDot" onclick="clickPages(index='2', id='myPages', dot='informationDot')"></span> 
+</div>
+
+<br>
+
+<!-- Projects: start -->
+<h3 id="portal">Link to Portal Page</h3>
 
 <table class="link-table">
   <tr>
@@ -94,13 +86,12 @@ Hera are four URL tags that can be used to search our web page:
     <td>page</td>
     <td>name of a particular project in the GeneHive database (see <a href="#api-calls">API Explorer</a> on how to retrieve a list of project names)<br>
     </td>
-    <td>a project page on the Xposome application</td>
+    <td>a project page on the Xposome Portal</td>
     <td>string</td>
   </tr>
   <tr>
     <td>tab</td>
     <td><em>
-      - about (default) <br> 
       - annotation <br> 
       - chemical_explorer <br> 
       - marker_explorer <br> 
@@ -109,26 +100,216 @@ Hera are four URL tags that can be used to search our web page:
       - compare_multiple
       </em>
     </td>
-    <td>a tab panel of a particular project. Currently, there are seven tab-panels defined for a given project.</td>
+    <td>a tab panel of a given project. Currently, there are six tab-panels available for a given project.</td>
     <td>string</td>
   </tr>
   <tr>
     <td>chemical_id</td>
     <td>see <a href="#api-calls">API Explorer</a> on how to retrieve a list of chemical ids/CAS ids/chemical names of a particular project</td>
-    <td>a chemical id/CAS id/chemical name located in the chemical explorer page of a particular project</td>
+    <td>a chemical id/CAS id/chemical name of a given project</td>
     <td>string</td>
   </tr>
   <tr>
     <td>stat</td>
     <td><em>
-      - gene_expression (default) <br> 
+      - gene_expression <br> 
       - gene_set_enrichment <br> 
       - connectivity
       </em>
     </td>
-    <td>a statistical tab-panel located in the chemical explorer page of a particular project</td>
+    <td>a statistical tab-panel located in the Chemical Explorer tab of a given project. Currently, there are three statistical-tabs available for a given project.</td>
     <td>string</td>
   </tr>
 </table>
 
+<br>
+
+<div class="slideshow-container">
+
+  <div class="portalPages">
+    <p><strong>Implementation:</strong></p>
+    <p><a target="blank" href="https://montilab.bu.edu/Xposome/?page=ADIPO&tab=annotation">https://montilab.bu.edu/Xposome/?page=ADIPO&tab=annotation</a></p>
+    <br>
+    <p><strong>Output:</strong></p>
+    <p>This query links to the <strong>Annotation</strong> tab on the ADIPO Portal page</p>
+    <br>
+    <img src="www/annotation-tab.png" style="width:100%">
+    <div class="numbertext">1 / 8</div>
+  </div>
+
+  <div class="portalPages">
+    <p><strong>Implementation:</strong></p>
+    <p><a target="blank" href="https://montilab.bu.edu/Xposome/?page=ADIPO&tab=chemical_explorer&chemical_id=2-ethylhexanol&stat=gene_expression">https://montilab.bu.edu/Xposome/?page=ADIPO&tab=chemical_explorer&chemical_id=2-ethylhexanol&stat=gene_expression</a></p>
+    <br>
+    <p><strong>Output:</strong></p>
+    <p>This query links to the <strong>Gene Expression</strong> subtab of <strong>Chemical Explorer</strong> tab on the ADIPO Portal page</p>
+    <br>
+    <img src="www/chemical-gene-expression-tab.png" style="width:100%">
+    <img src="www/chemical-gene-expression-tab-1.png" style="width:100%">
+    <div class="numbertext">2 / 8</div>
+  </div>
+  
+  <div class="portalPages">
+    <p><strong>Implementation:</strong></p>
+    <p><a target="blank" href="https://montilab.bu.edu/Xposome/?page=ADIPO&tab=chemical_explorer&chemical_id=2-ethylhexanol&stat=gene_set_enrichment">https://montilab.bu.edu/Xposome/?page=ADIPO&tab=chemical_explorer&chemical_id=2-ethylhexanol&stat=gene_set_enrichment</a></p>
+    <br>
+    <p><strong>Output:</strong></p>
+    <p>This query links to the <strong>Gene Set Enrichment</strong> subtab of <strong>Chemical Explorer</strong> tab on the ADIPO Portal page</p>
+    <br>
+    <img src="www/chemical-gene-set-enrichment-tab.png" style="width:100%">
+    <img src="www/chemical-gene-set-enrichment-tab-1.png" style="width:100%">
+    <div class="numbertext">3 / 8</div>
+  </div>
+  
+  <div class="portalPages">
+    <p><strong>Implementation:</strong></p>
+    <p><a target="blank" href="https://montilab.bu.edu/Xposome/?page=ADIPO&tab=chemical_explorer&chemical_id=2-ethylhexanol&stat=connectivity">https://montilab.bu.edu/Xposome/?page=ADIPO&tab=chemical_explorer&chemical_id=2-ethylhexanol&stat=connectivity</a></p>
+    <br>
+    <p><strong>Output:</strong></p>
+    <p>This query links to the <strong>Connectivity</strong> subtab of <strong>Chemical Explorer</strong> tab on the ADIPO Portal page</p>
+    <br>
+    <img src="www/chemical-connectivity-tab.png" style="width:100%">
+    <img src="www/chemical-connectivity-tab-1.png" style="width:100%">
+    <br>
+    <div class="numbertext">4 / 8</div>
+  </div>
+  
+  <div class="portalPages">
+    <p><strong>Implementation:</strong></p>
+    <p><a target="blank" href="https://montilab.bu.edu/Xposome/?page=ADIPO&tab=marker_explorer">https://montilab.bu.edu/Xposome/?page=ADIPO&tab=marker_explorer</a></p>
+    <br>
+    <p><strong>Output:</strong></p>
+    <p>This query links to the <strong>Marker Explorer</strong> tab on the ADIPO Portal page</p>
+    <br>
+    <img src="www/marker-tab.png" style="width:100%">
+    <img src="www/marker-tab-1.png" style="width:100%">
+    <img src="www/marker-tab-2.png" style="width:100%">
+    <div class="numbertext">5 / 8</div>
+  </div>
+  
+  <div class="portalPages">
+    <p><strong>Implementation:</strong></p>
+    <p><a target="blank" href="https://montilab.bu.edu/Xposome/?page=ADIPO&tab=heatmap_explorer">https://montilab.bu.edu/Xposome/?page=ADIPO&tab=heatmap_explorer</a></p>
+    <br>
+    <p><strong>Output:</strong></p>
+    <p>This query links to the <strong>Heatmap Explorer</strong> tab on the ADIPO Portal page</p>
+    <br>
+    <img src="www/heatmap-tab.png" style="width:100%">
+    <div class="numbertext">6 / 8</div>
+  </div>
+
+  <div class="portalPages">
+    <p><strong>Implementation:</strong></p>
+    <p><a target="blank" href="https://montilab.bu.edu/Xposome/?page=ADIPO&tab=k2_taxonomer_results">https://montilab.bu.edu/Xposome/?page=ADIPO&tab=k2_taxonomer_results</a></p>
+    <br>
+    <p><strong>Output:</strong></p>
+    <p>This query links to the <strong>K2 Taxonomer Results</strong> tab on the ADIPO Portal page</p>
+    <br>
+    <img src="www/k2taxonomer-tab.png" style="width:100%">
+    <img src="www/k2taxonomer-tab-1.png" style="width:100%">
+    <img src="www/k2taxonomer-tab-2.png" style="width:100%">
+    <img src="www/k2taxonomer-tab-3.png" style="width:100%">
+    <div class="numbertext">7 / 8</div>
+  </div>
+  
+  <div class="portalPages">
+    <p><strong>Implementation:</strong></p>
+    <p><a target="blank" href="https://montilab.bu.edu/Xposome/?page=ADIPO&tab=compare_multiple">https://montilab.bu.edu/Xposome/?page=ADIPO&tab=compare_multiple</a></p>
+    <br>
+    <p><strong>Output:</strong></p>
+    <p>This query links to the <strong>Compare Multiple</strong> tab on the <strong>ADIPO Portal</strong> page</p>
+    <br>
+    <img src="www/compare-multiple-tab.png" style="width:100%">
+    <div class="numbertext">8 / 8</div>
+  </div>
+  
+</div>
+
+<br>
+
+<div style="text-align:center">
+  <span class="portalDot" onclick="clickPages(index='1', id='portalPages', dot='portalDot')"></span> 
+  <span class="portalDot" onclick="clickPages(index='2', id='portalPages', dot='portalDot')"></span> 
+  <span class="portalDot" onclick="clickPages(index='3', id='portalPages', dot='portalDot')"></span> 
+  <span class="portalDot" onclick="clickPages(index='4', id='portalPages', dot='portalDot')"></span> 
+  <span class="portalDot" onclick="clickPages(index='5', id='portalPages', dot='portalDot')"></span> 
+  <span class="portalDot" onclick="clickPages(index='6', id='portalPages', dot='portalDot')"></span> 
+  <span class="portalDot" onclick="clickPages(index='7', id='portalPages', dot='portalDot')"></span> 
+  <span class="portalDot" onclick="clickPages(index='8', id='portalPages', dot='portalDot')"></span> 
+</div>
+
+<br>
+
+<h3 id="moderator">Link to Moderator Page</h3>
+
+<!-- sign-page: start -->
+<table class="link-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>page</td>
+    <td><em>sign_in</em></td>
+    <td>Allows only authorized users to access to the portal in order to make edits or to upload new projects to the GeneHive database</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<p><strong>Implementation:</strong></p>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome/?page=sign_in">https://montilab.bu.edu/Xposome/?page=sign_in</a></p>
+
+<br>
+
+<p><strong>Output:</strong></p>
+<p>This query links to <strong>The Sign-In Page</strong> which allows only authorized users to log into the Xposome database and make changes to the existed screens or to upload new screens onto the portal</p>
+<img src="www/sign-in-page.png" style="width:100%">
+
 <br><br>
+
+<script type="text/javascript">
+
+  showPages(id="myPages", dot="informationDot");
+  showPages(id="portalPages", dot="portalDot");
+  
+  function showPages(id, dot) {
+    var i;
+    var id = String(id);
+    var dot = String(dot);
+    var slides = document.getElementsByClassName(id);
+    var dots = document.getElementsByClassName(dot);
+    for (i = 0; i < slides.length; i++) {
+      slides[i].style.display = "none";
+      dots[i].style.backgroundColor = "#bbb";
+    }
+    var slideIndex = 0;
+    slides[slideIndex].style.display = "block";  
+    dots[slideIndex].style.backgroundColor = "#717171";
+  }
+  
+  function clickPages(index, id, dot) {
+    var i;
+    var id = String(id);
+    var dot = String(dot);
+    var index = Number(index);
+    var slides = document.getElementsByClassName(id);
+    var dots = document.getElementsByClassName(dot);
+    for (i = 0; i < slides.length; i++) {
+      slides[i].style.display = "none";
+      dots[i].style.backgroundColor = "#bbb";
+    }
+    var slideIndex = index;
+    if (slideIndex > slides.length) {slideIndex = 1}    
+    slides[slideIndex-1].style.display = "block";  
+    dots[slideIndex-1].style.backgroundColor = "#717171";
+  }
+  
+</script>
+
+<!-- link-to-application: end --> 
+

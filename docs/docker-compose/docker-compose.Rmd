@@ -8,23 +8,23 @@ output: html_document
 
 <strong>Docker-Compose</strong> - A technology for enabling docker containers to communicate to each other
 
-In this post, I will go over steps of how to create an encrypt (https) traffic that allows users to interact with the Xposome application that is published through a docker container. To achieve that, we need both NGINX and docker-compose.
+In this post, I will go over steps on how to create an encrypt HTTPS traffic that allows users to interact with the Xposome application that is published thru a docker container. To achieve that, we need both NGINX and docker-compose.
 
-Here are seven steps to set-up NGINX and docker-compose:
+Here are the seven steps to set-up NGINX and docker-compose:
 
 1.	Install docker-compose
 2.	Build a NGINX image from Docker Hub without the need of installing NGINX software
 3.	Dockerize the Xposome application locally or pull the image from Docker Hub
-4.	Set up NGINX configuration files 
+4.	Set up NGINX configuration files (i.e. nginx.conf and default.conf.template)
 5.	Create a YAML file for docker-compose (i.e. docker-compose.yml)
 6.	Run the docker-compose.yml file
-7.	Check to see if the application is running on https
+7.	Check to see if the application is running on HTTPS
 
 <br>
 
 #### Step 1: Install docker-compose
 
-Check out how to install Docker-compose <a href="https://docs.docker.com/compose/install/">here</a>
+Check out how to install Docker-compose <a target="blank" href="https://docs.docker.com/compose/install/">here</a>
 
 To check if docker-compose is installed, 
 
@@ -32,15 +32,15 @@ To check if docker-compose is installed,
 
 #### Step 2: Build a docker image for NGINX
 
-An image for NGINX can be found at <a href="https://hub.docker.com/_/nginx">Docker Hub</a>. You can pull this image without the need of installing the NGINX software locally.
+A docker image for NGINX can be found on <a target="blank" href="https://hub.docker.com/_/nginx">Docker Hub</a>. You can pull this image without the need to install NGINX software on your local machine.
 
     docker pull nginx:latest 
 
-To check if the image is built successfully 
+To check if the image is built successfully, 
 
     docker images
 
-Also see this <a href="https://hub.docker.com/_/nginx">link</a> on how to use the NGINX image
+Also see this <a target="blank" href="https://hub.docker.com/_/nginx">link</a> on how to use the NGINX image
 
 #### Step 3: Dockerize the Xposome application locally or pull the image from Docker Hub
 
@@ -48,15 +48,75 @@ You can check out this step on my previous post <a href='#dockerize'>here</a> fo
 
 #### Step 4: Set-up NGINX configuration files
 
-Once the images for NGINX and Xposome application are build successfully, we can start setting up the NGINX configuration files. There are two configuration files for NGINX, <span class="highlight-text">nginx.conf</span> and <span class="highlight-text">default.conf.template files</span>. 
+Once the docker images for NGINX and the Xposome application are built successfully, we can start setting up the NGINX configuration files. There are two configuration files for NGINX: <span class="highlight-text">nginx.conf</span> and <span class="highlight-text">default.conf.template</span>. 
 
-The nginx.conf file contains the standard configuration for NGINX. Unless you know how to add directives to a configuration file, otherwise, I do not recommend making any changes to this file. 
+The nginx.conf contains the standard configuration for NGINX. Unless you know how to add directives to this configuration file, otherwise I do not recommend making any changes to this file. 
 
-For example, one of the directives that we used on our web portal is to maximize a file uploading size from our users. This directive is useful as it helped us avoided the problems of importing some gene expression datasets that far exceeded the limit of 1MB file uploads on NGINX.
+Here is a snapshot of nginx.conf file:
 
-The default.conf.template file contains HTTP configuration that allows NGINX to direct any encrypt (https) or unencrypt (http) traffics to an application that is published on a specified port on the host machine.  
+    # For more information on configuration, see:
+    #   * Official English Documentation: http://nginx.org/en/docs/
+    #   * Official Russian Documentation: http://nginx.org/ru/docs/
+    
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log;
+    pid /run/nginx.pid;
+    
+    # Load dynamic modules. See /usr/share/doc/nginx/README.dynamic.
+    include /usr/share/nginx/modules/*.conf;
+    
+    events {
+        worker_connections 1024;
+    }
+    
+    mail {
+        server_name 155.41.202.164;
+        auth_http 155.41.202.164:3838;
+    
+        proxy_pass_error_message on;
+    
+        server {
+            listen     25;
+            protocol   smtp;
+            smtp_auth  login plain cram-md5;
+        }
+    }
+    
+    http {
+        map $http_upgrade $connection_upgrade {
+            default upgrade;
+            ''      close;
+        }
+    
+        log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                          '$status $body_bytes_sent "$http_referer" '
+                          '"$http_user_agent" "$http_x_forwarded_for"';
+    
+        access_log  /var/log/nginx/access.log  main;
+    
+        sendfile            on;
+        tcp_nopush          on;
+        tcp_nodelay         on;
+        keepalive_timeout   65;
+        types_hash_max_size 2048;
+    
+        # set client body size to 8M #
+        client_max_body_size 1000M;
+    
+        include             /etc/nginx/mime.types;
+        default_type        application/octet-stream;
+    
+        # Load modular configuration files from the /etc/nginx/conf.d directory.
+        # See http://nginx.org/en/docs/ngx_core_module.html#include
+        # for more information.
+        include /etc/nginx/conf.d/*.conf;
+    
+    }
 
-How NGINX talks to Docker
+The default.conf.template contains instructions on how to direct and encrypt any traffics to the Xposome application with HTTPS protocol that is published thru a specific port on the host machine.  
+
+How NGINX, Docker, Shiny talk to each other 
 
     With NGINX,
     nginx → listens on → port 80 (http) and 443 (https) 
@@ -65,24 +125,28 @@ How NGINX talks to Docker
     Docker → listens on → port 80/443/8080/3838/8000/… 
 
     With SHINY
-    Shiny → listens on localhost → port 3838/8787/4848/… 
+    Shiny → listens on localhost (127.0.0.1) → port 3838/8787/4848/… 
 
-In other words, when we run a docker container, we basically expose our application through a port that is viewable on a Shiny's localhost (for example: port 3838). Docker listens to this port and reroutes the application to a specified port on the host machine (for example: port 7856). Therefore, when we navigate to port 7856 on the host domain (for example http://[domain_name/ip address]:7856), we will see that the shiny app is hosted there. 
+In brief, when we run a docker container, we basically expose our shiny application through a port, i.e port 3838, on the localhost. Docker is then listened to this port and redirects the application to a host port, i.e port 7856, on the host machine. If the host machine has a domain, for example, montilab.bu.edu (in my case), then we can navigate to http://montilab.bu.edu:7856 and check to see if the Xposome application is indeed hosted there. 
 
-Nevertheless, we probably do not want to direct our users to an application through a port link. Thus, we can use NGINX configuration files to create an alias location for the application (for example https://[domain_name/ip address]/Xposome/). Hence, when a user is navigated to that specified address on the host domain, NGINX will transfer that traffic to the port e.g. 7856 of where the application was originally published on. Furthermore, NGINX will encrypt that traffic with a https protocol. As a result, NGINX is served as a reverse proxy for hosting our applications.
+    Shiny:localhost:3838 → http://montilab.bu.edu:7856  
 
-Here is a snapshot of how the http configuration file looks like:
+Nevertheless, we do not want to provide a link to an application with a port number and furthermore the link is not encrypted with HTTPS. Thus, we can use NGINX to create an alias name for the application (for example: https://montilab.bu.edu/Xposome/), and then redirects and encrypts any traffics to the application with HTTPS using <a target="blank" href="https://certbot.eff.org/">Certbot</a>, a free, open source software tool for automatically using Let’s Encrypt certificates on manually-administrated websites to enable HTTPS. As a result, NGINX is served as a reverse proxy for hosting our applications.
+
+    Shiny:localhost:3838 → http://montilab.bu.edu:7856 → https://montilab.bu.edu/Xposome/ 
+
+Here is a snapshot of default.conf.template file:
 
 <a href="www/nginx-conf.png" target="blank"><img class="img-box" src="www/nginx-conf.png"></a>
 
 
 #### Step 5: Create a docker-compose.yml file
 
-Once we had configured NGINX as a reverse proxy for our application, we can create a docker-compose.yml file that comprises of all of the containers that we want to communicate with NGINX container.
+Once we had configured NGINX as a reverse proxy for our application, we can create a docker-compose.yml file that allows communication between the Xposome and NGINX containers.
 
-To enable communication between containers, in the docker-compose file, we must create a service to run the NGINX container and a service to run the Xposome container. Under each service, we need to specify a list of instructions of how a container can be built, for instance, what image is used to build the container, what do we want to name the container, what port is used to expose the shiny app to Docker, and what port is used to publish the app on the host machine, etc.
+To enable communication between containers, in the docker-compose.yml file, we must create a service to run the NGINX container and a service to run the Xposome container. Under each service, we need to specify a list of instructions on how a container can be built, for instance, what image is used to build the container, what do we want to name the container, which port do we used to expose the shiny app to Docker, and which port do Docker use to publish the app on a specific port of the host machine, etc.
 
-After we had defined all of the key components of how the containers can be built, one last step is to confirm the host port on the docker-compose.yml file matches the port that NGINX redirects the encrypt traffics to the application on HTTP configuration file.
+After we had all of these key components defined, the last step is to make sure that the host port on the docker-compose.yml file matches the port defined in the nginx.conf file.
 
 Here is a snapshot of the docker-compose.yml file:
 
@@ -91,15 +155,15 @@ Here is a snapshot of the docker-compose.yml file:
 
 #### Step 6: Run the docker-compose file
 
-After we had the docker-compose file and NGINX configuration files all set up, we can cd to where docker-compose.yml is located and run the following command to fire up all the containers that were defined in the docker-compose file.
+After we had the docker-compose file and the NGINX configuration files all set up, we can cd to where the docker-compose.yml file is located at and run the following command to fire up all the containers.
 
     docker-compose up -d
     
     -d is used to run docker compose in detach mode
 
-#### Step 7: Check to make sure the application is running on https 
+#### Step 7: Check to make sure the application is running on HTTPS 
 
-Navigate to the alias domain for the application (for example https://montilab.bu.edu/Xposome/) and see if the application is indeed hosted there.
+If the containers is built without any errors. We can navigate to the alias address of the Xposome application (i.e. https://montilab.bu.edu/Xposome/ in my case) and see if the application is indeed hosted there.
 
 <br><br>
 

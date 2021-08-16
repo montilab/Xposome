@@ -1,9 +1,9 @@
 
 ## API EXPLORER
 
-<p>The API Explorer provides documentation on how users can retrieve data from the Xposome application and create their next project. All successful responses are returned in JSON. Only queries that respond with a 200 response code is considered successful.</p>
+<p>The API Explorer provides documentation on how users can retrieve data from the Xposome application and use them to create their next project. All successful responses are returned in JSON. Only queries that respond with a 200 response code is considered successful.</p>
 
-<p>Here are standard HTTP codes you will find in the “Status” element of the response body.</p>
+<p>Here are standard HTTP codes that you will find in the “Status” element of the response body.</p>
 
 <div class="knitr-options" data-fig-width="576" data-fig-height="460"></div>
 
@@ -22,7 +22,7 @@
   </tr>
   <tr>
     <td>500 Internal Server Error</td>
-    <td>There was an unexpected error on our server. If you see this error, please help us notify the issue on our <a href="https://github.com/montilab/Xposome/">GitHub page</a></td>
+    <td>There was an unexpected error on our server. If you see this error, please notify us about the issue on our <a target="blank" href="https://github.com/montilab/Xposome/">GitHub page</a></td>
   </tr>
 </table>
 
@@ -40,22 +40,27 @@
   </tr>
   <tr>
     <td>Projects</td>
-    <td>a list of projects in the GeneHive Database. Visit our <a href="https://montilab.bu.edu/Xposome/">webpage</a> to see on how we define each project</td>
+    <td>a list of projects or chemical screenings available in the GeneHive Database. Visit our <a href="https://montilab.bu.edu/Xposome/">webpage</a> to see on how we define each project</td>
     <td>list</td>
   </tr>
   <tr>
+    <td>Chemicals</td>
+    <td>a list of chemicals/cas ids available in a particular project in the GeneHive database</td>
+    <td>data frame</td>
+  </tr>
+  <tr>
     <td>Datasets</td>
-    <td>a list of data sources for generating the Xposome portal such as profile and chemical annotation, expression set, gene set enrichment, connectivity set, and K2-taxonomer</a></td>
+    <td>a list of data sources for generating the Xposome Portal such as profile and chemical annotation, expression set, gene set enrichment, connectivity set, and K2-taxonomer</a></td>
     <td>data frame or RDS file</td>
   </tr>
   <tr>
     <td>RDS Bundle</td>
-    <td>a bundle of RDS files for a given Xposome projects, including profile annotation, chemical annotation, expression set, gene set enrichment, connectivity set, and K2-taxonomer</a></td>
+    <td>a bundle of RDS files for a given Xposome project, including profile annotation, chemical annotation, expression set, gene set enrichment, connectivity set, and K2-taxonomer</a></td>
     <td>zip file</td>
   </tr> 
   <tr>
     <td>Statistics</td>
-    <td>a summary statistics for a specific chemical  within a particular project. The statistics are calculated based on its gene expression, gene set enrichment and gene connectivity</a></td>
+    <td>a summary of statistic given by a chemical in a Xposome project of interest. The statistics are calculated based on the scores obtained from the expression set, enrichment set and connectivity set</a></td>
     <td>data frame</td>
   </tr>
 </table>
@@ -170,6 +175,156 @@ library(httr)
 </div>
 <!-- Projects: end -->
 
+<!-- Chemical: start -->
+### Chemicals
+
+<table class="get-table">
+  <tr>
+    <td><button type="button" onclick="ToggleOperation('chemicals')" class="btn btn-default action-button">GET</button></td>
+    <td>&#47;chemicals</td>
+    <td>Return a list of chemicals/cas ids available in a particular project in the GeneHive database</td>
+  </tr>
+</table>
+  
+<br>
+
+<div id="chemicals-block" style="display: none;">
+
+<h4>Implementation</h4>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome-API/chemicals?projects=ADIPO&chemical_ids=all">https://montilab.bu.edu/Xposome-API/chemicals?projects=ADIPO&chemical_ids=all</a></p>
+
+<br>
+
+<table class="api-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>project</td>
+    <td>all (default)</td>
+    <td>a project name or a list of concatenated projects or all projects in the GeneHive database. If a list is provided, they must be concatenated and separated by a comma.</td>
+    <td>string</td>
+  </tr>
+    <tr>
+    <td>chemical_ids</td>
+    <td>all (default)</td>
+    <td>a chemical id/cas id or a list of concatenated chemical ids/cas ids or all chemical ids/cas ids in the GeneHive database. If a list is provided, they must be concatenated and separated by a comma.</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<h4>Return</h4>
+
+<p>A list of values</p>
+
+<br>
+
+<h4>Example in R</h4>
+
+<div class="knitr-options" data-fig-width="576" data-fig-height="460"></div>
+
+<pre>
+  # url for local testing
+  url <- "https://montilab.bu.edu/Xposome-API/chemicals?projects=ADIPO&chemical_ids=all"
+  
+  # Send GET Request to API
+  res <- GET(url = url, encode = "json")
+  
+  # Check the status of GET request 
+  test_request <- tryCatch({
+    
+    stop_for_status(res)
+    
+    "pass"
+    
+  }, error = function(e) {
+    
+    "fail"
+    
+  })
+</pre>
+
+
+<h4>Output</h4>
+
+<div class="knitr-options" data-fig-width="576" data-fig-height="460"></div>
+
+<pre>
+  # If GET request is successful, return the results
+  if(test_request == "pass"){
+    
+    chemicals <- fromJSON(fromJSON(rawToChar(res$content)))
+    print(head(chemicals))
+    
+  }
+</pre>
+<pre class='output'> <table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> Chemical_Id </th>
+   <th style="text-align:left;"> BUID </th>
+   <th style="text-align:left;"> Project </th>
+   <th style="text-align:left;"> Chemical_Name </th>
+   <th style="text-align:left;"> CAS </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Vehicle </td>
+   <td style="text-align:left;"> BUID_1 </td>
+   <td style="text-align:left;"> ADIPO </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> BADGE </td>
+   <td style="text-align:left;"> BUID_2 </td>
+   <td style="text-align:left;"> ADIPO </td>
+   <td style="text-align:left;"> Bisphenol A diglycidyl ether </td>
+   <td style="text-align:left;"> 1675-54-3 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> DOSS </td>
+   <td style="text-align:left;"> BUID_3 </td>
+   <td style="text-align:left;"> ADIPO </td>
+   <td style="text-align:left;"> Dioctyl sulfosuccinate sodium </td>
+   <td style="text-align:left;"> 577-11-7 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MBuP </td>
+   <td style="text-align:left;"> BUID_4 </td>
+   <td style="text-align:left;"> ADIPO </td>
+   <td style="text-align:left;"> Mono-n-butyl phthalate </td>
+   <td style="text-align:left;"> 131-70-4 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> ProPara </td>
+   <td style="text-align:left;"> BUID_5 </td>
+   <td style="text-align:left;"> ADIPO </td>
+   <td style="text-align:left;"> Propylparaben </td>
+   <td style="text-align:left;"> 94-13-3 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> TCCP </td>
+   <td style="text-align:left;"> BUID_6 </td>
+   <td style="text-align:left;"> ADIPO </td>
+   <td style="text-align:left;"> Tris(1-chloro-2-propyl) phosphate </td>
+   <td style="text-align:left;"> 13674-87-5 </td>
+  </tr>
+</tbody>
+</table> </pre>
+
+<br>
+
+</div>
+<!-- chemical: end -->
+
 <!-- Datasets - profile annotation: start -->
 ### Datasets
 
@@ -203,7 +358,7 @@ library(httr)
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -432,7 +587,7 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -650,7 +805,7 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -893,7 +1048,7 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -1136,7 +1291,7 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -1379,7 +1534,7 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -1625,7 +1780,7 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -1734,13 +1889,13 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
   <tr>
     <td>chemical_id</td>
     <td>1,2-Dibromo-3-chloropropane or ...</td>
-    <td>Name of the chemicals or CAS ids of a chemical in a specific project</td>
+    <td>Name of the chemicals or CAS ids of a chemical in a specific project (see <span class="highlight-text">chemicals API</span>)</td>
     <td>string</td>
   </tr>
   <tr>
@@ -1758,14 +1913,38 @@ if(test_request == "pass"){
   <tr>
     <td>do.nmarkers</td>
     <td>TRUE (default) or FALSE</td>
-    <td>Whether to filter by the number of landmark genes (ranging from 1 to 1000)</td>
+    <td>Whether to filter by the number of up- and down- regulated genes</td>
     <td>boolean</td>
+  </tr>
+  <tr>
+    <td>nmarkers_up</td>
+    <td>1000 (default) if do.nmarkers=TRUE</td>
+    <td>Number of up-pregulated genes</td>
+    <td>Positive integer</td>
+  </tr>
+  <tr>
+    <td>nmarkers_down</td>
+    <td>1000 (default) if do.nmarkers=TRUE</td>
+    <td>Number of down-pregulated genes</td>
+    <td>Positive integer</td>
   </tr>
   <tr>
     <td>do.scorecutoff</td>
     <td>TRUE (default) or FALSE</td>
-    <td>Whether to filter by the z-scores (cutoff from -2 to 2)</td>
+    <td>Whether to filter by the z-scores</td>
     <td>boolean</td>
+  </tr>
+  <tr>
+    <td>scorecutoff_lb</td>
+    <td>-2 (default) if do.scorecutoff=TRUE</td>
+    <td>Lower bound of the z-scores cutoff</td>
+    <td>integer</td>
+  </tr>
+  <tr>
+    <td>scorecutoff_ub</td>
+    <td>2 (default) if do.scorecutoff=TRUE</td>
+    <td>Upper bound of the z-scores cutoff</td>
+    <td>integer</td>
   </tr>
 </table>
 
@@ -1826,90 +2005,79 @@ if(test_request == "pass"){
    <th style="text-align:left;"> Gene </th>
    <th style="text-align:left;"> Direction </th>
    <th style="text-align:right;"> Summary Score </th>
-   <th style="text-align:right;"> ModZscore 10uM </th>
-   <th style="text-align:left;"> Genecard_Link </th>
+   <th style="text-align:right;"> ModZScore 10uM </th>
   </tr>
  </thead>
 <tbody>
   <tr>
-   <td style="text-align:left;"> TRPM3 </td>
-   <td style="text-align:left;"> TRPM3 </td>
-   <td style="text-align:left;"> Up </td>
-   <td style="text-align:right;"> 1.9998 </td>
-   <td style="text-align:right;"> 1.9998 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://www.genecards.org/cgi-bin/carddisp.pl?gene=TRPM3&amp;keywords=TRPM3&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;TRPM3&lt;/a&gt; </td>
+   <td style="text-align:left;"> TAF5L </td>
+   <td style="text-align:left;"> TAF5L </td>
+   <td style="text-align:left;"> Down </td>
+   <td style="text-align:right;"> -0.0014 </td>
+   <td style="text-align:right;"> -0.0014 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> SH2B2 </td>
-   <td style="text-align:left;"> SH2B2 </td>
-   <td style="text-align:left;"> Up </td>
-   <td style="text-align:right;"> 1.9995 </td>
-   <td style="text-align:right;"> 1.9995 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://www.genecards.org/cgi-bin/carddisp.pl?gene=SH2B2&amp;keywords=SH2B2&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;SH2B2&lt;/a&gt; </td>
+   <td style="text-align:left;"> PYGL </td>
+   <td style="text-align:left;"> PYGL </td>
+   <td style="text-align:left;"> Down </td>
+   <td style="text-align:right;"> -0.0016 </td>
+   <td style="text-align:right;"> -0.0016 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> REV1 </td>
-   <td style="text-align:left;"> REV1 </td>
-   <td style="text-align:left;"> Up </td>
-   <td style="text-align:right;"> 1.9995 </td>
-   <td style="text-align:right;"> 1.9995 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://www.genecards.org/cgi-bin/carddisp.pl?gene=REV1&amp;keywords=REV1&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;REV1&lt;/a&gt; </td>
+   <td style="text-align:left;"> MRPL50 </td>
+   <td style="text-align:left;"> MRPL50 </td>
+   <td style="text-align:left;"> Down </td>
+   <td style="text-align:right;"> -0.0034 </td>
+   <td style="text-align:right;"> -0.0034 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> PLEKHJ1 </td>
-   <td style="text-align:left;"> PLEKHJ1 </td>
-   <td style="text-align:left;"> Up </td>
-   <td style="text-align:right;"> 1.9991 </td>
-   <td style="text-align:right;"> 1.9991 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://www.genecards.org/cgi-bin/carddisp.pl?gene=PLEKHJ1&amp;keywords=PLEKHJ1&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;PLEKHJ1&lt;/a&gt; </td>
+   <td style="text-align:left;"> CD3EAP </td>
+   <td style="text-align:left;"> CD3EAP </td>
+   <td style="text-align:left;"> Down </td>
+   <td style="text-align:right;"> -0.0054 </td>
+   <td style="text-align:right;"> -0.0054 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> STIM1 </td>
-   <td style="text-align:left;"> STIM1 </td>
-   <td style="text-align:left;"> Up </td>
-   <td style="text-align:right;"> 1.9966 </td>
-   <td style="text-align:right;"> 1.9966 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://www.genecards.org/cgi-bin/carddisp.pl?gene=STIM1&amp;keywords=STIM1&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;STIM1&lt;/a&gt; </td>
+   <td style="text-align:left;"> YTHDF2 </td>
+   <td style="text-align:left;"> YTHDF2 </td>
+   <td style="text-align:left;"> Down </td>
+   <td style="text-align:right;"> -0.0136 </td>
+   <td style="text-align:right;"> -0.0136 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> HADHB </td>
-   <td style="text-align:left;"> HADHB </td>
-   <td style="text-align:left;"> Up </td>
-   <td style="text-align:right;"> 1.9965 </td>
-   <td style="text-align:right;"> 1.9965 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://www.genecards.org/cgi-bin/carddisp.pl?gene=HADHB&amp;keywords=HADHB&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;HADHB&lt;/a&gt; </td>
+   <td style="text-align:left;"> TOP3A </td>
+   <td style="text-align:left;"> TOP3A </td>
+   <td style="text-align:left;"> Down </td>
+   <td style="text-align:right;"> -0.0139 </td>
+   <td style="text-align:right;"> -0.0139 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> ASCC3 </td>
-   <td style="text-align:left;"> ASCC3 </td>
-   <td style="text-align:left;"> Up </td>
-   <td style="text-align:right;"> 1.9960 </td>
-   <td style="text-align:right;"> 1.9960 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://www.genecards.org/cgi-bin/carddisp.pl?gene=ASCC3&amp;keywords=ASCC3&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;ASCC3&lt;/a&gt; </td>
+   <td style="text-align:left;"> NRK </td>
+   <td style="text-align:left;"> NRK </td>
+   <td style="text-align:left;"> Down </td>
+   <td style="text-align:right;"> -0.0168 </td>
+   <td style="text-align:right;"> -0.0168 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> RPSA </td>
-   <td style="text-align:left;"> RPSA </td>
-   <td style="text-align:left;"> Up </td>
-   <td style="text-align:right;"> 1.9957 </td>
-   <td style="text-align:right;"> 1.9957 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://www.genecards.org/cgi-bin/carddisp.pl?gene=RPSA&amp;keywords=RPSA&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;RPSA&lt;/a&gt; </td>
+   <td style="text-align:left;"> POLR2E </td>
+   <td style="text-align:left;"> POLR2E </td>
+   <td style="text-align:left;"> Down </td>
+   <td style="text-align:right;"> -0.0230 </td>
+   <td style="text-align:right;"> -0.0230 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> SH2B1 </td>
-   <td style="text-align:left;"> SH2B1 </td>
-   <td style="text-align:left;"> Up </td>
-   <td style="text-align:right;"> 1.9952 </td>
-   <td style="text-align:right;"> 1.9952 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://www.genecards.org/cgi-bin/carddisp.pl?gene=SH2B1&amp;keywords=SH2B1&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;SH2B1&lt;/a&gt; </td>
+   <td style="text-align:left;"> SBNO2 </td>
+   <td style="text-align:left;"> SBNO2 </td>
+   <td style="text-align:left;"> Down </td>
+   <td style="text-align:right;"> -0.0253 </td>
+   <td style="text-align:right;"> -0.0253 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> TNK2 </td>
-   <td style="text-align:left;"> TNK2 </td>
-   <td style="text-align:left;"> Up </td>
-   <td style="text-align:right;"> 1.9951 </td>
-   <td style="text-align:right;"> 1.9951 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://www.genecards.org/cgi-bin/carddisp.pl?gene=TNK2&amp;keywords=TNK2&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;TNK2&lt;/a&gt; </td>
+   <td style="text-align:left;"> TRIM24 </td>
+   <td style="text-align:left;"> TRIM24 </td>
+   <td style="text-align:left;"> Down </td>
+   <td style="text-align:right;"> -0.0255 </td>
+   <td style="text-align:right;"> -0.0255 </td>
   </tr>
 </tbody>
 </table> </pre>
@@ -1948,13 +2116,13 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
   <tr>
     <td>chemical_id</td>
     <td>1,2-Dibromo-3-chloropropane or ...</td>
-    <td>Name of the chemicals or CAS ids of a chemical in a specific project</td>
+    <td>Name of the chemicals or CAS ids of a chemical in a specific project (see <span class="highlight-text">chemicals API</span>)</td>
     <td>string</td>
   </tr>
   <tr>
@@ -2032,79 +2200,68 @@ if(test_request == "pass"){
    <th style="text-align:left;"> Geneset </th>
    <th style="text-align:right;"> Summary Score </th>
    <th style="text-align:right;"> GS Score 10uM </th>
-   <th style="text-align:left;"> Geneset_Link </th>
   </tr>
  </thead>
 <tbody>
   <tr>
-   <td style="text-align:left;"> HALLMARK_NOTCH_SIGNALING </td>
-   <td style="text-align:left;"> HALLMARK_NOTCH_SIGNALING </td>
-   <td style="text-align:right;"> 0.0271 </td>
-   <td style="text-align:right;"> 0.0271 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://software.broadinstitute.org/gsea/msigdb/cards/HALLMARK_NOTCH_SIGNALING&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;HALLMARK NOTCH SIGNALING&lt;/a&gt; </td>
+   <td style="text-align:left;"> HALLMARK_IL6_JAK_STAT3_SIGNALING </td>
+   <td style="text-align:left;"> HALLMARK_IL6_JAK_STAT3_SIGNALING </td>
+   <td style="text-align:right;"> 0.2350 </td>
+   <td style="text-align:right;"> 0.2350 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> HALLMARK_PANCREAS_BETA_CELLS </td>
-   <td style="text-align:left;"> HALLMARK_PANCREAS_BETA_CELLS </td>
-   <td style="text-align:right;"> 0.0240 </td>
-   <td style="text-align:right;"> 0.0240 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://software.broadinstitute.org/gsea/msigdb/cards/HALLMARK_PANCREAS_BETA_CELLS&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;HALLMARK PANCREAS BETA CELLS&lt;/a&gt; </td>
+   <td style="text-align:left;"> HALLMARK_ESTROGEN_RESPONSE_EARLY </td>
+   <td style="text-align:left;"> HALLMARK_ESTROGEN_RESPONSE_EARLY </td>
+   <td style="text-align:right;"> 0.1892 </td>
+   <td style="text-align:right;"> 0.1892 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> HALLMARK_G2M_CHECKPOINT </td>
-   <td style="text-align:left;"> HALLMARK_G2M_CHECKPOINT </td>
-   <td style="text-align:right;"> 0.0234 </td>
-   <td style="text-align:right;"> 0.0234 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://software.broadinstitute.org/gsea/msigdb/cards/HALLMARK_G2M_CHECKPOINT&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;HALLMARK G2M CHECKPOINT&lt;/a&gt; </td>
+   <td style="text-align:left;"> HALLMARK_ESTROGEN_RESPONSE_LATE </td>
+   <td style="text-align:left;"> HALLMARK_ESTROGEN_RESPONSE_LATE </td>
+   <td style="text-align:right;"> 0.1542 </td>
+   <td style="text-align:right;"> 0.1542 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> HALLMARK_GLYCOLYSIS </td>
-   <td style="text-align:left;"> HALLMARK_GLYCOLYSIS </td>
-   <td style="text-align:right;"> 0.0192 </td>
-   <td style="text-align:right;"> 0.0192 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://software.broadinstitute.org/gsea/msigdb/cards/HALLMARK_GLYCOLYSIS&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;HALLMARK GLYCOLYSIS&lt;/a&gt; </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> HALLMARK_ANDROGEN_RESPONSE </td>
-   <td style="text-align:left;"> HALLMARK_ANDROGEN_RESPONSE </td>
-   <td style="text-align:right;"> 0.0190 </td>
-   <td style="text-align:right;"> 0.0190 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://software.broadinstitute.org/gsea/msigdb/cards/HALLMARK_ANDROGEN_RESPONSE&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;HALLMARK ANDROGEN RESPONSE&lt;/a&gt; </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> HALLMARK_ALLOGRAFT_REJECTION </td>
-   <td style="text-align:left;"> HALLMARK_ALLOGRAFT_REJECTION </td>
-   <td style="text-align:right;"> 0.0186 </td>
-   <td style="text-align:right;"> 0.0186 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://software.broadinstitute.org/gsea/msigdb/cards/HALLMARK_ALLOGRAFT_REJECTION&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;HALLMARK ALLOGRAFT REJECTION&lt;/a&gt; </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> HALLMARK_MYC_TARGETS_V2 </td>
-   <td style="text-align:left;"> HALLMARK_MYC_TARGETS_V2 </td>
-   <td style="text-align:right;"> 0.0176 </td>
-   <td style="text-align:right;"> 0.0176 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://software.broadinstitute.org/gsea/msigdb/cards/HALLMARK_MYC_TARGETS_V2&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;HALLMARK MYC TARGETS V2&lt;/a&gt; </td>
+   <td style="text-align:left;"> HALLMARK_TGF_BETA_SIGNALING </td>
+   <td style="text-align:left;"> HALLMARK_TGF_BETA_SIGNALING </td>
+   <td style="text-align:right;"> 0.1358 </td>
+   <td style="text-align:right;"> 0.1358 </td>
   </tr>
   <tr>
    <td style="text-align:left;"> HALLMARK_SPERMATOGENESIS </td>
    <td style="text-align:left;"> HALLMARK_SPERMATOGENESIS </td>
-   <td style="text-align:right;"> 0.0158 </td>
-   <td style="text-align:right;"> 0.0158 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://software.broadinstitute.org/gsea/msigdb/cards/HALLMARK_SPERMATOGENESIS&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;HALLMARK SPERMATOGENESIS&lt;/a&gt; </td>
+   <td style="text-align:right;"> 0.1251 </td>
+   <td style="text-align:right;"> 0.1251 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> HALLMARK_E2F_TARGETS </td>
-   <td style="text-align:left;"> HALLMARK_E2F_TARGETS </td>
-   <td style="text-align:right;"> 0.0156 </td>
-   <td style="text-align:right;"> 0.0156 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://software.broadinstitute.org/gsea/msigdb/cards/HALLMARK_E2F_TARGETS&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;HALLMARK E2F TARGETS&lt;/a&gt; </td>
+   <td style="text-align:left;"> HALLMARK_PI3K_AKT_MTOR_SIGNALING </td>
+   <td style="text-align:left;"> HALLMARK_PI3K_AKT_MTOR_SIGNALING </td>
+   <td style="text-align:right;"> 0.1249 </td>
+   <td style="text-align:right;"> 0.1249 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> HALLMARK_UV_RESPONSE_DN </td>
+   <td style="text-align:left;"> HALLMARK_UV_RESPONSE_DN </td>
+   <td style="text-align:right;"> 0.1240 </td>
+   <td style="text-align:right;"> 0.1240 </td>
   </tr>
   <tr>
    <td style="text-align:left;"> HALLMARK_ADIPOGENESIS </td>
    <td style="text-align:left;"> HALLMARK_ADIPOGENESIS </td>
-   <td style="text-align:right;"> 0.0156 </td>
-   <td style="text-align:right;"> 0.0156 </td>
-   <td style="text-align:left;"> &lt;a href=&quot;http://software.broadinstitute.org/gsea/msigdb/cards/HALLMARK_ADIPOGENESIS&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;HALLMARK ADIPOGENESIS&lt;/a&gt; </td>
+   <td style="text-align:right;"> 0.1209 </td>
+   <td style="text-align:right;"> 0.1209 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> HALLMARK_TNFA_SIGNALING_VIA_NFKB </td>
+   <td style="text-align:left;"> HALLMARK_TNFA_SIGNALING_VIA_NFKB </td>
+   <td style="text-align:right;"> 0.1135 </td>
+   <td style="text-align:right;"> 0.1135 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> HALLMARK_IL2_STAT5_SIGNALING </td>
+   <td style="text-align:left;"> HALLMARK_IL2_STAT5_SIGNALING </td>
+   <td style="text-align:right;"> 0.1008 </td>
+   <td style="text-align:right;"> 0.1008 </td>
   </tr>
 </tbody>
 </table> </pre>
@@ -2143,13 +2300,13 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
   <tr>
     <td>chemical_id</td>
     <td>1,2-Dibromo-3-chloropropane or ...</td>
-    <td>Name of the chemicals or CAS ids of a chemical in a specific project</td>
+    <td>Name of the chemicals or CAS ids of a chemical in a specific project (see <span class="highlight-text">chemicals API</span>)</td>
     <td>string</td>
   </tr>
   <tr>
@@ -2227,74 +2384,74 @@ if(test_request == "pass"){
  </thead>
 <tbody>
   <tr>
-   <td style="text-align:left;"> KD_INTEGRIN_SUBUNITS_BETA </td>
-   <td style="text-align:left;"> KD_INTEGRIN_SUBUNITS_BETA </td>
-   <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 37.4602 </td>
-   <td style="text-align:right;"> 37.4602 </td>
+   <td style="text-align:left;"> CP_HSP_INHIBITOR </td>
+   <td style="text-align:left;"> CP_HSP_INHIBITOR </td>
+   <td style="text-align:right;"> 7 </td>
+   <td style="text-align:right;"> 97.5249 </td>
+   <td style="text-align:right;"> 97.5249 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> CP_STEROL_DEMETHYLASE_INHIBITOR </td>
-   <td style="text-align:left;"> CP_STEROL_DEMETHYLASE_INHIBITOR </td>
-   <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 28.8480 </td>
-   <td style="text-align:right;"> 28.8480 </td>
+   <td style="text-align:left;"> CP_HDAC_INHIBITOR </td>
+   <td style="text-align:left;"> CP_HDAC_INHIBITOR </td>
+   <td style="text-align:right;"> 20 </td>
+   <td style="text-align:right;"> 83.8594 </td>
+   <td style="text-align:right;"> 83.8594 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> KD_PHOSPHOLIPASES </td>
-   <td style="text-align:left;"> KD_PHOSPHOLIPASES </td>
+   <td style="text-align:left;"> KD_POLY_ADP_RIBOSE_POLYMERASES </td>
+   <td style="text-align:left;"> KD_POLY_ADP_RIBOSE_POLYMERASES </td>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:right;"> 72.3805 </td>
+   <td style="text-align:right;"> 72.3805 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> CP_FGFR_INHIBITOR </td>
+   <td style="text-align:left;"> CP_FGFR_INHIBITOR </td>
    <td style="text-align:right;"> 4 </td>
-   <td style="text-align:right;"> 24.1127 </td>
-   <td style="text-align:right;"> 24.1127 </td>
+   <td style="text-align:right;"> 70.7205 </td>
+   <td style="text-align:right;"> 70.7205 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> CP_TRICYCLIC_ANTIDEPRESSANT </td>
-   <td style="text-align:left;"> CP_TRICYCLIC_ANTIDEPRESSANT </td>
-   <td style="text-align:right;"> 6 </td>
-   <td style="text-align:right;"> 22.6872 </td>
-   <td style="text-align:right;"> 22.6872 </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> CP_NOREPINEPHRINE_REPUTAKE_INHIBITOR </td>
-   <td style="text-align:left;"> CP_NOREPINEPHRINE_REPUTAKE_INHIBITOR </td>
-   <td style="text-align:right;"> 4 </td>
-   <td style="text-align:right;"> 22.2762 </td>
-   <td style="text-align:right;"> 22.2762 </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> CP_CALMODULIN_ANTAGONIST </td>
-   <td style="text-align:left;"> CP_CALMODULIN_ANTAGONIST </td>
+   <td style="text-align:left;"> KD_APOLIPOPROTEINS </td>
+   <td style="text-align:left;"> KD_APOLIPOPROTEINS </td>
    <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 22.0175 </td>
-   <td style="text-align:right;"> 22.0175 </td>
+   <td style="text-align:right;"> 56.3082 </td>
+   <td style="text-align:right;"> 56.3082 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> CP_DOPAMINE_RECEPTOR_ANTAGONIST </td>
-   <td style="text-align:left;"> CP_DOPAMINE_RECEPTOR_ANTAGONIST </td>
-   <td style="text-align:right;"> 22 </td>
-   <td style="text-align:right;"> 21.4763 </td>
-   <td style="text-align:right;"> 21.4763 </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> CP_SEROTONIN_RECEPTOR_ANTAGONIST </td>
-   <td style="text-align:left;"> CP_SEROTONIN_RECEPTOR_ANTAGONIST </td>
-   <td style="text-align:right;"> 15 </td>
-   <td style="text-align:right;"> 20.2985 </td>
-   <td style="text-align:right;"> 20.2985 </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> KD_NADH_UBIQUINONE_OXIDOREDUCTASE_SUPERNUMERARY_SUBUNITS </td>
-   <td style="text-align:left;"> KD_NADH_UBIQUINONE_OXIDOREDUCTASE_SUPERNUMERARY_SUBUNITS </td>
+   <td style="text-align:left;"> KD_WNT_FAMILY </td>
+   <td style="text-align:left;"> KD_WNT_FAMILY </td>
    <td style="text-align:right;"> 4 </td>
-   <td style="text-align:right;"> 19.4728 </td>
-   <td style="text-align:right;"> 19.4728 </td>
+   <td style="text-align:right;"> 55.2858 </td>
+   <td style="text-align:right;"> 55.2858 </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> OE_GPCR_SUBSET </td>
-   <td style="text-align:left;"> OE_GPCR_SUBSET </td>
+   <td style="text-align:left;"> CP_PROTEASOME_INHIBITOR </td>
+   <td style="text-align:left;"> CP_PROTEASOME_INHIBITOR </td>
    <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 18.7758 </td>
-   <td style="text-align:right;"> 18.7758 </td>
+   <td style="text-align:right;"> 52.5642 </td>
+   <td style="text-align:right;"> 52.5642 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> KD_UBIQUITIN_SPECIFIC_PEPTIDASES </td>
+   <td style="text-align:left;"> KD_UBIQUITIN_SPECIFIC_PEPTIDASES </td>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:right;"> 49.4315 </td>
+   <td style="text-align:right;"> 49.4315 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> KD_PROTEASOME_PATHWAY </td>
+   <td style="text-align:left;"> KD_PROTEASOME_PATHWAY </td>
+   <td style="text-align:right;"> 9 </td>
+   <td style="text-align:right;"> 47.2839 </td>
+   <td style="text-align:right;"> 47.2839 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> KD_S100_CALCIUM_BINDING_PROTEINS </td>
+   <td style="text-align:left;"> KD_S100_CALCIUM_BINDING_PROTEINS </td>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:right;"> 46.9016 </td>
+   <td style="text-align:right;"> 46.9016 </td>
   </tr>
 </tbody>
 </table> </pre>

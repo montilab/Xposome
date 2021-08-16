@@ -28,3 +28,5 @@ output: html_document
   </div>
 </div>
 
+<div style="padding: 20px 0 10px 0;"><img width="100px" height="120px" src="www/shiny.svg"><img width="100px" height="120px" src="www/rmarkdown.svg"><img width="100px" height="120px" src="www/ggplot2.svg"><img width="100px" height="120px" src="www/plumber.svg">
+</div>

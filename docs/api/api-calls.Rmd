@@ -1,9 +1,9 @@
 
 ## API EXPLORER
 
-<p>The API Explorer provides documentation on how users can retrieve data from the Xposome application and create their next project. All successful responses are returned in JSON. Only queries that respond with a 200 response code is considered successful.</p>
+<p>The API Explorer provides documentation on how users can retrieve data from the Xposome application and use them to create their next project. All successful responses are returned in JSON. Only queries that respond with a 200 response code is considered successful.</p>
 
-<p>Here are standard HTTP codes you will find in the “Status” element of the response body.</p>
+<p>Here are standard HTTP codes that you will find in the “Status” element of the response body.</p>
 
 ```{r status-table, include=TRUE, echo=TRUE, results='asis'}
 ```
@@ -22,7 +22,7 @@
   </tr>
   <tr>
     <td>500 Internal Server Error</td>
-    <td>There was an unexpected error on our server. If you see this error, please help us notify the issue on our <a href="https://github.com/montilab/Xposome/">GitHub page</a></td>
+    <td>There was an unexpected error on our server. If you see this error, please notify us about the issue on our <a target="blank" href="https://github.com/montilab/Xposome/">GitHub page</a></td>
   </tr>
 </table>
 
@@ -40,22 +40,27 @@
   </tr>
   <tr>
     <td>Projects</td>
-    <td>a list of projects in the GeneHive Database. Visit our <a href="https://montilab.bu.edu/Xposome/">webpage</a> to see on how we define each project</td>
+    <td>a list of projects or chemical screenings available in the GeneHive Database. Visit our <a href="https://montilab.bu.edu/Xposome/">webpage</a> to see on how we define each project</td>
     <td>list</td>
   </tr>
   <tr>
+    <td>Chemicals</td>
+    <td>a list of chemicals/cas ids available in a particular project in the GeneHive database</td>
+    <td>data frame</td>
+  </tr>
+  <tr>
     <td>Datasets</td>
-    <td>a list of data sources for generating the Xposome portal such as profile and chemical annotation, expression set, gene set enrichment, connectivity set, and K2-taxonomer</a></td>
+    <td>a list of data sources for generating the Xposome Portal such as profile and chemical annotation, expression set, gene set enrichment, connectivity set, and K2-taxonomer</a></td>
     <td>data frame or RDS file</td>
   </tr>
   <tr>
     <td>RDS Bundle</td>
-    <td>a bundle of RDS files for a given Xposome projects, including profile annotation, chemical annotation, expression set, gene set enrichment, connectivity set, and K2-taxonomer</a></td>
+    <td>a bundle of RDS files for a given Xposome project, including profile annotation, chemical annotation, expression set, gene set enrichment, connectivity set, and K2-taxonomer</a></td>
     <td>zip file</td>
   </tr> 
   <tr>
     <td>Statistics</td>
-    <td>a summary statistics for a specific chemical  within a particular project. The statistics are calculated based on its gene expression, gene set enrichment and gene connectivity</a></td>
+    <td>a summary of statistic given by a chemical in a Xposome project of interest. The statistics are calculated based on the scores obtained from the expression set, enrichment set and connectivity set</a></td>
     <td>data frame</td>
   </tr>
 </table>
@@ -205,6 +210,140 @@ if(test_request == "pass"){
 </div>
 <!-- Projects: end -->
 
+<!-- Chemical: start -->
+### Chemicals
+
+<table class="get-table">
+  <tr>
+    <td><button type="button" onclick="ToggleOperation('chemicals')" class="btn btn-default action-button">GET</button></td>
+    <td>&#47;chemicals</td>
+    <td>Return a list of chemicals/cas ids available in a particular project in the GeneHive database</td>
+  </tr>
+</table>
+  
+<br>
+
+<div id="chemicals-block" style="display: none;">
+
+<h4>Implementation</h4>
+
+<p><a target="blank" href="https://montilab.bu.edu/Xposome-API/chemicals?projects=ADIPO&chemical_ids=all">https://montilab.bu.edu/Xposome-API/chemicals?projects=ADIPO&chemical_ids=all</a></p>
+
+<br>
+
+<table class="api-table">
+  <tr>
+    <td><strong>Parameter</strong></td>
+    <td><strong>Value</strong></td>
+    <td><strong>Description</strong></td>
+    <td><strong>Data Type</strong></td>
+  </tr>
+  <tr>
+    <td>project</td>
+    <td>all (default)</td>
+    <td>a project name or a list of concatenated projects or all projects in the GeneHive database. If a list is provided, they must be concatenated and separated by a comma.</td>
+    <td>string</td>
+  </tr>
+    <tr>
+    <td>chemical_ids</td>
+    <td>all (default)</td>
+    <td>a chemical id/cas id or a list of concatenated chemical ids/cas ids or all chemical ids/cas ids in the GeneHive database. If a list is provided, they must be concatenated and separated by a comma.</td>
+    <td>string</td>
+  </tr>
+</table>
+
+<br>
+
+<h4>Return</h4>
+
+<p>A list of values</p>
+
+<br>
+
+<h4>Example in R</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+  # url for local testing
+  url <- "https://montilab.bu.edu/Xposome-API/chemicals?projects=ADIPO&chemical_ids=all"
+  
+  # Send GET Request to API
+  res <- GET(url = url, encode = "json")
+  
+  # Check the status of GET request 
+  test_request <- tryCatch({
+    
+    stop_for_status(res)
+    
+    "pass"
+    
+  }, error = function(e) {
+    
+    "fail"
+    
+  })
+</pre>
+'
+)
+
+# url for local testing
+url <- "https://montilab.bu.edu/Xposome-API/chemicals?projects=ADIPO&chemical_ids=all"
+
+# Send GET Request to API
+res <- GET(url = url, encode = "json")
+
+# Check the status of GET request 
+test_request <- tryCatch({
+  
+  stop_for_status(res)
+  
+  "pass"
+  
+}, error = function(e) {
+  
+  "fail"
+  
+})
+
+```
+
+<h4>Output</h4>
+
+```{r include=TRUE, echo=FALSE, results='asis'}
+
+cat(
+'
+<pre>
+  # If GET request is successful, return the results
+  if(test_request == "pass"){
+    
+    chemicals <- fromJSON(fromJSON(rawToChar(res$content)))
+    print(head(chemicals))
+    
+  }
+</pre>
+'
+)
+
+
+# If GET request is successful, return the results
+if(test_request == "pass"){
+  
+  chemicals <- fromJSON(fromJSON(rawToChar(res$content)))
+  cat("<pre class='output'>", knitr::kable(head(chemicals), format="html"), "</pre>")
+
+}
+      
+```
+
+<br>
+
+</div>
+<!-- chemical: end -->
+
 <!-- Datasets - profile annotation: start -->
 ### Datasets
 
@@ -238,7 +377,7 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -369,7 +508,7 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -501,7 +640,7 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -641,7 +780,7 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -780,7 +919,7 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -919,7 +1058,7 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -1062,7 +1201,7 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
 </table>
@@ -1227,13 +1366,13 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
   <tr>
     <td>chemical_id</td>
     <td>1,2-Dibromo-3-chloropropane or ...</td>
-    <td>Name of the chemicals or CAS ids of a chemical in a specific project</td>
+    <td>Name of the chemicals or CAS ids of a chemical in a specific project (see <span class="highlight-text">chemicals API</span>)</td>
     <td>string</td>
   </tr>
   <tr>
@@ -1251,14 +1390,38 @@ if(test_request == "pass"){
   <tr>
     <td>do.nmarkers</td>
     <td>TRUE (default) or FALSE</td>
-    <td>Whether to filter by the number of landmark genes (ranging from 1 to 1000)</td>
+    <td>Whether to filter by the number of up- and down- regulated genes</td>
     <td>boolean</td>
+  </tr>
+  <tr>
+    <td>nmarkers_up</td>
+    <td>1000 (default) if do.nmarkers=TRUE</td>
+    <td>Number of up-pregulated genes</td>
+    <td>Positive integer</td>
+  </tr>
+  <tr>
+    <td>nmarkers_down</td>
+    <td>1000 (default) if do.nmarkers=TRUE</td>
+    <td>Number of down-pregulated genes</td>
+    <td>Positive integer</td>
   </tr>
   <tr>
     <td>do.scorecutoff</td>
     <td>TRUE (default) or FALSE</td>
-    <td>Whether to filter by the z-scores (cutoff from -2 to 2)</td>
+    <td>Whether to filter by the z-scores</td>
     <td>boolean</td>
+  </tr>
+  <tr>
+    <td>scorecutoff_lb</td>
+    <td>-2 (default) if do.scorecutoff=TRUE</td>
+    <td>Lower bound of the z-scores cutoff</td>
+    <td>integer</td>
+  </tr>
+  <tr>
+    <td>scorecutoff_ub</td>
+    <td>2 (default) if do.scorecutoff=TRUE</td>
+    <td>Upper bound of the z-scores cutoff</td>
+    <td>integer</td>
   </tr>
 </table>
 
@@ -1387,13 +1550,13 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
   <tr>
     <td>chemical_id</td>
     <td>1,2-Dibromo-3-chloropropane or ...</td>
-    <td>Name of the chemicals or CAS ids of a chemical in a specific project</td>
+    <td>Name of the chemicals or CAS ids of a chemical in a specific project (see <span class="highlight-text">chemicals API</span>)</td>
     <td>string</td>
   </tr>
   <tr>
@@ -1539,13 +1702,13 @@ if(test_request == "pass"){
   <tr>
     <td>project</td>
     <td>ADIPO or HEPG2 or ...</td>
-    <td>Name of the projects</td>
+    <td>Name of the projects (see <span class="highlight-text">projects API</span>)</td>
     <td>string</td>
   </tr>
   <tr>
     <td>chemical_id</td>
     <td>1,2-Dibromo-3-chloropropane or ...</td>
-    <td>Name of the chemicals or CAS ids of a chemical in a specific project</td>
+    <td>Name of the chemicals or CAS ids of a chemical in a specific project (see <span class="highlight-text">chemicals API</span>)</td>
     <td>string</td>
   </tr>
   <tr>
