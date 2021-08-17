@@ -30,8 +30,10 @@ fluidRow(
             title = "Options", value = "de_options",
             
             fluidRow(
+              
               column(
                 width=2,
+                checkboxGroupInput(inputId = "filterbyinput_de", label = "Filter by", choices=c("score" = "score", "number" = "number"), selected = defaults[["filterbyinput_de"]]),
                 if(landmark() == FALSE){
                   shinyjs::disabled(
                     checkboxInput(inputId = "landmark_de", label = "Landmark only", value=FALSE)
@@ -42,48 +44,33 @@ fluidRow(
               ),
               
               column(
-                width=2,
+                width=3,
                 selectInput(inputId = "summarizefunc_de", label = "Summarization", choices=c("max", "median", "mean", "min", "Q1", "Q3"), selected = defaults[["summarizefunc_de"]])
               ),
               
               column(
-                width=2,
+                width=3,
+                sliderInput(inputId = "range_de_lower", label = "Score Lower Threshold", min = -10, max = 10, value = c(-10, -2), step = 0.01),
+                br(),
+                sliderInput(inputId = "range_de_upper", label = "Score Upper Threshold", min = -10, max = 10, value = c(2, 10), step = 0.01)
+              ),
+              
+              column(
+                width=3,
                 if(landmark() == FALSE){
-                  div(
-                    checkboxGroupInput(inputId = "filterbyinput_de", label = "Filter by", choices=c("score" = "score"), selected = "score"),
-                    shinyjs::disabled(
-                      checkboxInput(inputId = "filterbyinput_de_number", label = "number", value=FALSE)
+                  shinyjs::disabled(
+                    div(
+                      sliderInput(inputId = "numberthresright_de", label = "Num -", min = 0, max = 1000, value = defaults[["numberthresright_de"]], ticks = FALSE, step = 10),
+                      br(),
+                      sliderInput(inputId = "numberthresleft_de", label = "Num +", min = 0, max = 1000, value = defaults[["numberthresleft_de"]], ticks = FALSE, step = 10)
                     )
                   )
                 }else{
-                  checkboxGroupInput(inputId = "filterbyinput_de", label = "Filter by", choices=c("score" = "score", "number" = "number"), selected = defaults[["filterbyinput_de"]])
-                }
-              ),
-              
-              column(
-                width=2,
-                sliderInput(inputId = "range_de", label = "Score Threshold", min = -10, max = 10, value = defaults[["range_de"]], step = 0.01)
-              ),
-              
-              column(
-                width=2,
-                if(landmark() == FALSE){
-                  shinyjs::disabled(
+                  div(
+                    sliderInput(inputId = "numberthresright_de", label = "Num -", min = 0, max = 1000, value = defaults[["numberthresright_de"]], ticks = FALSE, step = 10),
+                    br(),
                     sliderInput(inputId = "numberthresleft_de", label = "Num +", min = 0, max = 1000, value = defaults[["numberthresleft_de"]], ticks = FALSE, step = 10)
                   )
-                }else{
-                  sliderInput(inputId = "numberthresleft_de", label = "Num +", min = 0, max = 1000, value = defaults[["numberthresleft_de"]], ticks = FALSE, step = 10)
-                }
-              ),
-              
-              column(
-                width=2,
-                if(landmark() == FALSE){
-                  shinyjs::disabled(
-                    sliderInput(inputId = "numberthresright_de", label = "Num -", min = 0, max = 1000, value = defaults[["numberthresright_de"]], ticks = FALSE, step = 10)
-                  )
-                }else{
-                  sliderInput(inputId = "numberthresright_de", label = "Num -", min = 0, max = 1000, value = defaults[["numberthresright_de"]], ticks = FALSE, step = 10)
                 }
               )
             )
