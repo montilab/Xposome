@@ -5,8 +5,8 @@ defaults <- list(
   summarizefunc_de = "median", 
   filterbyinput_de = c("score", "number"),
   range_de = c(-2, 2), 
-  numberthresleft_de = 10, 
-  numberthresright_de = 10
+  numberthresleft_de = 100, 
+  numberthresright_de = 100
 )
 
 # Create a list of gene enrichment methods ####
@@ -99,7 +99,7 @@ get_de <- function(
   summarize.func = "mean",
   landmark = TRUE, 
   do.nmarkers = TRUE, nmarkers = c(100, 100),
-  do.scorecutoff = TRUE, scorecutoff = c(-2, 2)){
+  do.scorecutoff = TRUE, scorecutoff_lower = c(-10, -2), scorecutoff_upper = c(2, 10)){
 
   #getting chemical BUID####
   chemical_id <- get_chem_description(chemical_dat=chemical_dat, chem=chem, chemical_id=TRUE)
@@ -154,33 +154,36 @@ get_de <- function(
     ord_down <- data.frame(
       pos=ind_down,
       x=x[ind_down]
-    ) %>% arrange(desc(x))
+    ) %>% arrange(x)
     
     ord_up <- data.frame(
       pos=ind_up,
       x=x[ind_up]
     ) %>% arrange(desc(x))
     
-    n1 = ifelse(nmarkers[1] > nrow(ord_down), nrow(ord_down), nmarkers[1]); 
-    n2 = ifelse(nmarkers[2] > nrow(ord_up), nrow(ord_up), nmarkers[2]);
+    n1 = ifelse(as.numeric(nmarkers[1]) > nrow(ord_down), nrow(ord_down), as.numeric(nmarkers[1])); 
+    n2 = ifelse(as.numeric(nmarkers[2]) > nrow(ord_up), nrow(ord_up), as.numeric(nmarkers[2]));
     
     if(n1 == 0 & n2 == 0){
       x.ind.nmarkers <- 1:n
-    }else if(n2 == 0){
+    }else if(n2 == 0 & n1 > 0){
       x.ind.nmarkers <- ord_down$pos[1:n1]
-    }else{
+    }else if(n1 == 0 & n2 > 0){
+      x.ind.nmarkers <- ord_up$pos[1:n2]
+    }else if(n1 > 0 & n2 > 0){
       x.ind.nmarkers <- c(ord_down$pos[1:n1], ord_up$pos[1:n2])
     }
     
-  } else { 
+  }else { 
     
     x.ind.nmarkers <- 1:n 
     
   }
   
   if(do.scorecutoff){
-    #TODO: rank by score here too
-    x.ind.scorecutoff <- which(x >= scorecutoff[1] & x <= scorecutoff[2])
+    x.ind.scorecutoff_lower <- which(x >= as.numeric(scorecutoff_lower[1]) & x <= as.numeric(scorecutoff_lower[2]))
+    x.ind.scorecutoff_upper <- which(x >= as.numeric(scorecutoff_upper[1]) & x <= as.numeric(scorecutoff_upper[2]))
+    x.ind.scorecutoff <- c(x.ind.scorecutoff_lower, x.ind.scorecutoff_upper)
   }else {
     x.ind.scorecutoff <- 1:n
   }

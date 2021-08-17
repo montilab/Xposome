@@ -49,16 +49,17 @@ options = list(
 ##Get the gene expression table####
 expression_table <- reactive({
 
-  req(annot_var(), input$chem, input$summarizefunc_de, input$filterbyinput_de, input$range_de, input$numberthresleft_de, input$numberthresright_de)
+  req(annot_var(), input$chem, input$summarizefunc_de, input$filterbyinput_de, input$range_de_lower, input$range_de_upper, input$numberthresleft_de, input$numberthresright_de)
 
   chem=input$chem
   landmark_de=input$landmark_de
   summarizefunc_de=input$summarizefunc_de
   filterbyinput_de=input$filterbyinput_de
-  range_de=input$range_de
+  range_de_lower=input$range_de_lower
+  range_de_upper=input$range_de_upper
   numberthresleft_de=input$numberthresleft_de
   numberthresright_de=input$numberthresright_de
-
+  
   promise_all(annot_var=annot_var(), profile_dat=profile_dat(), chemical_dat=chemical_dat(), expression_dat=expression_dat()) %...>% with({
     get_de(
       chem=chem,
@@ -72,7 +73,8 @@ expression_table <- reactive({
       do.nmarkers = "number" %in% filterbyinput_de,
       nmarkers = c(numberthresleft_de, numberthresright_de),
       do.scorecutoff = "score" %in% filterbyinput_de,
-      scorecutoff = c(range_de[1], range_de[2])
+      scorecutoff_lower = c(range_de_lower[1], range_de_lower[2]),
+      scorecutoff_upper = c(range_de_upper[1], range_de_upper[2])
     ) %>% data.table.round()
 
   }) %...!% { return(NULL) }
