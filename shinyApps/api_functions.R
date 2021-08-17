@@ -36,7 +36,7 @@ get_geneset_link <- function(geneset){
 }
 
 # Get the chemical name####
-get_chem_description <- function(chemical_dat, chemical_id){
+get_chem_description <- function(chemical_dat, chemical_id, data_frame=FALSE){
   
   pos <- lapply(c("Chemical_Id", "Chemical_Name", "BUID", "CAS"), function(x){
     w <- which(chemical_dat[,x] %in% chemical_id)
@@ -46,7 +46,11 @@ get_chem_description <- function(chemical_dat, chemical_id){
   }) %>% unlist()
   
   if(length(pos) > 0){
-    return(sort(unique(chemical_dat$Chemical_Id[pos])))
+    if(data_frame){
+      return(chemical_dat[pos, c("Chemical_Id", "Chemical_Name", "BUID", "CAS")])
+    }else{
+      return(sort(unique(chemical_dat$Chemical_Id[pos])))
+    }
   }else{
     return(NULL)
   }
@@ -59,9 +63,10 @@ get_de <- function(
   profile_dat, chemical_dat, expression_dat,
   header = "ModZScore",
   summarize.func = "mean",
-  landmark = TRUE, 
-  do.nmarkers = TRUE, nmarkers = c(1000, 1000),
-  do.scorecutoff = TRUE, scorecutoff = c(-2, 2)){
+  landmark = FALSE, 
+  do.nmarkers = FALSE, nmarkers = c(1000, 1000),
+  do.scorecutoff = FALSE, scorecutoff = c(-2, 2),
+  concentration = FALSE){
   
   #getting signature id ####
   profile_dat <- profile_dat[match(colnames(expression_dat), profile_dat[, annot_var]),]
@@ -113,32 +118,34 @@ get_de <- function(
     ord_down <- data.frame(
       pos=ind_down,
       x=x[ind_down]
-    ) %>% arrange(desc(x))
+    ) %>% arrange(x)
     
     ord_up <- data.frame(
       pos=ind_up,
       x=x[ind_up]
     ) %>% arrange(desc(x))
     
-    n1 = ifelse(nmarkers[1] > nrow(ord_down), nrow(ord_down), nmarkers[1]); n2 = ifelse(nmarkers[2] > nrow(ord_up), nrow(ord_up), nmarkers[2]);
+    n1 = ifelse(as.numeric(nmarkers[1]) > nrow(ord_down), nrow(ord_down), as.numeric(nmarkers[1])); 
+    n2 = ifelse(as.numeric(nmarkers[2]) > nrow(ord_up), nrow(ord_up), as.numeric(nmarkers[2]));
     
     if(n1 == 0 & n2 == 0){
       x.ind.nmarkers <- 1:n
-    }else if(n2 == 0){
+    }else if(n2 == 0 & n1 > 0){
       x.ind.nmarkers <- ord_down$pos[1:n1]
-    }else{
+    }else if(n1 == 0 & n2 > 0){
+      x.ind.nmarkers <- ord_up$pos[1:n2]
+    }else if(n1 > 0 & n2 > 0){
       x.ind.nmarkers <- c(ord_down$pos[1:n1], ord_up$pos[1:n2])
     }
     
-  } else { 
+  }else { 
     
     x.ind.nmarkers <- 1:n 
     
   }
   
   if(do.scorecutoff){
-    #TODO: rank by score here too
-    x.ind.scorecutoff <- which(x >= scorecutoff[1] & x <= scorecutoff[2])
+    x.ind.scorecutoff <- c(which(x <= as.numeric(scorecutoff[1])), which(x >= as.numeric(scorecutoff[2])))
   }else {
     x.ind.scorecutoff <- 1:n
   }
@@ -154,12 +161,19 @@ get_de <- function(
     if(i > 0) return("Up") else return("Down")
   })
   
-  #creata the summary table 
+  #create the summary table 
   table <- cbind(fdat[res.ind,, drop = FALSE], Direction = direction, SummaryScore=res.scores, mat[res.ind,, drop = FALSE])
   colnames(table)[which(colnames(table) %in% "SummaryScore")] <- "Summary Score"
   
   #return hyperlink from genecard.org
-  table$Gene <- sapply(as.character(table$Gene), get_genecard_link)
+  #table$Gene <- sapply(as.character(table$Gene), get_genecard_link)
+  
+  #return a table with concentration separated
+  if(concentration){
+    pos <- grep(header, colnames(table), fixed=TRUE)
+    table <- table %>% gather(key="Concentration", value="ModZScore", -colnames(table)[-pos]) %>% 
+      mutate(Concentration=gsub(paste0(header,"|\\s"), "", Concentration))
+  }
   
   return(table)
 
@@ -171,7 +185,8 @@ get_gsenrichment <- function(
   profile_dat, chemical_dat, expression_dat,
   gsname = "Hallmark",
   header = "GS Score",
-  summarize.func = "mean"){
+  summarize.func = "mean",
+  concentration = FALSE){
   
   #getting signature id ####
   profile_dat <- profile_dat[match(colnames(expression_dat), profile_dat[, annot_var]),]
@@ -212,7 +227,14 @@ get_gsenrichment <- function(
   colnames(table)[which(colnames(table) %in% "score")] <- "Summary Score"
   
   #return hyperlink to MSigDB genesets
-  if(gsname %in% c("Hallmark", "C2")) table$Geneset <- sapply(as.character(table$Geneset), get_geneset_link)
+  #if(gsname %in% c("Hallmark", "C2")) table$Geneset <- sapply(as.character(table$Geneset), get_geneset_link)
+  
+  #return a table with concentration separated
+  if(concentration){
+    pos <- grep(header, colnames(table), fixed=TRUE)
+    table <- table %>% gather(key="Concentration", value="GS Score", -colnames(table)[-pos]) %>% 
+      mutate(Concentration=gsub(paste0(header,"|\\s"), "", Concentration))
+  }
   
   return(table)
   
@@ -223,7 +245,8 @@ get_connectivity <- function(
   chemical_id, annot_var,
   profile_dat, chemical_dat, expression_dat,
   header = "Connectivity Score",
-  summarize.func = "mean"){
+  summarize.func = "mean",
+  concentration = FALSE){
   
   #getting signature id ####
   profile_dat <- profile_dat[match(colnames(expression_dat), profile_dat[, annot_var]),]
@@ -261,7 +284,14 @@ get_connectivity <- function(
   
   table <- cbind(fdat, score = res, mat)
   table <- table[order(table$score, decreasing = TRUE),, drop = FALSE]
-  colnames(table)[colnames(table) %in% "score"]<- "Summary Score"
+  colnames(table)[colnames(table) %in% "score"] <- "Summary Score"
+  
+  #return a table with concentration separated
+  if(concentration){
+    pos <- grep(header, colnames(table), fixed=TRUE)
+    table <- table %>% gather(key="Concentration", value="Connectivity Score", -colnames(table)[-pos]) %>% 
+      mutate(Concentration=gsub(paste0(header,"|\\s"), "", Concentration))
+  }
   
   return(table)
   
@@ -292,6 +322,109 @@ projects <- function(orderby="asc"){
 
   return(toJSON(portal_names, pretty=TRUE))
 
+}
+
+## Get a list of chemical ids/cas ids available on GeneHive database
+#* @param projects
+#* @param chemical_ids
+#' @get /chemicals
+#' @post /chemicals
+chemicals <- function(res, req, projects="all", chemical_ids="all"){
+  
+  ##Shiny Packages####
+  library(uuidtools)
+  library(GeneHive)
+  library(tidyverse)
+  library(Biobase)
+  library(jsonlite)
+  
+  # string split the project by comma separator
+  projects <- strsplit(as.character(projects), ",", perl=TRUE) %>% unlist() %>% gsub("[[:space:]]", "", .)
+  chemical_ids <- strsplit(as.character(chemical_ids), ",", perl=TRUE) %>% unlist() %>% gsub("[[:space:]]", "", .)
+  
+  # Retrieve list of all PortalDataset entities in hive
+  portal_names <- unique(sapply(GeneHive::listEntities("PortalDataset"), slot, "portal"))
+  
+  # Check if the project is available on GeneHive, if not, return warning message
+  if(any(toupper(projects) %in% toupper(c(portal_names, "all")))){
+    
+    all_chemical_list <- NULL;
+    
+    if(any(toupper(projects) %in% toupper("all"))){
+      
+      for(i in seq_along(portal_names)){
+        
+        project <- portal_names[i]
+        
+        # Retrieve list of all projectDataset entities in hive
+        datasets <- listEntities("PortalDataset", portal=project)
+        
+        # Sort by timestamp and extract most recent dataset to convenience object
+        datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
+        dataset <- datasets[[length(datasets)]]
+        
+        # read in datasets
+        chemical_dat <- getWorkFileAsObject(
+          hiveWorkFileID(dataset@ChemicalAnnotationRDS)
+        )
+        
+        if(any(toupper(chemical_ids) %in% "ALL")){
+          chemical_list <- chemical_dat[, c("Chemical_Id", "Chemical_Name", "BUID", "CAS")]
+        }else{
+          chemical_list <- get_chem_description(chemical_dat = chemical_dat, chemical_id = chemical_ids, data_frame = TRUE)
+        }
+        
+        if(!is.null(chemical_list)){
+          chemical_list <- chemical_list %>% mutate(Project=project)
+          all_chemical_list <- rbind(all_chemical_list, chemical_list)
+        }
+        
+      }
+      
+    }else{
+      
+      for(i in seq_along(projects)){
+        
+        if(toupper(projects[i]) %in% toupper(portal_names)){
+          
+          project <- portal_names[which(toupper(portal_names) == toupper(projects[i]))]
+          
+          # Retrieve list of all projectDataset entities in hive
+          datasets <- listEntities("PortalDataset", portal=project)
+          
+          # Sort by timestamp and extract most recent dataset to convenience object
+          datasets <- datasets[order(sapply(datasets, slot, "timestamp"))]
+          dataset <- datasets[[length(datasets)]]
+          
+          # read in datasets
+          chemical_dat <- getWorkFileAsObject(
+            hiveWorkFileID(dataset@ChemicalAnnotationRDS)
+          )
+          
+          # get a list of chemical ids/cas ids for a project
+          if(any(toupper(chemical_ids) %in% "ALL")){
+            chemical_list <- chemical_dat[, c("Chemical_Id", "Chemical_Name", "BUID", "CAS")]
+          }else{
+            chemical_list <- get_chem_description(chemical_dat = chemical_dat, chemical_id = chemical_ids, data_frame = TRUE)
+          }
+          
+          if(!is.null(chemical_list)){
+            chemical_list <- chemical_list %>% mutate(Project=project)
+            all_chemical_list <- rbind(all_chemical_list, chemical_list)
+          }          
+        }
+      }
+    }
+    
+    return(toJSON(all_chemical_list, pretty=TRUE))
+    
+  }else{
+    
+    res$status <- 404  
+    return(list(error=paste0("The ", paste0(projects, collapse=", "), " project(s) is/are not available on the Xposome portal")))
+    
+  }
+  
 }
 
 ## Get profile annotation
@@ -661,9 +794,10 @@ rds_bundle <- function(res, req, project){
 #* @param do.scorecutoff
 #* @param scorecutoff_lb
 #* @param scorecutoff_ub
+#* @param concentration
 #' @get /gene_expression
 #' @post /gene_expression
-gene_expression <- function(res, req, project, chemical_id, summarize.func="median", landmark=TRUE, do.nmarkers=TRUE, nmarkers_up=1000, nmarkers_down=1000, do.scorecutoff=TRUE, scorecutoff_lb=-2, scorecutoff_ub=2){
+gene_expression <- function(res, req, project, chemical_id, summarize.func="median", landmark=FALSE, do.nmarkers=TRUE, nmarkers_up=1000, nmarkers_down=1000, do.scorecutoff=TRUE, scorecutoff_lb=-2, scorecutoff_ub=2, concentration=FALSE){
   
   ##Shiny Packages####
   library(uuidtools)
@@ -727,7 +861,8 @@ gene_expression <- function(res, req, project, chemical_id, summarize.func="medi
         do.nmarkers = do.nmarkers,
         nmarkers = c(nmarkers_down, nmarkers_up),
         do.scorecutoff = do.scorecutoff,
-        scorecutoff = c(scorecutoff_lb, scorecutoff_ub)
+        scorecutoff = c(scorecutoff_lb, scorecutoff_ub),
+        concentration = concentration
       )
       
       return(toJSON(table, pretty=TRUE))
@@ -749,9 +884,10 @@ gene_expression <- function(res, req, project, chemical_id, summarize.func="medi
 #* @param geneset
 #* @param gsva
 #* @param summarize.func
+#* @param concentration
 #' @get /gs_enrichment
 #' @post /gs_enrichment
-gs_enrichment <- function(res, req, project, chemical_id, geneset="Hallmark", gsva="gsva", summarize.func="median"){
+gs_enrichment <- function(res, req, project, chemical_id, geneset="Hallmark", gsva="gsva", summarize.func="median", concentration=FALSE){
   
   ##Shiny Packages####
   library(uuidtools)
@@ -813,7 +949,8 @@ gs_enrichment <- function(res, req, project, chemical_id, geneset="Hallmark", gs
         expression_dat=gs_enrichment_dat,
         gsname = geneset,
         header="GS Score",
-        summarize.func=summarize.func
+        summarize.func=summarize.func,
+        concentration=concentration
       )
       
       return(toJSON(table, pretty=TRUE))
@@ -836,7 +973,7 @@ gs_enrichment <- function(res, req, project, chemical_id, geneset="Hallmark", gs
 #* @param summarize.func
 #' @get /connectivity
 #' @post /connectivity
-connectivity <- function(res, req, project, chemical_id, connectivity_classes="pcl", summarize.func="median"){
+connectivity <- function(res, req, project, chemical_id, connectivity_classes="pcl", summarize.func="median", concentration=FALSE){
   
   ##Shiny Packages####
   library(uuidtools)
@@ -899,7 +1036,8 @@ connectivity <- function(res, req, project, chemical_id, connectivity_classes="p
           chemical_dat=chemical_dat,
           expression_dat=connectivity_dat,
           header="Connectivity Score",
-          summarize.func=summarize.func
+          summarize.func=summarize.func,
+          concentration=concentration
         )
         
         return(toJSON(table, pretty=TRUE))
