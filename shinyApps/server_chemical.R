@@ -1,40 +1,15 @@
 
-# Output the chemical selection ####
-output$chemical_options <- renderUI({
-  
-  req(input$selected_chemical_id)
-  
-  chemical_id <- isolate({ input$selected_chemical_id })
-  
-  chemical_list() %...>% {
-    
-    chemicals <- .
-    
-    selectInput(
-      inputId = "chem",
-      label = "Select a Chemical Name/BUID/CAS:",
-      choices = c("Please select an option below" = "", chemicals),
-      selected = chemical_id,
-      width = "100%"
-    )
-    
-  }
-  
-})
-
 ##output chemical table####
 output$chemical_table <- DT::renderDataTable({
-
+  
   req(input$chem)
-
-  chem=input$chem
-
-  chemical_dat() %...>% {
-    chemical_dat <- .
-    pos <- get_chem_description(chemical_dat=chemical_dat, chem=chem, chemical_id=FALSE)
-    table <- chemical_dat[pos,] %>% data.table.round()
-  }
-
+  
+  chem <- input$chem
+  
+  chemical_dat() %...>% 
+    get_chem_description(chemical_dat=., chem=chem, chemical_id=FALSE) %...>% 
+    data.table.round() %...!% { return(NULL) }
+  
 }, escape = FALSE, extensions = 'Buttons', server = TRUE, rownames=FALSE, selection = "none",
 options = list(
   columnDefs = list(list(className = 'dt-left', targets = "_all")),
@@ -46,46 +21,51 @@ options = list(
   buttons=c('copy','csv','print')
 ))
 
+
 ##Get the gene expression table####
 expression_table <- reactive({
-
-  req(annot_var(), input$chem, input$summarizefunc_de, input$filterbyinput_de, input$range_de_lower, input$range_de_upper, input$numberthresleft_de, input$numberthresright_de)
-
-  chem=input$chem
-  landmark_de=input$landmark_de
-  summarizefunc_de=input$summarizefunc_de
-  filterbyinput_de=input$filterbyinput_de
-  range_de_lower=input$range_de_lower
-  range_de_upper=input$range_de_upper
-  numberthresleft_de=input$numberthresleft_de
-  numberthresright_de=input$numberthresright_de
   
-  promise_all(annot_var=annot_var(), profile_dat=profile_dat(), chemical_dat=chemical_dat(), expression_dat=expression_dat()) %...>% with({
-    get_de(
-      chem=chem,
-      annot_var=annot_var,
-      profile_dat=profile_dat,
-      chemical_dat=chemical_dat,
-      expression_dat=expression_dat,
-      header = "ModZScore",
+  chem = input$chem;
+
+  promise_all(profile_dat=profile_dat(), chemical_dat=chemical_dat(), expression_dat=expression_dat()) %...>% 
+    with({
+      get_de(
+        chem = chem,
+        profile_dat = profile_dat,
+        chemical_dat = chemical_dat,
+        expression_dat = expression_dat,
+        header = "ModZScore"
+      ) %>% data.table.round()
+    }) %...!% { return(NULL) }
+  
+}) %>% bindCache(input$portal_id, input$chem) %>% 
+  bindEvent(input$portal_id, input$chem)
+
+
+##Output the gene expression table####
+output$gene_expression_table <- DT::renderDataTable({
+  
+  req(input$chem)
+  
+  landmark_de = input$landmark_de;
+  summarizefunc_de = input$summarizefunc_de;
+  filterbyinput_de = input$filterbyinput_de;
+  range_de = input$range_de;
+  numberthresleft_de = input$numberthresleft_de;
+  numberthresright_de = input$numberthresright_de;
+  
+  expression_table() %...>%
+    get_de_filter(
+      de_dat = ., 
+      landmark_dat = landmark_dat,
       summarize.func = summarizefunc_de,
       landmark = landmark_de,
       do.nmarkers = "number" %in% filterbyinput_de,
       nmarkers = c(numberthresleft_de, numberthresright_de),
       do.scorecutoff = "score" %in% filterbyinput_de,
-      scorecutoff_lower = c(range_de_lower[1], range_de_lower[2]),
-      scorecutoff_upper = c(range_de_upper[1], range_de_upper[2])
-    ) %>% data.table.round()
-
-  }) %...!% { return(NULL) }
-
-})
-
-##Output the gene expression table####
-output$gene_expression_table <- DT::renderDataTable({
-
-  req(expression_table())
-
+      scorecutoff = c(range_de[1], range_de[2])
+    ) %...!% { return(NULL) }
+  
 }, escape = FALSE, extensions = 'Buttons', server = TRUE, rownames=FALSE, selection = "none",
 options = list(
   columnDefs = list(list(className = 'dt-center', targets = "_all")),
@@ -101,41 +81,46 @@ options = list(
   scrollCollapse = TRUE,
   dom = 'T<"clear">Blfrtip',
   buttons=c('copy','csv','print'))
-)
+) 
 
 #Get the gene set enrichment table####
 gs_enrichment_table <- reactive({
+  
+  chem = input$chem
+  gsname = input$gsname
+  gsmethod = input$gsmethod
+  
+  promise_all(profile_dat=profile_dat(), chemical_dat=chemical_dat(), gs_enrichment_dat=gs_enrichment_dat()) %...>%
+    with({
+      get_gsenrichment(
+        chem = chem,
+        profile_dat = profile_dat,
+        chemical_dat = chemical_dat,
+        expression_dat = gs_enrichment_dat[[paste0(gsname, "_", gsmethod)]],
+        header = "GS Score"
+      ) %>% data.table.round()
+    }) %...!% { return(NULL) }
+  
+}) %>% bindCache(input$portal_id, input$chem, input$gsname, input$gsmethod) %>%
+  bindEvent(input$portal_id, input$chem, input$gsname, input$gsmethod)
 
-  req(annot_var(), input$chem, input$gsname, input$gsmethod, input$summarize_gs)
-
-  dsmap=dsmap()
-  chem=input$chem
-  gsname=input$gsname
-  gsmethod=input$gsmethod
-  summarize_gs=input$summarize_gs
-
-  promise_all(annot_var=annot_var(), profile_dat=profile_dat(), chemical_dat=chemical_dat(), gs_enrichment_dat=gs_enrichment_dat()) %...>% with({
-
-    get_gsenrichment(
-      chem=chem,
-      annot_var=annot_var,
-      profile_dat=profile_dat,
-      chemical_dat=chemical_dat,
-      expression_dat=gs_enrichment_dat[[paste0(dsmap[[gsname]], "_", gsmethod)]],
-      gsname = gsname,
-      header="GS Score",
-      summarize.func=summarize_gs
-    ) %>% data.table.round()
-
-  }) %...!% { return(NULL) }
-
-})
 
 #Output the gene set enrichment table####
 output$gene_set_enrichment_table <- DT::renderDataTable({
+  
+  req(input$chem)
+  
+  portal_id = input$portal_id; 
+  gsname = input$gsname; 
+  summarize.func = input$summarizefunc_gs;
 
-  req(gs_enrichment_table())
-
+  gs_enrichment_table() %...>%
+    get_gsenrichment_filter(
+      gs_dat = .,
+      gsname = gsname,
+      summarize.func = summarize.func
+    ) %...!% { return(NULL) }
+  
 }, escape = FALSE, extensions = 'Buttons', server = TRUE, rownames=FALSE, selection = "none",
 options = list(
   columnDefs = list(list(className = 'dt-center', targets = "_all")),
@@ -153,86 +138,66 @@ options = list(
   buttons=c('copy','csv','print'))
 )
 
+
 #Get connectivity table####
 connectivity_table <- reactive({
-
-  req(annot_var(), input$chem, input$conn_name, input$summarizefunc_conn)
-
-  chem=input$chem
-  conn_name=input$conn_name
-  summarizefunc_conn=input$summarizefunc_conn
-
-  promise_all(annot_var=annot_var(), profile_dat=profile_dat(), chemical_dat=chemical_dat(), connectivity_dat=connectivity_dat()) %...>% with({
-
-    get_connectivity(
-      chem=chem,
-      annot_var=annot_var,
-      profile_dat=profile_dat,
-      chemical_dat=chemical_dat,
-      expression_dat=connectivity_dat[[conn_name]],
-      header="Connectivity Score",
-      summarize.func=summarizefunc_conn
-    ) %>% data.table.round()
-
-  }) %...!% { return(data.frame(Connectivity_Id="NO CONNECTIVITY MAP")) }
-
-})
+  
+  chem = input$chem
+  conn_name = input$conn_name
+  
+  promise_all(profile_dat=profile_dat(), chemical_dat=chemical_dat(), connectivity_dat=connectivity_dat()) %...>%
+    with({
+      get_connectivity(
+        chem = chem,
+        profile_dat = profile_dat,
+        chemical_dat = chemical_dat,
+        expression_dat = connectivity_dat[[conn_name]],
+        header = "Connectivity Score"
+      ) %>% data.table.round()
+    }) %...!% {
+      warning <- data.frame(WARNING="<span>There is no connectivity map for this portal.</span>")
+      return(warning)
+    }
+  
+}) %>% bindCache(input$portal_id, input$chem, input$conn_name) %>%
+  bindEvent(input$portal_id, input$chem, input$conn_name)
 
 
 #Output connectivity table####
 output$connectivity_table <- DT::renderDataTable({
-
-  req(connectivity_table()) %...>% {
-
-    conn_table <- .
-
-    if(all(!conn_table$Connectivity_Id %in% "NO CONNECTIVITY MAP")){
-
-      conn_table %>% datatable(
-        rownames = FALSE,
-        escape = FALSE,
-        extensions = 'Buttons',
-        selection = "none",
-        options = list(
-          columnDefs = list(
-            list(className = 'dt-left', targets = 0),
-            list(className = 'dt-center', targets = 1:(ncol(conn_table)-1))
-          ),
-          deferRender = FALSE,
-          paging = TRUE,
-          searching = TRUE,
-          ordering = TRUE,
-          pageLength = 20,
-          scrollX = TRUE,
-          scrollY = 400,
-          scrollCollapse = TRUE,
-          dom = 'T<"clear">Blfrtip',
-          buttons=c('copy','csv','print')
-        )
-      )
-
+  
+  req(input$chem)
+  
+  summarize.func = input$summarizefunc_conn
+  
+  connectivity_table() %...>% (function(data){
+    if("WARNING" %in% colnames(data)){
+      colnames(data) <- paste0("<b style='color:red'>WARNING!!!</b>")
+      return(data)
     }else{
-
-      conn_table <- data.frame(WARNING="There is no connectivity map for this portal.");
-
-      conn_table %>% datatable(
-        rownames = FALSE,
-        escape = FALSE,
-        extensions = 'Buttons',
-        selection = "single",
-        options = list(
-          columnDefs = list(list(className = 'dt-center', targets = "_all")),
-          deferRender = FALSE,
-          scrollX = TRUE,
-          scrollCollapse = TRUE,
-          dom = 'T'
-        )
+      get_connectivity_filter(
+        conn_dat = data,
+        summarize.func = summarize.func
       )
-
     }
-
-  }
-})
+  }) %...!% { return(NULL) }
+  
+}, escape = FALSE, extensions = 'Buttons', server = TRUE, rownames=FALSE, selection = "none",
+options = list(
+  columnDefs = list(list(className = 'dt-center', targets = "_all")),
+  rowCallback = JS( 'function(row, data) { $("td:eq(0)", row).css("text-align", "left"); }'),
+  headerCallback =  JS( 'function(thead, data) { $(thead).find("th").eq(0).css("text-align", "left"); }'),
+  deferRender = FALSE,
+  paging = TRUE,
+  searching = TRUE,
+  ordering = TRUE,
+  pageLength = 20,
+  scrollX = TRUE,
+  scrollY = 400,
+  scrollCollapse = TRUE,
+  dom = 'T<"clear">Blfrtip',
+  buttons=c('copy','csv','print'))
+)
 
 ###################################################
 #
@@ -242,24 +207,30 @@ output$connectivity_table <- DT::renderDataTable({
 
 #observe when restore button is clicked####
 observeEvent(input$de_restore, {
-  updateCheckboxInput(session, inputId = "landmark_de", value = defaults[["landmark_de"]])
-  updateSelectInput(session, inputId = "summarizefunc_de", selected = defaults[["summarizefunc_de"]])
-  updateCheckboxGroupInput(session, inputId = "filterbyinput_de", selected = defaults[["filterbyinput_de"]])
-  updateSelectInput(session, inputId = "range_de", selected = defaults[["range_de"]])
-  updateSliderInput(session, inputId = "numberthresleft_de", value = defaults[["numberthresleft_de"]])
-  updateSliderInput(session, inputId = "numberthresright_de", value = defaults[["numberthresright_de"]])
-}, ignoreInit=TRUE)
+  
+  updateCheckboxInput(session, inputId = "landmark_de", value = de_defaults[["landmark_de"]])
+  updateSelectInput(session, inputId = "summarizefunc_de", selected = de_defaults[["summarizefunc_de"]])
+  updateCheckboxGroupInput(session, inputId = "filterbyinput_de", selected = de_defaults[["filterbyinput_de"]])
+  updateSelectInput(session, inputId = "range_de", selected = de_defaults[["range_de"]])
+  updateSliderInput(session, inputId = "numberthresleft_de", value = de_defaults[["numberthresleft_de"]])
+  updateSliderInput(session, inputId = "numberthresright_de", value = de_defaults[["numberthresright_de"]])
+  
+})
 
 ##Observe when hide button is clicked####
 observeEvent(input$de_hide, {
-  updateCollapse(session, "de_opt_panel", close = "de_options")
-}, ignoreInit=TRUE)
+  
+  shinyjs::hide(id="de_opt_panel")
+  
+})
 
 
 ##Observe when show button is clicked####
 observeEvent(input$de_show, {
-  updateCollapse(session, "de_opt_panel", open = "de_options")
-}, ignoreInit=TRUE)
+  
+  shinyjs::show(id="de_opt_panel")
+  
+})
 
 
 ###################################################
@@ -270,21 +241,27 @@ observeEvent(input$de_show, {
 
 #observe when restore button is clicked####
 observeEvent(input$es_restore, {
+  
   updateSelectInput(session, inputId = "gsname", selected = "Hallmark")
   updateSelectInput(session, inputId = "gsmethod", selected = "gsva")
   updateSelectInput(session, inputId = "summarize_gs", selected = "median")
-}, ignoreInit=TRUE)
+  
+})
 
 ##Observe when hide button is clicked####
 observeEvent(input$es_hide, {
-  updateCollapse(session, "es_opt_panel", close = "es_options")
-}, ignoreInit=TRUE)
+  
+  shinyjs::hide(id="es_opt_panel")
+  
+})
 
 
 ##Observe when show button is clicked####
 observeEvent(input$es_show, {
-  updateCollapse(session, "es_opt_panel", open = "es_options")
-}, ignoreInit=TRUE)
+  
+  shinyjs::show(id="es_opt_panel")
+  
+})
 
 
 ###################################################
@@ -295,19 +272,26 @@ observeEvent(input$es_show, {
 
 #observe when restore button is clicked####
 observeEvent(input$conn_restore, {
+  
   updateSelectInput(session, inputId = "conn_name", selected = "pcl")
   updateSelectInput(session, inputId = "summarizefunc_conn", selected = "median")
-}, ignoreInit=TRUE)
+  
+})
+
 
 ##Observe when hide button is clicked####
 observeEvent(input$conn_hide, {
-  updateCollapse(session, "conn_opt_panel", close = "conn_options")
-}, ignoreInit=TRUE)
+  
+  shinyjs::hide(id="conn_opt_panel")
+  
+})
 
 
 ##Observe when show button is clicked####
 observeEvent(input$conn_show, {
-  updateCollapse(session, "conn_opt_panel", open = "conn_options")
-}, ignoreInit=TRUE)
+  
+  shinyjs::show(id="conn_opt_panel")
+  
+})
 
 

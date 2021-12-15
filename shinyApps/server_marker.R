@@ -1,597 +1,270 @@
 
-
-# Output the chemical selection ####
-output$TAS_view <- renderUI({
+## Update tas selection ####
+observeEvent({
+  input$portal_id
+}, {
   
-  profile_dat() %...>% {
-    
-    prof_dat <- .
-    
-    if("TAS" %in% colnames(prof_dat)){
-      max <- floor(max(prof_dat$TAS)/0.1)*0.1    
-      sliderInput(inputId="marker_tas", label="TAS:", min=0, max=max, step=0.1, value=c(0, max))
-    }  
-    
-  }
+  profile_dat() %...>% (function(data){
+    max <- ceiling(max(data$TAS))  
+    val <- round(max(data$TAS), 2) + 0.05
+    updateSliderInput(session, inputId="marker_tas", label="TAS:", min=0, max=max, step=0.1, value=c(0, val))
+  })
   
 })
 
-# update the marker selection if there is no connectivity map ####
-output$marker_option <- renderUI({
+
+## Observe tas selection ####
+observeEvent({
+  input$marker_tas
+}, {
   
-  req(input$portal_id)  
+  tas = input$marker_tas 
   
-  fname <- isolate({ input$portal_id }); 
-  
-  conn_dat <- projectlist$Connectivity_Variable[which(projectlist$Portal == fname)]
-  
-  if(conn_dat){
-    selectizeInput(
-      inputId = "marker",
-      label = "Select a marker set:",
-      choices = c("Please select an option below" = "", "Genes", "Gene Sets", "CMap Connectivity")
-    )
-  }else{
-    selectizeInput(
-      inputId = "marker",
-      label = "Select a marker set:",
-      choices = c("Please select an option below" = "", "Genes", "Gene Sets")
-    )
-  }
+  profile_dat() %...>% (function(data){
+    data <- data %>% filter(as.numeric(TAS) >= as.numeric(tas[1]) & as.numeric(TAS) <= as.numeric(tas[2]))
+    if(nrow(data) == 0){
+      shinyjs::hide(id="plot_content")
+      shinyjs::show(id="warning_content")
+    }else{
+      shinyjs::hide(id="warning_content")
+      shinyjs::show(id="plot_content")
+    }
+  })
   
 })
 
-output$marker_gene_options <- renderUI({
+
+## Update the gene expression selection ####
+observeEvent({
+  input$portal_id
+  input$marker
+}, {
   
-  ##Getting the gene list####
-  expression_dat() %...>% {
-    eset <- .
+  req(input$marker == 'Genes')
+  
+  selected_gene = input$marker_gene
+  
+  expression_dat() %...>% (function(eset){
     genelist <- sort(rownames(eset))
+    updateSelectizeInput(session, inputId = "marker_gene", label = "Select a gene:", choices = c("Select an option below"="", genelist), selected=selected_gene)
+  }) %...!% { return(NULL) }
+
+})
+
+
+## Update the gene set selection ####
+observeEvent({
+  input$portal_id
+  input$marker
+  input$marker_gsname
+  input$marker_gsmethod
+}, {
+
+  req(input$marker == 'Gene Sets')
+  
+  selected_gs=input$marker_gs; gsname=input$marker_gsname; gsmethod=input$marker_gsmethod;
+  
+  gs_enrichment_dat() %...>% (function(eset){
+    genesetlist <- sort(rownames(eset[[paste0(gsname, "_", gsmethod)]]))
+    updateSelectizeInput(session, inputId = "marker_gs", label = "Select a gene set:", choices = c("Select an option below"="", genesetlist), selected=selected_gs)
+  }) %...!% { return(NULL) }
+  
+})
+
+
+## Update connectivity selection ####
+observeEvent({
+  input$portal_id
+  input$marker
+  input$marker_conn_name
+}, {
+
+  req(input$marker == 'CMap Connectivity')
+  
+  selected_conn=input$marker_conn; conn_name = input$marker_conn_name
     
-    div(
-      selectizeInput(inputId = "marker_gene", label = "Select a gene:", choices = genelist),
-      actionButton(inputId = "de_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
-    )
-  } 
-
-})
- 
-# Output the gene set selection ###
-output$marker_geneset_options <- renderUI({
-  
-  req(input$marker_gsname, input$marker_gsmethod)
-  
-  ## Get gene set list
-  dsmap=dsmap(); gsname=input$marker_gsname; gsmethod=input$marker_gsmethod;
-  
-  ##Getting the gene list####
-  gs_enrichment_dat() %...>% {
-    eset <- .[[paste0(dsmap[[gsname]], "_", gsmethod)]]
-    genesetlist <- sort(rownames(eset))
-    selectizeInput(inputId="marker_gs", label="Select a gene set:", choices = genesetlist)
-  }
+  connectivity_dat() %...>% (function(eset){
+    genesetlist <- sort(rownames(eset[[conn_name]]))
+    updateSelectizeInput(session, inputId = "marker_conn", label = "Select a gene set:", choices = c("Select an option below"="", genesetlist), selected=selected_conn)
+  }) %...!% { return(NULL) }    
   
 })
 
-# Output the gene set selection ###
-output$marker_geneset_btn <- renderUI({
+###########################################################
+#
+# EXPRESSION PLOTS ####
+#
+###########################################################
+
+## Get DE data for overall profiles ####
+de_all <- reactive({
   
-  req(input$marker_gs)
+  req(input$marker == 'Genes')
   
-  actionButton(inputId = "gs_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
+  tas=input$marker_tas; view=input$marker_view;
   
-})
-
-output$marker_conn_options <- renderUI({
-
-  req(input$marker_conn_name)
-  
-  ## Get gene set list
-  conn_name=input$marker_conn_name; 
-  
-  ##Getting the gene list####
-  connectivity_dat() %...>% {
-    eset <- .[[conn_name]]
-    genesetlist <- sort(rownames(eset))
-    selectizeInput(inputId = "marker_conn", label = "Select a gene set:", choices = genesetlist)
-  }
-  
-})
-
-output$marker_conn_btn <- renderUI({
-  
-  req(input$marker_conn)
-  
-  actionButton(inputId = "conn_generate", label = "Generate plot", icon=icon("fas fa-arrow-circle-right"), class="mybuttons")
-  
-})
-
-##Create reactive values####
-marker_header <- reactiveVal();
-marker_id <- reactiveVal();
-create_marker_plot <- reactiveVal();
-running <- reactiveVal(FALSE);
-
-# Clear out the plot after users selected different portals
-observeEvent(input$portal_id, {
-
-  fname <- isolate({ input$portal_id });
-
-  phenotype <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype[which(projectlist$Portal == fname)]), ",", fixed=TRUE)) %>% trimws()
-  exposure_phenotype(phenotype)
-
-  create_marker_plot(NULL)
-
-}, ignoreInit = TRUE)
-
-##Observe event when a button is clicked####
-observeEvent(input$de_generate, {
-
-  req(expression_dat(), profile_dat(), annot_var(), exposure_phenotype(), input$marker_gene, input$marker_tas, input$marker_view)
-
-  #Don't do anything if in the middle of a run
-  if(running()){ return(NULL) }else{ running(TRUE) }
-  
-  print("Starting Run")
-  
-  ##regenerate plots again
-  create_marker_plot(NULL)
-
-  ##Get marker header
-  marker_header("Mod-Zscores")
-  marker_id(input$marker_gene)
-
-  #Get input values
-  exposure_phenotype <- exposure_phenotype(); 
-  header <- marker_header();
-  marker_id <- marker_id();
-  tas <- input$marker_tas;
-  view <- input$marker_view;
-  width <- input$dimension[1];
-
-  ##Create new progress bar
-  progress <- AsyncProgress$new(message=paste0("Generating ", ifelse(view %in% "Density", paste0("Density Plot"), view), "..."))
-
-  results <<- promise_all(annot_var=annot_var(), profile_dat=profile_dat(), expression_dat=expression_dat()) %...>% 
+  promise_all(profile_dat=profile_dat(), expression_dat=expression_dat()) %...>%
     with({
       
-      ##Create a empty list to store figures####
-      marker_fig <- list(); n=length(exposure_phenotype)+2;
+      #matching expression column names with profile annotation
+      annot_var <- ifelse(all(colnames(expression_dat) %in% profile_dat$Sig_Id), "Sig_Id", "Chemical_Id")
       
-      ##Create the overall plot####
-      fig1 <- get_marker_plot(
+      profile_dat <- profile_dat %>%
+        filter(as.numeric(TAS) >= as.numeric(tas[1]) & as.numeric(TAS) <= as.numeric(tas[2])) %>% 
+        transmute(Id=(!!!syms(annot_var))) %>%
+        distinct(Id, .keep_all=TRUE)
+      
+      eset <- exprs(expression_dat)[,which(colnames(expression_dat) %in% profile_dat$Id)]
+      all <- data.frame(x=as.numeric(eset))
+      
+      all_wrapper_df(df=all, view=view, marker_id="All")
+      
+    }) %...!% { return(NULL) }
+  
+}) %>% bindCache(input$portal_id, input$marker, input$marker_tas, input$marker_view) %>% 
+  bindEvent(input$portal_id, input$marker, input$marker_tas, input$marker_view)
+
+
+## Get DE data for selected chemical profiles ####
+de_chemical <- reactive({
+
+  req(input$marker == 'Genes')
+
+  marker_id=input$marker_gene; tas=input$marker_tas; view=input$marker_view;
+
+  promise_all(profile_dat=profile_dat(), expression_dat=expression_dat()) %...>%
+    with({
+
+      #matching expression column names with profile annotation
+      annot_var <- ifelse(all(colnames(expression_dat) %in% profile_dat$Sig_Id), "Sig_Id", "Chemical_Id")
+    
+      profile_dat <- profile_dat %>%
+        filter(as.numeric(TAS) >= as.numeric(tas[1]) & as.numeric(TAS) <= as.numeric(tas[2])) %>% 
+        transmute(Id=(!!!syms(annot_var))) %>%
+        distinct(Id, .keep_all=TRUE)
+
+      rowid <- which(rownames(expression_dat) %in% marker_id)
+      eset <- exprs(expression_dat)[rowid,]
+
+      query <- profile_dat %>% mutate(Id=as.character(Id)) %>%
+        left_join(data.frame(Id=as.character(names(eset)), x=as.numeric(eset))) %>%
+        select(x)
+
+      all_wrapper_df(df=query, view=view, marker_id=marker_id)
+
+  }) %...!% { return(NULL) }
+
+}) %>% bindCache(input$portal_id, input$marker, input$marker_gene, input$marker_tas, input$marker_view, "Chemical") %>% 
+  bindEvent(input$portal_id, input$marker, input$marker_gene, input$marker_tas, input$marker_view)
+
+
+## Output DE overall plot ####
+output$de_marker_plot <- renderPlotly({
+
+  req(input$marker == 'Genes')
+  
+  marker_id=input$marker_gene; view=input$marker_view; header="Moderated Z-scores";
+
+  promise_all(de_all=de_all(), de_chemical=de_chemical()) %...>%
+    with({
+      
+      data <- de_all %>% rbind(de_chemical)
+      get_overall_marker_plot(data=data, marker_id=marker_id, view=view, header=header) %>% 
+        ggplotly() %>% layout(showlegend=TRUE, hoverlabel=list(bgcolor="white"))
+      
+    }) %...!% { return(NULL) }
+
+})
+
+
+## Get DE exposure data ####
+de_exposure <- reactive({
+  
+  portal_id = input$portal_id; marker_id = input$marker_gene; tas = input$marker_tas; view = input$marker_view;
+  
+  exposure_phenotype <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype[which(projectlist$Portal == portal_id)]), ",", fixed=TRUE)) %>% trimws()
+  
+  promise_map(exposure_phenotype, function(exposure_variable){
+    
+    promise_all(profile_dat=profile_dat(), expression_dat=expression_dat()) %...>%
+      with({
+        
+        #matching expression column names with profile annotation
+        annot_var <- ifelse(all(colnames(expression_dat) %in% profile_dat$Sig_Id), "Sig_Id", "Chemical_Id")
+        
+        profile_dat <- profile_dat %>%
+          filter(as.numeric(TAS) >= as.numeric(tas[1]) & as.numeric(TAS) <= as.numeric(tas[2])) %>% 
+          transmute(Id=(!!!syms(annot_var)), exposure_value=(!!!syms(exposure_variable))) %>% 
+          distinct(Id, .keep_all=TRUE)
+        
+        rowid <- which(rownames(expression_dat) %in% marker_id)
+        eset <- exprs(expression_dat)[rowid,]
+        
+        df <- profile_dat %>% mutate(Id=as.character(Id)) %>% 
+          left_join(data.frame(Id=as.character(names(eset)), x=as.numeric(eset))) %>% 
+          select(x, exposure_value)
+        
+        exposure_wrapper_df(df=df, view=view, exposure_variable=exposure_variable)
+        
+      }) %...!% { return(NULL) }
+    
+  }) %...!% { return(NULL) }
+  
+}) %>% bindCache(input$portal_id, input$marker, input$marker_gene, input$marker_tas, input$marker_view, "Exposure") %>% 
+  bindEvent(input$portal_id, input$marker, input$marker_gene, input$marker_tas, input$marker_view)
+
+
+## Output DE exposure plot ####
+output$de_exposure_phenotype_plot <- renderPlotly({
+
+  req(input$marker == 'Genes')
+  
+  portal_id = input$portal_id; marker_id = input$marker_gene; view = input$marker_view; header = "Moderated Z-scores";
+  exposure_phenotype <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype[which(projectlist$Portal == portal_id)]), ",", fixed=TRUE)) %>% trimws()
+  
+  de_exposure() %...>% 
+    do.call(rbind, .) %...>% 
+    get_exposure_marker_plot(
+      df = .,
+      marker_id = marker_id,
+      header = header,
+      view = view
+    ) %...>% 
+    ggplotly(height=400*length(exposure_phenotype)) %...>% 
+    layout(showlegend=TRUE, hoverlabel=list(bgcolor="white")) %...!% { return(NULL) }
+
+})
+
+## Get DE table ####
+de_table <- reactive({
+  
+  req(input$marker == 'Genes')
+  
+  marker_id = input$marker_gene; tas = input$marker_tas; header = "Moderated <br> Z-scores";
+  
+  promise_all(profile_dat=profile_dat(), expression_dat=expression_dat()) %...>%
+    with({
+      
+      get_marker_table(
+        marker_id = marker_id,
+        profile_dat = profile_dat,
         expression_dat = expression_dat,
-        profile_dat = profile_dat,
-        annot_var = annot_var,
-        marker_id = marker_id,
-        col_id = NA,
-        fill_name = "Genes",
-        header = header,
-        tas = tas,
-        view = view
-      )  %>% ggplotly(width = width)
-      
-      marker_fig[["Overall"]] <- fig1
-      
-      progress$inc(1/n)
-      
-      ##Color palettes for qualitative data####
-      col_palette <- c("Set3", "Set1", "Paired", "Accent", "Pastel1", "Dark2", "Pastel2", "Set2")
-      
-      #Create the exposure phenotype plots####
-      for(s in seq_along(exposure_phenotype)){
-        #s=1;
-        col_id=exposure_phenotype[s]
-        variable=profile_dat %>% select(!!exposure_phenotype[s]) %>% distinct()
-        col_colors=brewer.pal(nrow(variable), col_palette[s])
-        col_names=unique(variable[,exposure_phenotype[s]])
-        
-        fig <- get_marker_plot(
-          expression_dat = expression_dat,
-          profile_dat = profile_dat,
-          annot_var = annot_var,
-          marker_id = marker_id,
-          col_id = col_id,
-          col_names = col_names,
-          col_colors = col_colors,
-          fill_name = col_id,
-          header = header,
-          tas = tas,
-          view = view
-        )  %>% ggplotly(width = width)
-        
-        marker_fig[[exposure_phenotype[s]]] <- fig
-        
-        progress$inc((s+1)/n)
-        
-      }
-      
-      ##Create the summary of table output####
-      table <- get_de_by_gene_table(
-        expression_dat = expression_dat,
-        profile_dat = profile_dat,
-        annot_var = annot_var,
-        marker_id = marker_id,
         header = header,
         tas = tas
       ) %>% data.table.round()
       
-      marker_fig[["Table"]] <- table
-      
-      progress$inc(n/n)
-      
-      progress$close()
-      
-      return(marker_fig)
-      
-    }) %...>% create_marker_plot
+    }) %...!% { return(NULL) }
   
-  ## Show notification on error or user interrupt
-  results <- catch(
-    results,
-    function(e){
-      create_marker_plot(NULL)
-      print(e$message)
-      showNotification("Task Stopped")
-    })
-  
-  ## When done with analysis, remove progress bar
-  results <- finally(results, function(){
-    print("Done")
-    running(FALSE) #declare done with run
-  })
-  
-  print(paste0("Generating ", ifelse(view %in% "Density", paste0("Density Plot"), view), "..."))
-  
-}, ignoreInit = TRUE)
+}) %>% bindCache(input$portal_id, input$marker, input$marker_gene, input$marker_tas) %>% 
+  bindEvent(input$portal_id, input$marker, input$marker_gene, input$marker_tas)
 
-# ##Observe event when a button is clicked####
-observeEvent(input$gs_generate, {
 
-  req(gs_enrichment_dat(), profile_dat(), annot_var(), exposure_phenotype(), input$marker_gs, input$marker_gsname, input$marker_gsmethod, input$marker_tas, input$marker_view)
+## Output DE marker table####
+output$de_marker_table <-  DT::renderDataTable({
 
-  #Don't do anything if in the middle of a run
-  if(running()){ return(NULL) }else{ running(TRUE) }
+  req(input$marker == 'Genes')
   
-  print("Starting Run")
-  
-  ##regenerate plots again
-  create_marker_plot(NULL)
-  
-  ##Get marker header
-  marker_header("Gene Set Scores")
-  marker_id(input$marker_gs)
-  
-  #Get input values
-  dsmap <- dsmap();
-  exposure_phenotype <- exposure_phenotype(); 
-  gsname <- input$marker_gsname; 
-  gsmethod <- input$marker_gsmethod;  
-  marker_id <- marker_id();
-  header <- marker_header();
-  tas <- input$marker_tas;
-  view <- input$marker_view;
-  width <- input$dimension[1];
-
-  ##Create new progress bar
-  progress <- AsyncProgress$new(message=paste0("Generating ", ifelse(view %in% "Density", paste0("Density Plot"), view), "..."))
-  
-  results <- promise_all(annot_var=annot_var(), profile_dat=profile_dat(), gs_enrichment_dat=gs_enrichment_dat()) %...>% 
-    with({
-      
-      ##Create a empty list to store figures####
-      marker_fig <- list(); n=length(exposure_phenotype)+2;
-      
-      ##Create the overall plot####
-      fig1 <- get_marker_plot(
-        expression_dat = gs_enrichment_dat[[paste0(dsmap[[gsname]], "_", gsmethod)]],
-        profile_dat = profile_dat,
-        annot_var = annot_var,
-        marker_id = marker_id,
-        col_id = NA,
-        fill_name = "Gene_Sets",
-        header = header,
-        tas = tas,
-        view = view
-      )  %>% ggplotly(width = width)
-      
-      marker_fig[["Overall"]] <- fig1
-      
-      progress$inc(1/n)
-      
-      ##Color palettes for qualitative data####
-      col_palette <- c("Set3", "Set1", "Paired", "Accent", "Pastel1", "Dark2", "Pastel2", "Set2")
-      
-      #Create the exposure phenotype plots####
-      for(s in seq_along(exposure_phenotype)){
-        #s=1;
-        col_id=exposure_phenotype[s]
-        variable=profile_dat %>% select(!!exposure_phenotype[s]) %>% distinct()
-        col_colors=brewer.pal(nrow(variable), col_palette[s])
-        col_names=unique(variable[,exposure_phenotype[s]])
-        
-        fig <- get_marker_plot(
-          expression_dat = gs_enrichment_dat[[paste0(dsmap[[gsname]], "_", gsmethod)]],
-          profile_dat = profile_dat,
-          annot_var = annot_var,
-          marker_id = marker_id,
-          col_id = col_id,
-          col_names = col_names,
-          col_colors = col_colors,
-          fill_name = col_id,
-          header = header,
-          tas = tas,
-          view = view
-        )  %>% ggplotly(width = width)
-        
-        marker_fig[[exposure_phenotype[s]]] <- fig
-        
-        progress$inc((s+1)/n)
-        
-      }
-      
-      ##Create the summary of table output####
-      table <- get_de_by_gene_table(
-        expression_dat = gs_enrichment_dat[[paste0(dsmap[[gsname]], "_", gsmethod)]],
-        profile_dat = profile_dat,
-        annot_var = annot_var,
-        marker_id = marker_id,
-        header = header,
-        tas = tas
-      ) %>% data.table.round()
-      
-      marker_fig[["Table"]] <- table
-      
-      progress$inc(n/n)
-      
-      progress$close()
-      
-      return(marker_fig)
-      
-    }) %...>% create_marker_plot()
-  
-  ## Show notification on error or user interrupt
-  results <- catch(
-    results,
-    function(e){
-      create_marker_plot(NULL)
-      print(e$message)
-      showNotification("Task Stopped")
-    })
-  
-  ## When done with analysis, remove progress bar
-  results <- finally(results, function(){
-    print("Done")
-    running(FALSE) #declare done with run
-  })
-  
-  print(paste0("Generating ", ifelse(view %in% "Density", paste0("Density Plot"), view), "..."))
-  
-}, ignoreInit = TRUE)
-
-##Observe event when a button is clicked####
-observeEvent(input$conn_generate, {
-
-  req(connectivity_dat(), profile_dat(), annot_var(), exposure_phenotype(), input$marker_conn, input$marker_conn_name, input$marker_tas, input$marker_view)
-
-  ##Disable the generate button
-  #shinyjs::disable(id="conn_generate")
-  
-  ##regenerate plots again
-  create_marker_plot(NULL)
-  
-  ##Get marker header
-  marker_header("Connectivity Score (Percentile)")
-  marker_id(input$marker_conn)
-  
-  #Get input values
-  exposure_phenotype <- exposure_phenotype(); 
-  conn_name <- input$marker_conn_name; 
-  marker_id <- marker_id();
-  header <- marker_header();
-  tas <- input$marker_tas;
-  view <- input$marker_view;
-  width <- input$dimension[1];
-
-  ##Create new progress bar
-  progress <- AsyncProgress$new(message=paste0("Generating ", ifelse(view %in% "Density", paste0("Density Plot"), view), "..."))
-  
-  results <- promise_all(annot_var=annot_var(), profile_dat=profile_dat(), connectivity_dat=connectivity_dat()) %...>% 
-    with({
-      
-      ##Create a empty list to store figures####
-      marker_fig <- list(); n=length(exposure_phenotype)+2;
-      
-      # throw errors that were signal (if Cancel was clicked)
-      interruptor$execInterrupts()
-      
-      ##Create the overall plot####
-      fig1 <- get_marker_plot(
-        expression_dat = connectivity_dat[[conn_name]],
-        profile_dat = profile_dat,
-        annot_var = annot_var,
-        marker_id = marker_id,
-        col_id = NA,
-        fill_name = "CMap_Connectivity",
-        header = header,
-        tas = tas,
-        view = view
-      )  %>% ggplotly(width = width)
-      
-      marker_fig[["Overall"]] <- fig1
-      
-      progress$inc(1/n)
-      
-      ##Color palettes for qualitative data####
-      col_palette <- c("Set3", "Set1", "Paired", "Accent", "Pastel1", "Dark2", "Pastel2", "Set2")
-      
-      #Create the exposure phenotype plots####
-      for(s in seq_along(exposure_phenotype)){
-        #s=1;
-        col_id=exposure_phenotype[s]
-        variable=profile_dat %>% select(!!exposure_phenotype[s]) %>% distinct()
-        col_colors=brewer.pal(nrow(variable), col_palette[s])
-        col_names=unique(variable[,exposure_phenotype[s]])
-        
-        fig <- get_marker_plot(
-          expression_dat = connectivity_dat[[conn_name]],
-          profile_dat = profile_dat,
-          annot_var = annot_var,
-          marker_id = marker_id,
-          col_id = col_id,
-          col_names = col_names,
-          col_colors = col_colors,
-          fill_name = col_id,
-          header = header,
-          tas = tas,
-          view = view
-        )  %>% ggplotly(width = width)
-        
-        marker_fig[[exposure_phenotype[s]]] <- fig
-        
-        progress$inc((s+1)/n)
-        
-      }
-      
-      ##Create the summary of table output####
-      table <- get_de_by_gene_table(
-        expression_dat = connectivity_dat[[conn_name]],
-        profile_dat = profile_dat,
-        annot_var = annot_var,
-        marker_id = marker_id,
-        header = header,
-        tas = tas
-      ) %>% data.table.round()
-      
-      marker_fig[["Table"]] <- table
-      
-      progress$inc(n/n)
-      
-      progress$close()
-      
-      return(marker_fig)
-
-    }) %...>% create_marker_plot()
-  
-  ## Show notification on error or user interrupt
-  results <- catch(
-    results,
-    function(e){
-      create_marker_plot(NULL)
-      print(e$message)
-      showNotification("Task Stopped")
-    })
-  
-  ## When done with analysis, remove progress bar
-  results <- finally(results, function(){
-    print("Done")
-    running(FALSE) #declare done with run
-  })
-  
-  print(paste0("Generating ", ifelse(view %in% "Density", paste0("Density Plot"), view), "..."))
-  
-}, ignoreInit = TRUE)
-
-##Styling the plots####
-l <- function(title){
-  list(
-    orientation = 'v',
-    title=list(
-      text=paste0('<b>', title, ':</b></br>'),
-      size=10,
-      color="lightgray"
-    ),
-    font = list(
-      family = "sans-serif",
-      size = 10
-    )
-  )
-}
-
-##Output the overall plot ####
-output$marker_plot <- renderPlotly({
-  
-  req(create_marker_plot())
-  
-  marker = isolate({ input$marker })
-  
-  fig <- create_marker_plot()[["Overall"]]
-  fig <- fig %>% layout(height=400, showlegend = TRUE, legend = l(marker), margin = list(b=100), hoverlabel = list(bgcolor="white"))
-  fig
-  
-})
-
-##Output the exposure phenotype plots####
-output$exposure_phenotype_plot <- renderPlotly({
-  
-  req(create_marker_plot())
-  
-  marker_plot <- create_marker_plot(); 
-  exposure_phenotype <- exposure_phenotype(); 
-  header <- marker_header(); 
-  marker_id <- marker_id();
-  
-  if(length(exposure_phenotype) == 1){
-    
-    fig <- marker_plot[[exposure_phenotype]]
-    fig <- fig %>% layout(showlegend = TRUE, legend = l(exposure_phenotype), margin = list(b=100), hoverlabel = list(bgcolor="white"))
-    
-  }else{
-    
-    p1 <- marker_plot[[exposure_phenotype[1]]] 
-    p2 <- marker_plot[[exposure_phenotype[2]]]
-    plist <- marker_plot[2:(length(exposure_phenotype)+1)]
-    y_val <- seq(1/length(exposure_phenotype), 1, by=1/length(exposure_phenotype)) %>% sort(decreasing=T)
-
-    plot_annotation <- lapply(seq_along(exposure_phenotype), function(i){ 
-      
-      col_id = exposure_phenotype[i]
-      
-      list(
-        x = 0.5, 
-        y = y_val[i], 
-        font = list(size = 16), 
-        text = paste("Distribution of ", header, " across profiles for ", marker_id, " (by ", col_id, ")\n", sep = ""), 
-        xref = "paper", 
-        yref = "paper", 
-        xanchor = "center", 
-        yanchor = "bottom", 
-        showarrow = FALSE
-      )
-      
-    })
-    
-    fig <- subplot(plist, nrows=length(exposure_phenotype), margin=0.05, shareX=T, shareY=T) %>% 
-      layout(
-        title = "",
-        showlegend = TRUE, 
-        legend = l("Exposure"),
-        height = 400*length(exposure_phenotype),
-        hoverlabel = list(bgcolor="white"),
-        annotations = plot_annotation
-      )
-    
-  }
-  
-  fig
-  
-})
-
-##Output the marker table header####
-output$marker_table_header <- renderUI({
-
-  req(create_marker_plot())
-
-  h3(paste0("Table of Profiles Ranked by ", marker_header()))
-
-})
-
-##Output the marker table####
-output$marker_table <-  DT::renderDataTable({
-
-  req(create_marker_plot())
-
-  create_marker_plot()[["Table"]]
+  de_table()  %...!% { return(NULL) }
 
 }, escape = FALSE, extensions = 'Buttons', server = TRUE, rownames=FALSE, selection = "none",
 options = list(
@@ -607,3 +280,407 @@ options = list(
   dom = 'T<"clear">Blfrtip',
   buttons=c('copy','csv','print'))
 )
+
+
+###########################################################
+#
+# GENE SETS PLOTS ####
+#
+###########################################################
+
+## Get GS data for overall profiles ####
+gs_all <- reactive({
+  
+  req(input$marker == 'Gene Sets')
+  
+  gsname=input$marker_gsname; gsmethod=input$marker_gsmethod; tas=input$marker_tas; view=input$marker_view;
+
+  promise_all(profile_dat=profile_dat(), gs_enrichment_dat=gs_enrichment_dat()) %...>%
+    with({
+      
+      expression_dat = gs_enrichment_dat[[paste0(gsname, "_", gsmethod)]]
+      
+      #matching expression column names with profile annotation
+      annot_var <- ifelse(all(colnames(expression_dat) %in% profile_dat$Sig_Id), "Sig_Id", "Chemical_Id")
+      
+      profile_dat <- profile_dat %>%
+        filter(as.numeric(TAS) >= as.numeric(tas[1]) & as.numeric(TAS) <= as.numeric(tas[2])) %>% 
+        transmute(Id=(!!!syms(annot_var))) %>%
+        distinct(Id, .keep_all=TRUE)
+      
+      eset <- exprs(expression_dat)[,which(colnames(expression_dat) %in% profile_dat$Id)]
+      all <- data.frame(x=as.numeric(eset))
+      
+      all_wrapper_df(df=all, view=view, marker_id="All")
+      
+    }) %...!% { return(NULL) }
+  
+}) %>% bindCache(input$portal_id, input$marker, input$marker_gsname, input$marker_gsmethod, input$marker_tas, input$marker_view) %>% 
+  bindEvent(input$portal_id, input$marker, input$marker_gsname, input$marker_gsmethod, input$marker_tas, input$marker_view)
+
+
+## Get GS data for selected chemical profiles ####
+gs_chemical <- reactive({
+  
+  req(input$marker == 'Gene Sets')
+  
+  marker_id=input$marker_gs; gsname=input$marker_gsname; gsmethod=input$marker_gsmethod; tas=input$marker_tas; view=input$marker_view;
+  
+  promise_all(profile_dat=profile_dat(), gs_enrichment_dat=gs_enrichment_dat()) %...>%
+    with({
+      
+      expression_dat = gs_enrichment_dat[[paste0(gsname, "_", gsmethod)]]
+      
+      #matching expression column names with profile annotation
+      annot_var <- ifelse(all(colnames(expression_dat) %in% profile_dat$Sig_Id), "Sig_Id", "Chemical_Id")
+      
+      profile_dat <- profile_dat %>%
+        filter(as.numeric(TAS) >= as.numeric(tas[1]) & as.numeric(TAS) <= as.numeric(tas[2])) %>% 
+        transmute(Id=(!!!syms(annot_var))) %>%
+        distinct(Id, .keep_all=TRUE)
+      
+      rowid <- which(rownames(expression_dat) %in% marker_id)
+      eset <- exprs(expression_dat)[rowid,]
+      
+      query <- profile_dat %>% mutate(Id=as.character(Id)) %>%
+        left_join(data.frame(Id=as.character(names(eset)), x=as.numeric(eset))) %>%
+        select(x)
+      
+      all_wrapper_df(df=query, view=view, marker_id=marker_id)
+      
+    }) %...!% { return(NULL) }
+  
+}) %>% bindCache(input$portal_id, input$marker, input$marker_gs, input$marker_gsname, input$marker_gsmethod, input$marker_tas, input$marker_view, "Chemical") %>% 
+  bindEvent(input$portal_id, input$marker, input$marker_gs, input$marker_gsname, input$marker_gsmethod, input$marker_tas, input$marker_view)
+
+
+## Output GS overall plot ####
+output$gs_marker_plot <- renderPlotly({
+  
+  req(input$marker == 'Gene Sets')
+  
+  marker_id=input$marker_gs; view=input$marker_view; header="Moderated Z-scores";
+  
+  promise_all(gs_all=gs_all(), gs_chemical=gs_chemical()) %...>%
+    with({
+      
+      data <- gs_all %>% rbind(gs_chemical)
+      get_overall_marker_plot(data=data, marker_id=marker_id, view=view, header=header) %>% 
+        ggplotly() %>% layout(showlegend=TRUE, hoverlabel=list(bgcolor="white"))
+      
+    }) %...!% { return(NULL) }
+  
+})
+
+
+## Get GS exposure data ####
+gs_exposure <- reactive({
+  
+  portal_id = input$portal_id; marker_id = input$marker_gs; gsname = input$marker_gsname; gsmethod = input$marker_gsmethod; tas = input$marker_tas; view = input$marker_view;
+  
+  exposure_phenotype <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype[which(projectlist$Portal == portal_id)]), ",", fixed=TRUE)) %>% trimws()
+  
+  promise_map(exposure_phenotype, function(exposure_variable){
+    
+    promise_all(profile_dat=profile_dat(), gs_enrichment_dat=gs_enrichment_dat()) %...>%
+      with({
+        
+        expression_dat = gs_enrichment_dat[[paste0(gsname, "_", gsmethod)]]
+        
+        #matching expression column names with profile annotation
+        annot_var <- ifelse(all(colnames(expression_dat) %in% profile_dat$Sig_Id), "Sig_Id", "Chemical_Id")
+        
+        profile_dat <- profile_dat %>%
+          filter(as.numeric(TAS) >= as.numeric(tas[1]) & as.numeric(TAS) <= as.numeric(tas[2])) %>% 
+          transmute(Id=(!!!syms(annot_var)), exposure_value=(!!!syms(exposure_variable))) %>% 
+          distinct(Id, .keep_all=TRUE)
+        
+        rowid <- which(rownames(expression_dat) %in% marker_id)
+        eset <- exprs(expression_dat)[rowid,]
+        
+        df <- profile_dat %>% mutate(Id=as.character(Id)) %>% 
+          left_join(data.frame(Id=as.character(names(eset)), x=as.numeric(eset))) %>% 
+          select(x, exposure_value)
+        
+        exposure_wrapper_df(df=df, view=view, exposure_variable=exposure_variable)
+        
+      }) %...!% { return(NULL) }
+    
+  }) %...!% { return(NULL) }
+  
+}) %>% bindCache(input$portal_id, input$marker, input$marker_gs, input$marker_gsname, input$marker_gsmethod, input$marker_tas, input$marker_view, "Exposure") %>% 
+  bindEvent(input$portal_id, input$marker, input$marker_gs, input$marker_gsname, input$marker_gsmethod, input$marker_tas, input$marker_view)
+
+
+## Output GS exposure plot ####
+output$gs_exposure_phenotype_plot <- renderPlotly({
+  
+  req(input$marker == 'Gene Sets')
+  
+  portal_id = input$portal_id; marker_id = input$marker_gs; view = input$marker_view; header = "Moderated Z-scores";
+  exposure_phenotype <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype[which(projectlist$Portal == portal_id)]), ",", fixed=TRUE)) %>% trimws()
+  
+  gs_exposure() %...>% 
+    do.call(rbind, .) %...>% 
+    get_exposure_marker_plot(
+      df = .,
+      marker_id = marker_id,
+      header = header,
+      view = view
+    ) %...>% 
+    ggplotly(height=400*length(exposure_phenotype)) %...>% 
+    layout(showlegend=TRUE, hoverlabel=list(bgcolor="white")) %...!% { return(NULL) }
+  
+})
+
+## Get GS table ####
+gs_table <- reactive({
+  
+  req(input$marker == 'Gene Sets')
+  
+  marker_id = input$marker_gs; gsname=input$marker_gsname; gsmethod=input$marker_gsmethod; tas = input$marker_tas; header = "Moderated <br> Z-scores";
+  
+  promise_all(profile_dat=profile_dat(), gs_enrichment_dat=gs_enrichment_dat()) %...>%
+    with({
+      
+      expression_dat = gs_enrichment_dat[[paste0(gsname, "_", gsmethod)]]
+      
+      get_marker_table(
+        marker_id = marker_id,
+        profile_dat = profile_dat,
+        expression_dat = expression_dat,
+        header = header,
+        tas = tas
+      ) %>% data.table.round()
+      
+    }) %...!% { return(NULL) }
+  
+}) %>% bindCache(input$portal_id, input$marker, input$marker_gs, input$marker_gsname, input$marker_gsmethod, input$marker_tas) %>% 
+  bindEvent(input$portal_id, input$marker, input$marker_gs, input$marker_gsname, input$marker_gsmethod, input$marker_tas)
+
+
+## Output GS marker table ####
+output$gs_marker_table <-  DT::renderDataTable({
+  
+  req(input$marker == 'Gene Sets')
+  
+  gs_table() %...!% { return(NULL) }
+  
+}, escape = FALSE, extensions = 'Buttons', server = TRUE, rownames=FALSE, selection = "none",
+options = list(
+  columnDefs = list(list(className = 'dt-left', targets = "_all")),
+  deferRender = FALSE,
+  paging = TRUE,
+  searching = TRUE,
+  ordering = TRUE,
+  pageLength = 20,
+  scrollX = TRUE,
+  scrollY = 400,
+  scrollCollapse = TRUE,
+  dom = 'T<"clear">Blfrtip',
+  buttons=c('copy','csv','print'))
+)
+
+
+###########################################################
+#
+# CONNECTIVITY PLOTS ####
+#
+###########################################################
+
+## Get CONNECTIVITY data for overall profiles ####
+conn_all <- reactive({
+  
+  req(input$marker == 'CMap Connectivity')
+  
+  conn_name = input$marker_conn_name; tas=input$marker_tas; view=input$marker_view;
+  
+  promise_all(profile_dat=profile_dat(), connectivity_dat=connectivity_dat()) %...>%
+    with({
+      
+      expression_dat = connectivity_dat[[conn_name]]
+      
+      #matching expression column names with profile annotation
+      annot_var <- ifelse(all(colnames(expression_dat) %in% profile_dat$Sig_Id), "Sig_Id", "Chemical_Id")
+      
+      profile_dat <- profile_dat %>%
+        filter(as.numeric(TAS) >= as.numeric(tas[1]) & as.numeric(TAS) <= as.numeric(tas[2])) %>% 
+        transmute(Id=(!!!syms(annot_var))) %>%
+        distinct(Id, .keep_all=TRUE)
+      
+      eset <- exprs(expression_dat)[,which(colnames(expression_dat) %in% profile_dat$Id)]
+      all <- data.frame(x=as.numeric(eset)) 
+      
+      all_wrapper_df(df=all, view=view, marker_id="All")
+      
+    }) %...!% { return(NULL) }
+  
+}) %>% bindCache(input$portal_id, input$marker, input$marker_conn_name, input$marker_tas, input$marker_view) %>% 
+  bindEvent(input$portal_id, input$marker, input$marker_conn_name, input$marker_tas, input$marker_view)
+
+
+## Get CONNECTIVITY data for selected chemical profiles ####
+conn_chemical <- reactive({
+  
+  req(input$marker == 'CMap Connectivity')
+  
+  marker_id=input$marker_conn; conn_name = input$marker_conn_name; tas=input$marker_tas; view=input$marker_view;
+  
+  promise_all(profile_dat=profile_dat(), connectivity_dat=connectivity_dat()) %...>%
+    with({
+      
+      expression_dat = connectivity_dat[[conn_name]]
+      
+      #matching expression column names with profile annotation
+      annot_var <- ifelse(all(colnames(expression_dat) %in% profile_dat$Sig_Id), "Sig_Id", "Chemical_Id")
+      
+      profile_dat <- profile_dat %>%
+        filter(as.numeric(TAS) >= as.numeric(tas[1]) & as.numeric(TAS) <= as.numeric(tas[2])) %>% 
+        transmute(Id=(!!!syms(annot_var))) %>%
+        distinct(Id, .keep_all=TRUE)
+      
+      rowid <- which(rownames(expression_dat) %in% marker_id)
+      eset <- exprs(expression_dat)[rowid,]
+      
+      query <- profile_dat %>% mutate(Id=as.character(Id)) %>%
+        left_join(data.frame(Id=as.character(names(eset)), x=as.numeric(eset))) %>%
+        select(x)
+      
+      all_wrapper_df(df=query, view=view, marker_id=marker_id)
+      
+    }) %...!% { return(NULL) }
+  
+}) %>% bindCache(input$portal_id, input$marker, input$marker_conn, input$marker_conn_name, input$marker_tas, input$marker_view, "Chemical") %>% 
+  bindEvent(input$portal_id, input$marker, input$marker_conn, input$marker_conn_name, input$marker_tas, input$marker_view)
+
+
+## Output CONNECTIVITY overall plot ####
+output$conn_marker_plot <- renderPlotly({
+  
+  req(input$marker == 'CMap Connectivity')
+  
+  marker_id = input$marker_conn; view = input$marker_view; header = "Moderated Z-scores";
+  
+  promise_all(conn_all=conn_all(), conn_chemical=conn_chemical()) %...>%
+    with({
+      
+      data <- conn_all %>% rbind(conn_chemical)
+      get_overall_marker_plot(data=data, marker_id=marker_id, view=view, header=header) %>% 
+        ggplotly() %>% layout(showlegend=TRUE, hoverlabel=list(bgcolor="white"))
+      
+    }) %...!% { return(NULL) }
+  
+})
+
+
+## Get CONNECTIVITY exposure data ####
+conn_exposure <- reactive({
+  
+  portal_id = input$portal_id; marker_id = input$marker_conn; conn_name = input$marker_conn_name; tas = input$marker_tas; view = input$marker_view;
+  
+  exposure_phenotype <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype[which(projectlist$Portal == portal_id)]), ",", fixed=TRUE)) %>% trimws()
+  
+  promise_map(exposure_phenotype, function(exposure_variable){
+    
+    promise_all(profile_dat=profile_dat(), connectivity_dat=connectivity_dat()) %...>%
+      with({
+        
+        expression_dat = connectivity_dat[[conn_name]]
+        
+        #matching expression column names with profile annotation
+        annot_var <- ifelse(all(colnames(expression_dat) %in% profile_dat$Sig_Id), "Sig_Id", "Chemical_Id")
+        
+        profile_dat <- profile_dat %>%
+          filter(as.numeric(TAS) >= as.numeric(tas[1]) & as.numeric(TAS) <= as.numeric(tas[2])) %>% 
+          transmute(Id=(!!!syms(annot_var)), exposure_value=(!!!syms(exposure_variable))) %>% 
+          distinct(Id, .keep_all=TRUE)
+        
+        rowid <- which(rownames(expression_dat) %in% marker_id)
+        eset <- exprs(expression_dat)[rowid,]
+        
+        df <- profile_dat %>% mutate(Id=as.character(Id)) %>% 
+          left_join(data.frame(Id=as.character(names(eset)), x=as.numeric(eset))) %>% 
+          select(x, exposure_value)
+        
+        exposure_wrapper_df(df=df, view=view, exposure_variable=exposure_variable)
+        
+      }) %...!% { return(NULL) }
+    
+  }) %...!% { return(NULL) }
+  
+}) %>% bindCache(input$portal_id, input$marker, input$marker_conn, input$marker_conn_name, input$marker_tas, input$marker_view, "Exposure") %>% 
+  bindEvent(input$portal_id, input$marker, input$marker_conn, input$marker_conn_name, input$marker_tas, input$marker_view)
+
+
+## Output CONNECTIVITY exposure plot ####
+output$conn_exposure_phenotype_plot <- renderPlotly({
+  
+  req(input$marker == 'CMap Connectivity')
+  
+  portal_id = input$portal_id; marker_id = input$marker_conn; view = input$marker_view; header = "Moderated Z-scores";
+  exposure_phenotype <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype[which(projectlist$Portal == portal_id)]), ",", fixed=TRUE)) %>% trimws()
+  
+  conn_exposure() %...>% 
+    do.call(rbind, .) %...>% 
+    get_exposure_marker_plot(
+      df = .,
+      marker_id = marker_id,
+      header = header,
+      view = view
+    ) %...>% 
+    ggplotly(height=400*length(exposure_phenotype)) %...>% 
+    layout(showlegend=TRUE, hoverlabel=list(bgcolor="white")) %...!% { return(NULL) }
+  
+})
+
+## Get CONNECTIVITY table ####
+conn_table <- reactive({
+  
+  req(input$marker == 'CMap Connectivity')
+  
+  marker_id = input$marker_conn; conn_name = input$marker_conn_name; tas = input$marker_tas; header = "Moderated <br> Z-scores";
+  
+  promise_all(profile_dat=profile_dat(), connectivity_dat=connectivity_dat()) %...>%
+    with({
+      
+      expression_dat = connectivity_dat[[conn_name]]
+      
+      get_marker_table(
+        marker_id = marker_id,
+        profile_dat = profile_dat,
+        expression_dat = expression_dat,
+        header = header,
+        tas = tas
+      ) %>% data.table.round()
+      
+    }) %...!% { return(NULL) }
+  
+}) %>% bindCache(input$portal_id, input$marker, input$marker_conn, input$marker_conn_name, input$marker_tas) %>% 
+  bindEvent(input$portal_id, input$marker, input$marker_conn, input$marker_conn_name, input$marker_tas)
+
+
+## Output CONNECTIVITY marker table ####
+output$conn_marker_table <-  DT::renderDataTable({
+  
+  req(input$marker == 'CMap Connectivity')
+  
+  conn_table() %...!% { return(NULL) }
+  
+}, escape = FALSE, extensions = 'Buttons', server = TRUE, rownames=FALSE, selection = "none",
+options = list(
+  columnDefs = list(list(className = 'dt-left', targets = "_all")),
+  deferRender = FALSE,
+  paging = TRUE,
+  searching = TRUE,
+  ordering = TRUE,
+  pageLength = 20,
+  scrollX = TRUE,
+  scrollY = 400,
+  scrollCollapse = TRUE,
+  dom = 'T<"clear">Blfrtip',
+  buttons=c('copy','csv','print'))
+)
+
+
+
+

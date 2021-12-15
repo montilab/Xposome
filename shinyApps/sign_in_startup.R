@@ -1,10 +1,13 @@
 
-login <- function(username="", password="") {
 
+login <<- function(username="", password="") {
+
+  credentials <- list(user_auth = FALSE, username="", password="")
+  
   users <- "Username"; pwds <- "Password";
   
   ##Read in the data
-  data <- read_csv(paste0("data/User_Login_List.csv"))
+  data <- read_csv(paste0("www/data/User_Login_List.csv"))
   
   # ensure all text columns are character class
   data <- dplyr::mutate_if(data, is.factor, as.character)
@@ -13,7 +16,7 @@ login <- function(username="", password="") {
   row_username <- which(dplyr::pull(data, !!users) == trimws(username))
   
   if (length(row_username) > 0) {
-    row_password <- dplyr::filter(data,dplyr::row_number() == row_username[1])
+    row_password <- dplyr::filter(data, dplyr::row_number() == row_username[1])
     row_password <- dplyr::pull(row_password, !!pwds)
     # create a sodium hash for password
     password_match <- sodium::password_verify(row_password, password)
@@ -24,19 +27,25 @@ login <- function(username="", password="") {
   # if user name row and password name row are same, credentials are valid
   if (password_match) {
     shinyjs::hide(id = "error")
+    shinyjs::hide(id = "uiSignIn")
+    shinyjs::show(id = "uiModeratorPage")
     credentials$user_auth <- TRUE
     credentials$username <- username
     credentials$password <- password
   } else { # if not valid temporarily show error message to user
     shinyjs::show(id = "error")
+    shinyjs::show(id = "uiSignIn")
+    shinyjs::hide(id = "uiModeratorPage")
     credentials$user_auth <- FALSE
     credentials$username <- ""
     credentials$password <- ""
   }
+  
+  return(credentials)
 
 }
 
-sendpassword <- function(from_sender="montilab@bu.edu", to_recipient="montilab@bu.edu", recipient_first="Montilab", recipient_last="Montilab", recipient_account="Montilab", tmp_pwd){
+sendpassword <<- function(from_sender="montilab@bu.edu", to_recipient="montilab@bu.edu", recipient_first="Montilab", recipient_last="Montilab", recipient_account="Montilab", tmp_pwd){
   
   recipient=paste(recipient_first, recipient_last)
   

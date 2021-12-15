@@ -6,132 +6,196 @@ fluidRow(
   column(
     width=12,
     
-    bsCollapse(
-      id = "marker_opt_panel", open = "marker_options",
-      
-      bsCollapsePanel(
-        title = "Options", value = "marker_options",
-        
+    div(
+      class="header",
+      div(class="title", "Options"),
+      div(
+        class="content",
         fluidRow(
           column(
             width=4,
-            uiOutput(outputId = "marker_option") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="80px")
+            selectizeInput(
+              inputId = "marker",
+              label = "Select a marker set",
+              choices = NULL,
+              multiple = FALSE,
+              width="auto"
+            )
           ),
           
           column(
             width=4,
             radioButtons(
-              inputId = "marker_view",  label = "Plot Type:", choices = c("Density", "Boxplot"), selected = "Density", inline=TRUE
+              inputId = "marker_view",  
+              label = "Plot Type", 
+              choices = c("Density", "Boxplot"), 
+              selected = "Density", 
+              inline=TRUE
             )
           ),
           
           column(
             width=4,
-            uiOutput(outputId = "TAS_view")
+            sliderInput(inputId="marker_tas", label="TAS", min=0, max=1, step=0.1, value=c(0, 1))
           )
         ),
-        
+          
         conditionalPanel(
           condition = "input.marker == 'Genes'",
-          
           fluidRow(
             column(
               width=4,
-              uiOutput(outputId = "marker_gene_options") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="80px")
+              selectizeInput(
+                inputId = "marker_gene", 
+                label = "Select a gene", 
+                choices = c("Select an option below" = ""),
+                multiple = FALSE,               
+                width="auto"
+              )
             )
           )
         ),
-        
+          
         conditionalPanel(
           condition = "input.marker == 'Gene Sets'",
-          
           fluidRow(
             column(
               width=4,
-              selectInputWithTooltip(
+              div(id = "marker_gsname_label"),
+              selectizeInput(
                 inputId = "marker_gsname",
-                label = "Gene set name", 
-                bId= "Bgsname_marker",
-                helptext = helptext_geneset(),
-                choices = names(dsmap())
+                label = NULL,
+                choices = NULL,
+                multiple = FALSE,
+                width="auto"
               )
             ),
             
             column(
               width=4,
-              selectInputWithTooltip(
-                inputId = "marker_gsmethod", 
-                label ="Projection method", 
-                bId = "Bgsmethod_marker",
-                helptext = helptext_method,
-                choices = names(dsmap_method)
+              selectizeInput(
+                inputId = "marker_gsmethod",
+                label = HTML("Projection method", paste0('<button type="button" class="tooltip-txt" data-html="true" data-tooltip-toggle="tooltip" data-placement="top" title=\"', helptext_gsva_method, '\">?</button>')),
+                choices = gsva_method,
+                multiple = FALSE,
+                width="auto"
               )
             ),
             
             column(
               width=4,
-              uiOutput(outputId = "marker_geneset_options") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="80px")
-            )
-          ),
-          
-          fluidRow(
-            column(
-              width=12,
-              uiOutput(outputId = "marker_geneset_btn")
+              selectizeInput(
+                inputId="marker_gs", 
+                label="Select a gene set", 
+                choices = c("Select an option below"=""),
+                multiple = FALSE,
+                width="auto"
+              )
             )
           )
         ),
         
         conditionalPanel(
           condition = "input.marker == 'CMap Connectivity'",
-          
           fluidRow(
             column(
               width=4,
-              selectInput(
+              selectizeInput(
                 inputId = "marker_conn_name",
-                label = "Connectivity Level:", 
-                choices = connmap
+                label = "Connectivity Level", 
+                choices = connmap,
+                multiple = FALSE,
+                width="auto"
               )
             ),
             
             column(
               width=4,
-              uiOutput(outputId = "marker_conn_options") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="80px")
-            )
-          ),
-          
-          fluidRow(
-            column(
-              width=12,
-              uiOutput(outputId = "marker_conn_btn")
+              selectizeInput(
+                inputId = "marker_conn", 
+                label = "Select a gene set", 
+                choices = c("Select an option below"=""),
+                multiple = FALSE,
+                width="auto"
+              )
             )
           )
-        )
-      )
-    ),
-    
-    conditionalPanel(
-      condition = "input.de_generate >= 1 | input.gs_generate >= 1 | input.conn_generate >= 1",
-      
-      fluidRow(
-        column(
-          width=12,
-          plotlyOutput(outputId = "marker_plot", width="auto") %>% withSpinner(type=4, color="#0dc5c1")
         ),
         
-        column(
-          width=12,
-          plotlyOutput(outputId = "exposure_phenotype_plot", width="auto", height="auto") %>% withSpinner(type=4, color="#0dc5c1")
+        shinyjs::hidden(
+          fluidRow(
+            id="warning_content",
+            h4(id="tas_warning_msg", HTML("None of the TAS lies within the selected boundary. Please select another zone!"))
+          )
         ),
         
-        column(
-          width=12,
-          uiOutput(outputId = "marker_table_header"),
-          DT::dataTableOutput(outputId = "marker_table") %>% withSpinner(type=4, color="#0dc5c1")
+        conditionalPanel(
+          condition = "input.marker == 'Genes' && input.marker_gene !== ''",
+          fluidRow(
+            id="plot_content",
+            
+            column(
+              width=12,
+              plotlyOutput(outputId = "de_marker_plot", width="auto", height="auto")
+            ),
+            
+            column(
+              width=12,
+              plotlyOutput(outputId = "de_exposure_phenotype_plot", width="auto", height="auto")
+            ),
+            
+            column(
+              width=12,
+              DT::dataTableOutput(outputId = "de_marker_table")
+            )
+          )
+        ),
+        
+        conditionalPanel(
+          condition = "input.marker == 'Gene Sets' && input.marker_gs !== ''",
+          fluidRow(
+            id="plot_content",
+            
+            column(
+              width=12,
+              plotlyOutput(outputId = "gs_marker_plot", width="auto", height="auto")
+            ),
+            
+            column(
+              width=12,
+              plotlyOutput(outputId = "gs_exposure_phenotype_plot", width="auto", height="auto")
+            ),
+            
+            column(
+              width=12,
+              DT::dataTableOutput(outputId = "gs_marker_table")
+            )
+          )
+        ),
+        
+        conditionalPanel(
+          condition = "input.marker == 'CMap Connectivity' && input.marker_conn !== ''",
+          fluidRow(
+            id="plot_content",
+            
+            column(
+              width=12,
+              plotlyOutput(outputId = "conn_marker_plot", width="auto", height="auto")
+            ),
+            
+            column(
+              width=12,
+              plotlyOutput(outputId = "conn_exposure_phenotype_plot", width="auto", height="auto")
+            ),
+            
+            column(
+              width=12,
+              DT::dataTableOutput(outputId = "conn_marker_table")
+            )
+          )
         )
       )
     )
   )
 )
-  
+

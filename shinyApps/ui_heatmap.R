@@ -6,16 +6,21 @@ fluidRow(
   column(
     width=12,
     
-    bsCollapse(
-      id = "heatmap_opt_panel", open = "heatmap_options",
-      
-      bsCollapsePanel(
-        title = "Options", value = "heatmap_options",
+    div(
+      class="header",
+      div(class="title", "Options"),
+      div(
+        class="content",
         
         fluidRow(
           column(
             width=4, 
-            uiOutput(outputId="marker_hm_option") %>% withSpinner(type=4, color="#0dc5c1", proxy.height="80px")
+            selectizeInput(
+              inputId = "marker_hm", 
+              label = "Select a marker set",   
+              choices = NULL,
+              multiple = FALSE
+            ) 
           ), 
           
           conditionalPanel(
@@ -23,8 +28,7 @@ fluidRow(
             
             column(
               width=12,
-              br(),
-              uiOutput(outputId = "hm_de_button")
+              actionButton(inputId = "hm_de_button", class="mybuttons", label = "Generate heatmap", onclick = "de_morpheusHM();")
             )
           ),
           
@@ -33,30 +37,28 @@ fluidRow(
             
             column(
               width=4,
-              selectInputWithTooltip(
+              div(id = "marker_gsname_hm_label"),
+              selectizeInput(
                 inputId = "marker_gsname_hm",
-                label = "Gene set name", 
-                bId= "Bgsname_marker_hm",
-                helptext = helptext_geneset(),
-                choices = names(dsmap())
+                label = NULL,
+                choices = NULL,
+                multiple = FALSE
               )
             ),
             
             column(
               width=4,
-              selectInputWithTooltip(
-                inputId = "marker_gsmethod_hm", 
-                label ="Projection method", 
-                bId = "Bgsmethod_marker_hm",
-                helptext = helptext_method,
-                choices = names(dsmap_method)
+              selectizeInput(
+                inputId = "marker_gsmethod_hm",
+                label = HTML("Projection method", paste0('<button type="button" class="tooltip-txt" data-html="true" data-tooltip-toggle="tooltip" data-placement="top" title=\"', helptext_gsva_method, '\">?</button>')),
+                choices = gsva_method,
+                multiple = FALSE
               )
             ),
             
             column(
               width=12,
-              br(),
-              uiOutput(outputId = "hm_es_button")
+              actionButton(inputId = "hm_gs_button", class="mybuttons", label = "Generate heatmap", onclick = "gs_morpheusHM();")
             )
           ),
           
@@ -68,39 +70,24 @@ fluidRow(
               selectizeInput(
                 inputId = "marker_conn_name_hm",
                 label = "Connectivity Level", 
-                choices = connmap
+                choices = connmap,
+                multiple = FALSE
               )
             ), 
             
             column(
               width=12,
-              br(),
-              uiOutput(outputId = "hm_conn_button")
+              actionButton(inputId = "hm_conn_button", class="mybuttons", label = "Generate heatmap", onclick = "conn_morpheusHM();")
             )
           )
-        ),
-        
-        br(), 
-        
-        fluidRow(
-          column(
-            width=12,
-            helpText(HTML("<em>Note: heatmap is generated using <a href='https://software.broadinstitute.org/morpheus'><b>Morpheus</b></a> interactive tool</em>"))
-          )
-        )
-      )
-    ),
-    
-    conditionalPanel(
-      condition = "input.hm_de_generate >= 1 | input.hm_es_generate >= 1 | input.hm_conn_generate >= 1",
-      
-      fluidRow(
-        column(
-          width=12,
-          uiOutput(outputId = "heatmap_holder")
         )
       )
     )
+  ),
+  
+  column(
+    width=12,
+    helpText(HTML("<em>Note: heatmap is generated using <a href='https://software.broadinstitute.org/morpheus' target='blank'><b>Morpheus</b></a> interactive tool</em>"))
   )
 )
 

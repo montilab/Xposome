@@ -2,15 +2,33 @@
 <div class="page-header">
   <div class="container">
     <div class="row">
+      
       <div class="col-md-12">
-        <h2 class="display-3">The Xposome Portal</h2>
+        <h2>The Xposome Portal</h2>
         <p class="lead mt-0">Chemical Screening using high-throughput transcriptomics assays</p>
       </div>
+      
       <div class="form-search">
-        <div id="portal_inputs" class="shiny-html-output"></div>
-        <div id="portal_choices" class="shiny-html-output"></div>
-        <div id="portal_search" class="shiny-html-output"></div>
+        <div class="search-by">
+          <label class="control-label shiny-label-null" for="portal_input" id="portal_input-label"></label>
+          <select id="portal_input">
+            <option value="" selected>Search by</option>
+          </select>
+        </div>
+        
+        <div class="search-option">
+          <label class="control-label shiny-label-null" for="portal_choice" id="portal_choice-label"></label>
+          <select id="portal_choice">
+            <option value="Portal" selected>Project</option>
+            <option value="Cell_Line">Cell-Line</option>
+         </select>
+        </div>
+        
+        <div class="search-button">
+          <button class="btn btn-default action-button btn btn-success" id="portal_submit" type="button">GO</button>
+        </div>
       </div>
+      
     </div>
   </div>
 </div>
@@ -24,7 +42,7 @@
       </div>
       
       <div class="col-md-6">
-        <div class="info info-horizontal info-hover-primary  features-info features-info-1">
+        <div class="info info-horizontal info-hover-primary features-info features-info-1">
           <div class="icon icon-shape icon-shape-info rounded-circle text-white">
             <i class="ni ni-html5 text-info"></i>
           </div>
@@ -54,7 +72,7 @@
           </div>
           <div class="description pl-4">
             <h5 class="title">Chemical Explorer</h5>
-            <p>For any screened chemical, queries can return: i) normalized measure of each gene expression response; ii) geneset enrichment scores measuring the coordinated response of the genes in a geneset or pathway to the chemical; or iii) the connectivity to (i.e., similarity of the response to those of) chemicals or classes of chemicals profiled in the <a href="https://clue.io">CMap</a>.</p>
+            <p>For any screened chemical, queries can return: i) normalized measure of each gene expression response; ii) geneset enrichment scores measuring the coordinated response of the genes in a geneset or pathway to the chemical; or iii) the connectivity to (i.e., similarity of the response to those of) chemicals or classes of chemicals profiled in the <a target="_blank" href="https://clue.io"><b>CMap</b></a>.</p>
           </div>
         </div>
       </div>
@@ -66,7 +84,7 @@
           </div>
           <div class="description pl-4">
             <h5 class="title">Heatmap Explorer</h5>
-            <p>A heatmap visualizer to explore gene expression, gene set enrichment, and connectivity results across genes and chemicals. Interactive visualization based on <a href="https://software.broadinstitute.org/morpheus/"><b>Morpheus</b></a>.</p>
+            <p>A heatmap visualizer to explore gene expression, gene set enrichment, and connectivity results across genes and chemicals. Interactive visualization based on <a target="_blank" href="https://software.broadinstitute.org/morpheus/"><b>Morpheus</b></a>.</p>
           </div>
         </div>
       </div>
@@ -78,7 +96,19 @@
           </div>
           <div class="description pl-4">
             <h5 class="title">K2Taxonomer</h5>
-            <p>Interactive visualization of the taxonomic hierarchy induced by the transcriptional responses to chemicals in a screen. Supports the gene- and geset-based querying and comparison of chemical groups’ transcriptional responses. Based on <a href="https://montilab.github.io/K2Taxonomer/"><b>K2Taxonomer</b></a>.</p>
+            <p>Interactive visualization of the taxonomic hierarchy induced by the transcriptional responses to chemicals in a screen. Supports the gene- and geneset-based querying and comparison of chemical groups’ transcriptional responses. Based on <a target="_blank" href="https://montilab.github.io/K2Taxonomer/"><b>K2Taxonomer</b></a>.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="info info-horizontal info-hover-primary features-info features-info-3">
+          <div class="icon icon-shape icon-shape-info rounded-circle text-white">
+            <i class="ni ni-bell-55 text-info"></i>
+          </div>
+          <div class="description pl-4">
+            <h5 class="title">Compare Multiple</h5>
+            <p>Interactive visualization of the taxonomic hierarchy induced by the transcriptional responses to chemicals in a screen. Supports the gene- and geneset-based querying and comparison of chemical groups’ transcriptional responses. Based on <a target="_blank" href="https://montilab.github.io/K2Taxonomer/"><b>K2Taxonomer</b></a>.</p>
           </div>
         </div>
       </div>
@@ -99,7 +129,7 @@
             </div>
             <a class="info-title" href="https://montilab.github.io/Xposome/" target="_blank"><h6 class="info-title text-uppercase text-primary">Documentation</h6></a>
           </div>
-          <p class="description opacity-8">Check out our documentation on how to dockerize the Xposome application and access our codebase at Github repository</p>
+          <p class="description opacity-8">Check out our documentation on how to dockerize the Xposome application and access the codebase at our Github repository</p>
         </div>
       </div>
         
@@ -111,7 +141,7 @@
             </div>
             <a class="info-title" href="https://montilab.github.io/Xposome/#api-calls" target="_blank"><h6 class="info-title text-uppercase text-success">Data Access</h6></a>
           </div>
-          <p class="description opacity-8">Users can retrieve portal data from the Xposome application through our API pipelines and create their next project</p>
+          <p class="description opacity-8">Users can retrieve portal data from the Xposome application through our API pipelines and create their next projects</p>
         </div>
       </div>
         
@@ -123,7 +153,7 @@
             </div>
             <a class="info-title" href="/www/HTML/publications.html" target="_blank"><h6 class="info-title text-uppercase text-warning">Publication</h6></a>
           </div>
-          <p class="description opacity-8">Explore a list of our publications that are associated with the building block of the Xposome portal</p>
+          <p class="description opacity-8">Explore a list of our publications that are associated with the building block of the Xposome Portal</p>
         </div>
       </div>
     </div>
@@ -162,3 +192,4 @@
     </div>
   </div>
 </div>
+

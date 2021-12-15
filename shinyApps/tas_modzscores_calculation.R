@@ -1,15 +1,18 @@
-TAS_Modzscores_Calculation <- function (pro_ann, chem_ann, gene_expression)
-{
+
+TAS_Modzscores_Calculation <- function (pro_ann, chem_ann, gene_expression){
+  
   # Determine the column variable name to use
   var <- ifelse(
     all(colnames(gene_expression) %in% pro_ann$Sig_Id), "Sig_Id", "Chemical_Id"
   )
+  
   # Define a data frame to store number of replicates and moderated z-scores
   TAS_output <- data.frame(
     Chemical_Id = unique(as.character(chem_ann$Chemical_Id)),
     TAS = NA,
     stringsAsFactors = FALSE
   )
+  
   # Tabulate the number of replicates for each chemical
   if (var=="Sig_Id") {
     TAS_output$Number_of_Replicates <-
@@ -32,9 +35,11 @@ TAS_Modzscores_Calculation <- function (pro_ann, chem_ann, gene_expression)
     } else {
       rep <- TAS_output$Chemical_Id[i]
     }
+    
     # The 'Chemical_Id' field is unfortunately stored as a factor,
     # so it is coerced to a character variable
     rep <- as.character(rep)
+    
     if (length(rep) == 1) {
       CC <- 1
       w <- 1
@@ -68,6 +73,9 @@ TAS_Modzscores_Calculation <- function (pro_ann, chem_ann, gene_expression)
     SS <- length(which(abs(modzscores[,i]) >= 2))
     TAS_output$TAS[i] <- sqrt(SS * max(c(0,CC)) / nrow(modzscores))
   }
+  
   TAS_output <- TAS_output[, c("Chemical_Id", "TAS", "Number_of_Replicates")]
+  
   return(list(TAS=TAS_output, Modzscores=modzscores))
+  
 }

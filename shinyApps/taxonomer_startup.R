@@ -1,15 +1,15 @@
 
+# Define colors for plotting for k2 taxonomers
+plot_colors <- c("Group 1" = "#ff8c00", "Vehicle" = "#808080", "Group 2" = "#9932cc")
 
-##Define the meta variable test for K2Taxonomer
+# Define the meta variable test for K2Taxonomer
 meta_variable_test <- data.frame(
   statistical_test=c("1-sided Fisher test", "2-sided Fisher test", "1-sided Wilcox RS test", "2-sided Wilcox RS test", "1-sided t test", "2-sided t test"),
   method=c("factor1", "factor", "numeric1", "numeric", "normal1", "normal"),
   stringsAsFactors = FALSE
 )
 
-# pro_ann = read.csv(paste0(path, "/Profile_Annotation_Testing.csv"), header = TRUE, row.names = 1, check.names = FALSE, stringsAsFactors = FALSE)
-# varlist = c("Carcinogenicity", "Genotoxicity"); test <- NULL; 
-
+# Extract phenotype test
 phenotype_test <- function(pro_ann, varlist){
   
   test <- NULL;
