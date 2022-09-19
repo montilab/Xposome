@@ -55,9 +55,13 @@ library(dendextend) #
 library(visNetwork) #
 library(K2Taxonomer)
 
+##Options to specify the maximum web request size, which serves as a size limit for file uploads####
+options(shiny.maxRequestSize=9e9, future.rng.onMisuse="ignore")
 
-##options to specify the maximum web request size, which serves as a size limit for file uploads####
-options(shiny.maxRequestSize=9e9)
+##Create a folder store cache data####
+if(!dir.exists("./myapp-cache")){
+  dir.create("./myapp-cache", showWarnings=F, recursive=t)
+}
 
 ##Shiny options to store cache data####
 shinyOptions(cache = cachem::cache_disk("./myapp-cache"))

@@ -146,6 +146,7 @@ fluidRow(
             
             column(
               width=12,
+              uiOutput(outputId = "de_marker_tbl_header"),
               DT::dataTableOutput(outputId = "de_marker_table")
             )
           )
@@ -168,6 +169,7 @@ fluidRow(
             
             column(
               width=12,
+              uiOutput(outputId = "gs_marker_tbl_header"),
               DT::dataTableOutput(outputId = "gs_marker_table")
             )
           )
@@ -190,6 +192,7 @@ fluidRow(
             
             column(
               width=12,
+              uiOutput(outputId = "conn_marker_tbl_header"),
               DT::dataTableOutput(outputId = "conn_marker_table")
             )
           )

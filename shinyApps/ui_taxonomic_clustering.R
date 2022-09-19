@@ -17,7 +17,7 @@ div(
           fluidRow(
             column(
               width=6,
-              strong("Enter a search string"),
+              strong("Enter a chemical string"),
               div(
                 class = "search_member",
                 textInput(inputId = "mstring", label=NULL, value="", width = "auto"),
@@ -92,7 +92,7 @@ div(
               
               div(
                 class="header-2",
-                div(class="title", HTML("Cluster Information (&#8593; = Group 1; &#8595; = Group 2)")),
+                div(class="title", HTML("Cluster Information")),
                 div(
                   class="content", 
                   
@@ -173,8 +173,10 @@ div(
               title = "Help",
               trigger = "geneHelp",
               size = "large",
-              div(HTML("Use ^SEARCHTERM$ to filter for exact matches in columns. Used | to combine multiple terms.")),
-              div(HTML("For example: search for ^FABP4$|^ADIPOQ$|^CD36$ in the <b>Gene</b> column"))
+              div(HTML("Use ^SEARCHTERM$ to filter for exact matches in each column. Used '|' to combine multiple terms.")),
+              div(HTML("For example: search for ^FABP4$|^ADIPOQ$|^CD36$ in the <b>Gene</b> column of the <b>Differential Analysis Results</b> table.")),
+              br(),
+              div(HTML("For each gene, '📊✈' allows you to plot <b>Gene Expression</b> for this gene and send row information to look up pathways which include this gene in the <b>Enrichment Results</b> table."))
             ),
             shinyBS::bsModal(
               id = "geneTabDL",
@@ -237,8 +239,10 @@ div(
               title = "Help",
               trigger = "hyperHelp",
               size = "large",
-              div(HTML("Use ^SEARCHTERM$ to filter for exact matches in columns. Used | to combine multiple terms.")),
-              div(HTML("For example: search for ^NURSA ERS ESTROGENS$|^REACTOME AXON GUIDANCE$ in the <b>Gene Set</b> column"))
+              div(HTML("Use ^SEARCHTERM$ to filter for exact matches in each column. Used '|' to combine multiple terms.")),
+              div(HTML("For example: search for ^NURSA ERS ESTROGENS$|^REACTOME AXON GUIDANCE$ in the <b>Gene Set</b> column of the <b>Enrichment Results</b> table.")),
+              br(),
+              div(HTML("For each enrichment pathway, '📊✈' allows you to plot <b>Single-Sample Enrichment</b> and send row information to look up results for individual genes in this pathway in the <b>Differential Analysis Results</b> table."))
             ),
             shinyBS::bsModal(
               id = "hyperTabDL",

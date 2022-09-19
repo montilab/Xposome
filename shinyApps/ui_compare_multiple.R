@@ -16,7 +16,7 @@ div(
               width=12,
               div(
                 class="header-1",
-                div(class="title", HTML("Click and hold nodes for 2 seconds to <span style='color: green'>select</span> or <span style='color: green'>unselect</span> sub-groups")),
+                div(class="title", HTML("Click and hold a node for 2 seconds to <span style='color: green'>select</span> or <span style='color: green'>unselect</span> a sub-module of compounds")),
                 div(class="content", 
                     visNetworkOutput(outputId="dendroSelect", width="auto", height="600px")  %>% withSpinner(type=4, color="#0dc5c1")
                 )
@@ -61,8 +61,10 @@ div(
               title = "Help",
               trigger = "geneHelpMulti",
               size = "large",
-              div(HTML("Use ^SEARCHTERM$ to filter for exact matches in columns. Used | to combine multiple terms.")),
-              div(HTML("For example: search for ^FABP4$|^ADIPOQ$|^CD36$ in the <b>Gene</b> column"))
+              div(HTML("Use ^SEARCHTERM$ to filter for exact matches in each column. Used '|' to combine multiple terms.")),
+              div(HTML("For example: search for ^FABP4$|^ADIPOQ$|^CD36$ in the <b>Gene</b> column of the <b>Differential Analysis Results</b> table.")),
+              br(),
+              div(HTML("For each gene, '📊✈' allows you to plot <b>Gene Expression</b> for this gene and send row information to look up pathways which include this gene in the <b>Enrichment Results</b> table."))
             ),
             shinyBS::bsModal(
               id = "geneMultiTabDL",
@@ -116,8 +118,10 @@ div(
               title = "Help",
               trigger = "hyperHelpMulti",
               size = "large",
-              div(HTML("Use ^SEARCHTERM$ to filter for exact matches in columns. Used | to combine multiple terms.")),
-              div(HTML("For example: search for ^FABP4$|^ADIPOQ$|^CD36$ in the <b>Gene</b> column"))
+              div(HTML("Use ^SEARCHTERM$ to filter for exact matches in each column. Used '|' to combine multiple terms.")),
+              div(HTML("For example: search for ^NURSA ERS ESTROGENS$|^REACTOME AXON GUIDANCE$ in the <b>Gene Set</b> column of the <b>Enrichment Results</b> table.")),
+              br(),
+              div(HTML("For each enrichment pathway, '📊✈' allows you to plot <b>Single-Sample Enrichment</b> and send row information to look up results for individual genes in this pathway in the <b>Differential Analysis Results</b> table."))
             ),
             shinyBS::bsModal(
               id = "hyperMultiTabDL",

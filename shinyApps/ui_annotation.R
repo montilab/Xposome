@@ -8,7 +8,7 @@ fluidRow(
     width=12,
     radioButtons(
       inputId = "annot_table_selection",
-      label = "Annotation Type:",
+      label = "Annotation Type",
       choices = c("Chemicals", "Samples"),
       selected = "Chemicals",
       inline = TRUE

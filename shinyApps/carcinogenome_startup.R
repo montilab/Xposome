@@ -191,18 +191,24 @@ get_de_filter <<- function(
   # Get the final filtered data
   fdat <- de_dat[res.ind,, drop = FALSE]
   
-  #check it landmark is selected
+  #Add landmark information
+  fdat <- fdat %>% 
+    mutate(Landmark_Gene = ifelse(Gene %in% landmark_dat$Gene, "Yes", "No")) %>% 
+    select(Gene, Landmark_Gene, everything())
+  
+  #create the summary table
+  table <- cbind(fdat, SummaryScore=res.scores, Direction = direction)
+  
+  #Check if landmark is selected
   if(landmark) {
-    fdat <- fdat %>% 
-      mutate(Landmark_Gene=ifelse(Gene %in% landmark_dat$Gene, "Yes", "No")) %>% 
-      select(Gene, Landmark_Gene, everything())
+    table <- table %>% filter(Landmark_Gene %in% "Yes")
+  }else{
+    table <- table %>% filter(Landmark_Gene %in% c("Yes", "No")) %>% dplyr::select(-Landmark_Gene)
   }
   
-  #creata the summary table
-  table <- cbind(fdat, SummaryScore=res.scores, Direction = direction)
   table <- table[order(table$SummaryScore, decreasing = TRUE),, drop = FALSE]
   colnames(table)[which(colnames(table) %in% "SummaryScore")] <- "Summary Score"
-
+  
   #return hyperlink from genecard.org
   table$Gene <- sapply(as.character(table$Gene), get_genecard_link)
   
@@ -483,7 +489,7 @@ get_exposure_marker_plot <<- function(
   names(cols_match) = variable
   n = length(unique(df$exposure_variable))
 
-  p.title <- paste0("Distribution of ", header, " across profiles for ", marker_id)
+  p.title <- paste0("Distribution of ", header, " Across Profiles for ", marker_id)
 
   if(view %in% "Density") {
 

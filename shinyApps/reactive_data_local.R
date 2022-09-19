@@ -57,7 +57,7 @@ observeEvent({
     ##Getting the helptext####
     helptext_geneset <- paste0(
       "<a class=\'tooltip-link\' href=\'https://www.gsea-msigdb.org/gsea/msigdb\'>MSigDB Hallmark Pathways (v7)</a><br>",
-      "<a class=\'tooltip-link\' href=\'https://www.gsea-msigdb.org/gsea/msigdb\'>MSigDB C2 reactome Pathways (v7)</a><br>",
+      "<a class=\'tooltip-link\' href=\'https://www.gsea-msigdb.org/gsea/msigdb\'>MSigDB C2 Reactome Pathways (v7)</a><br>",
       "<a class=\'tooltip-link\' href=\'https://signalingpathways.org\'>NURSA: Nuclear Receptor Signaling Atlas, consensome data for human</a><br>"
     )
     
@@ -365,32 +365,35 @@ K2Taxonomer_Tables <- reactive({
     
     # Get differential gene expression results
     dgeTable <- getDGETable(K2summary)
+    colnames(dgeTable) <- c('gene', 'coef', 'mean', 't', 'pval', 'fdr', 'B', 'mod', 'node', 'direction')
     
     ## Get the gene link
     dgeTable$Plot <- paste0("<label for='PlotRow", seq(nrow(dgeTable)), "'>&#128202;&nbsp;&#9992;</label>")
     dgeTable$Link <- sapply(as.character(dgeTable$gene), get_dgeTable_link)
     
     # Reorder columns
-    dgeTable <- dgeTable[,c("gene", "split", "mod", "direction", "pval", "fdr", "coef", "mean", "Plot", "Link")]
+    dgeTable <- dgeTable[,c("gene", "node", "mod", "direction", "pval", "fdr", "coef", "mean", "Plot", "Link")]
     
     # Rename columns
     colnames(dgeTable) <- c("Gene", "Node", "Group", "Direction", "P Value", "FDR", "Diff", "Mean", "Plot", "Link")
     
+    #print(head(dgeTable))
+    
     # Get gene set enrichment results
     enrTable <- getEnrichmentTable(K2summary)
-    
-    # Remove unnecessary columns
-    enrTable <- enrTable[, !colnames(enrTable) %in% c("B", "ntot", "t")]
+    colnames(enrTable) <- c('category', 'node', 'edge', 'direction', 'pval_hyper', 'fdr_hyper', 'nhits', 'ndrawn', 'ncats', 'ntot', 'pval_limma', 'fdr_limma', 'coef', 'mean', 't', 'B', 'hits')
     
     # Add links to gene sets
     enrTable$Plot <- paste0("<label for='PlotRow", seq(nrow(enrTable)), "'>&#128202;&nbsp;&#9992;</label>")
     enrTable$Link <- sapply(as.character(enrTable$category), get_enrTablelink)
     
     # Reorder columns
-    enrTable <- enrTable[,c("category", "split", "mod", "direction", "pval_hyper", "fdr_hyper", "nhits", "ndrawn", "ncats", "pval_limma", "fdr_limma", "coef", "mean", "Plot", "Link")]
+    enrTable <- enrTable[,c("category", "node", "edge", "direction", "pval_hyper", "fdr_hyper", "nhits", "ndrawn", "ncats", "pval_limma", "fdr_limma", "coef", "mean", "Plot", "Link")]
     
     # Rename columns
     colnames(enrTable) <- c("Gene Set", "Node", "Group", "Direction", "P Value_Hyper", "FDR_Hyper", "N_Overlap", "N_Sig. Genes", "N_Gene Set", "P Value_ssGSEA", "FDR_ssGSEA", "Diff_ssGSEA", "Mean_ssGSEA", "Plot", "Link")
+    
+    #print(head(enrTable))
     
     list(
       dgeTable = dgeTable,
@@ -399,5 +402,5 @@ K2Taxonomer_Tables <- reactive({
     
   }) %...!% { return(NULL) }
   
-}) %>% bindCache(input$portal_id, "-K2Taxonomer-Tables") %>% 
+}) %>% bindCache(input$portal_id, "-K2Taxonomer-tables") %>% 
   bindEvent(input$portal_id)

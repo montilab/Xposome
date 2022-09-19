@@ -259,6 +259,15 @@ de_table <- reactive({
   bindEvent(input$portal_id, input$marker, input$marker_gene, input$marker_tas)
 
 
+## Output DE marker table header ####
+output$de_marker_tbl_header <- renderUI({
+  
+  req(de_table())
+  
+  h2("Table of profiles ranked by Mod Z-scores")
+  
+})
+
 ## Output DE marker table####
 output$de_marker_table <-  DT::renderDataTable({
 
@@ -359,7 +368,7 @@ output$gs_marker_plot <- renderPlotly({
   
   req(input$marker == 'Gene Sets')
   
-  marker_id=input$marker_gs; view=input$marker_view; header="Moderated Z-scores";
+  marker_id=input$marker_gs; view=input$marker_view; header="Gene Set Scores";
   
   promise_all(gs_all=gs_all(), gs_chemical=gs_chemical()) %...>%
     with({
@@ -417,7 +426,7 @@ output$gs_exposure_phenotype_plot <- renderPlotly({
   
   req(input$marker == 'Gene Sets')
   
-  portal_id = input$portal_id; marker_id = input$marker_gs; view = input$marker_view; header = "Moderated Z-scores";
+  portal_id = input$portal_id; marker_id = input$marker_gs; view = input$marker_view; header = "Gene Set Scores";
   exposure_phenotype <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype[which(projectlist$Portal == portal_id)]), ",", fixed=TRUE)) %>% trimws()
   
   gs_exposure() %...>% 
@@ -438,7 +447,7 @@ gs_table <- reactive({
   
   req(input$marker == 'Gene Sets')
   
-  marker_id = input$marker_gs; gsname=input$marker_gsname; gsmethod=input$marker_gsmethod; tas = input$marker_tas; header = "Moderated <br> Z-scores";
+  marker_id = input$marker_gs; gsname=input$marker_gsname; gsmethod=input$marker_gsmethod; tas = input$marker_tas; header = "Gene Set <br> Scores";
   
   promise_all(profile_dat=profile_dat(), gs_enrichment_dat=gs_enrichment_dat()) %...>%
     with({
@@ -458,6 +467,15 @@ gs_table <- reactive({
 }) %>% bindCache(input$portal_id, input$marker, input$marker_gs, input$marker_gsname, input$marker_gsmethod, input$marker_tas) %>% 
   bindEvent(input$portal_id, input$marker, input$marker_gs, input$marker_gsname, input$marker_gsmethod, input$marker_tas)
 
+
+## Output GS marker table header ####
+output$gs_marker_tbl_header <-  renderUI({
+  
+  req(gs_table())
+  
+  h2("Table of Profiles Ranked by Gene Set Scores")
+  
+})
 
 ## Output GS marker table ####
 output$gs_marker_table <-  DT::renderDataTable({
@@ -559,7 +577,7 @@ output$conn_marker_plot <- renderPlotly({
   
   req(input$marker == 'CMap Connectivity')
   
-  marker_id = input$marker_conn; view = input$marker_view; header = "Moderated Z-scores";
+  marker_id = input$marker_conn; view = input$marker_view; header = "Connectivity Scores (Percentile)";
   
   promise_all(conn_all=conn_all(), conn_chemical=conn_chemical()) %...>%
     with({
@@ -617,7 +635,7 @@ output$conn_exposure_phenotype_plot <- renderPlotly({
   
   req(input$marker == 'CMap Connectivity')
   
-  portal_id = input$portal_id; marker_id = input$marker_conn; view = input$marker_view; header = "Moderated Z-scores";
+  portal_id = input$portal_id; marker_id = input$marker_conn; view = input$marker_view; header = "Connectivity Scores (Percentile)";
   exposure_phenotype <- unlist(strsplit(as.character(projectlist$Exposure_Phenotype[which(projectlist$Portal == portal_id)]), ",", fixed=TRUE)) %>% trimws()
   
   conn_exposure() %...>% 
@@ -638,7 +656,7 @@ conn_table <- reactive({
   
   req(input$marker == 'CMap Connectivity')
   
-  marker_id = input$marker_conn; conn_name = input$marker_conn_name; tas = input$marker_tas; header = "Moderated <br> Z-scores";
+  marker_id = input$marker_conn; conn_name = input$marker_conn_name; tas = input$marker_tas; header = "Connectivity Scores <br> (Percentile)";
   
   promise_all(profile_dat=profile_dat(), connectivity_dat=connectivity_dat()) %...>%
     with({
@@ -658,6 +676,14 @@ conn_table <- reactive({
 }) %>% bindCache(input$portal_id, input$marker, input$marker_conn, input$marker_conn_name, input$marker_tas) %>% 
   bindEvent(input$portal_id, input$marker, input$marker_conn, input$marker_conn_name, input$marker_tas)
 
+## Output CONN marker table header ####
+output$conn_marker_tbl_header <-  renderUI({
+  
+  req(conn_table())
+  
+  h2("Table of Profiles Ranked by Connectivity Scores (Percentile)")
+  
+})
 
 ## Output CONNECTIVITY marker table ####
 output$conn_marker_table <-  DT::renderDataTable({

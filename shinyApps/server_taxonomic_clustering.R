@@ -133,7 +133,7 @@ observeEvent({
 ## Output the Dendrogram #####
 output$dendro <- renderVisNetwork({
   
-  node = isolate({ input$dendro_selected }); visualizeQvalues = input$visualizeQvalues;
+  node = isolate({ input$dendro_selected }); visualizeQvalues = isolate({ input$visualizeQvalues });
   
   vNetOut_data() %...>% (function(vNetOut_data){
     
@@ -273,7 +273,7 @@ dendro_dat <- reactive({
 observeEvent({
   input$portal_id
 }, {
-
+  
   ## Set select input options for annotations bar
   taxonomer_results() %...>% (function(K2summary){
 
